@@ -10,18 +10,18 @@ namespace AirEngine
 		{
 			namespace Manager
 			{
-				class DLL_API GraphicDeviceManager final
+				class DLL_API GraphicDeviceManager
 					: public ManagerBase
 				{
 				private:
 					NO_COPY(GraphicDeviceManager)
 					NO_MOVE(GraphicDeviceManager)
-
-					virtual std::vector<ManagerInitializerWrapper> OnGetManagerInitializers() const override;
-					virtual void OnFinishInitialize() const override;
+				protected:
+					virtual std::vector<ManagerInitializerWrapper> OnGetManagerInitializers() override;
+					virtual void OnFinishInitialize() override;
 				public:
 					GraphicDeviceManager();
-					~GraphicDeviceManager();
+					virtual ~GraphicDeviceManager();
 				};
 			}
 		}
