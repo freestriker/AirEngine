@@ -1,17 +1,20 @@
-#include "Context.hpp"
-#include "Manager/GraphicDeviceManager.hpp"
-#include "Manager/ManagerInitializer.hpp"
+#include "Bootstrapper.hpp"
 #include <algorithm>
+#include "Manager/GraphicDeviceManager.hpp"
 
 using namespace AirEngine::Runtime;
 
-Core::Manager::GraphicDeviceManager* const Core::Context::_graphicDeviceManager = new Core::Manager::GraphicDeviceManager();
+AirEngine::Runtime::Core::Bootstrapper::Bootstrapper()
+	:_managerTable{}
+{
+	ResetManager(std::make_shared<Manager::GraphicDeviceManager>());
+}
 
-std::map<std::string, AirEngine::Runtime::Core::Manager::ManagerBase*> const AirEngine::Runtime::Core::Context::_managerTable{
-	{"GraphicDeviceManager", Core::Context::_graphicDeviceManager}
-};
+AirEngine::Runtime::Core::Bootstrapper::~Bootstrapper()
+{
+}
 
-void Core::Context::Init()
+void Core::Bootstrapper::Boot()
 {
 	std::vector<Manager::ManagerInitializerWrapper> initializers{};
 	for (auto& managerPair : _managerTable)
@@ -26,7 +29,7 @@ void Core::Context::Init()
 
 	for (auto& initializer : initializers)
 	{
-		initializer.operation();
+		initializer.initializer();
 	}
 
 	for (auto& managerPair : _managerTable)
@@ -34,7 +37,8 @@ void Core::Context::Init()
 		managerPair.second->OnFinishInitialize();
 	}
 }
-Core::Manager::GraphicDeviceManager& Core::Context::GraphicDeviceManager()
+
+void AirEngine::Runtime::Core::Bootstrapper::ResetManager(std::shared_ptr<Manager::ManagerBase> manager)
 {
-	return *_graphicDeviceManager;
+	_managerTable[manager->Name()] = manager;
 }

@@ -1,5 +1,4 @@
 #pragma once
-
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/ContructorMacro.hpp"
 #include <functional>
@@ -20,7 +19,7 @@ namespace AirEngine
 				{
 					uint32_t initLayer;
 					uint32_t initIndex;
-					ManagerInitializer operation;
+					ManagerInitializer initializer;
 				};
 			}
 		}

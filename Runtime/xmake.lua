@@ -1,4 +1,4 @@
-add_requires("vulkansdk", {system = true})
+add_requires("vulkansdk")
 add_requires("vk-bootstrap")
 
 target("Runtime")

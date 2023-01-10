@@ -10,4 +10,6 @@ set_languages("cxx17")
 add_cxxflags("cl::/Zc:__cplusplus /permissive-")
 add_defines("NOMINMAX")
 
+set_arch("x64")
+
 includes("Runtime", "Demo")

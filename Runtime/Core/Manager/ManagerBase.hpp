@@ -12,12 +12,12 @@ namespace AirEngine
 	{
 		namespace Core
 		{
-			class Context;
+			class Bootstrapper;
 			namespace Manager
 			{
 				class DLL_API ManagerBase
 				{
-					friend class Core::Context;
+					friend class Core::Bootstrapper;
 				private:
 					const std::string _name;
 				protected:
@@ -26,8 +26,8 @@ namespace AirEngine
 					NO_COPY(ManagerBase)
 					NO_MOVE(ManagerBase)
 
-					virtual std::vector<ManagerInitializerWrapper> OnGetManagerInitializers() const = 0;
-					virtual void OnFinishInitialize() const = 0;
+					virtual std::vector<ManagerInitializerWrapper> OnGetManagerInitializers() = 0;
+					virtual void OnFinishInitialize() = 0;
 				public:
 					const std::string& Name() const;
 				};
