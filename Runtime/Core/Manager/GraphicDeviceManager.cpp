@@ -1,8 +1,6 @@
-﻿#include <qdebug.h>
-#include "GraphicDeviceManager.hpp"
+﻿#include "GraphicDeviceManager.hpp"
 #include <VkBootstrap.h>
 #include <iostream>
-#include <QTextStream>
 #include <mutex>
 
 VkInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkInstance = VK_NULL_HANDLE;
@@ -45,7 +43,7 @@ std::vector<AirEngine::Runtime::Core::Manager::ManagerInitializerWrapper> AirEng
 					.set_debug_callback(DebugCallback)
 					.build();
 				if (!instance_builder_return) {
-					qFatal("Create vulkan instance failed.");
+					throw std::runtime_error("Create vulkan instance failed.");
 				}
 				_vkInstance = instance_builder_return.value().instance;
 			}
@@ -59,7 +57,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::OnFinishInitialize
 }
 
 AirEngine::Runtime::Core::Manager::GraphicDeviceManager::GraphicDeviceManager()
-	: ManagerBase("GraphicMemoryManager")
+	: ManagerBase("GraphicDeviceManager")
 {
 }
 
