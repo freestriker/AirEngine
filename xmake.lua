@@ -4,7 +4,7 @@ add_rules("mode.debug", "mode.release")
 
 add_requires("boost", {alias = "boost", configs = {all = true}})
 add_requires("vulkansdk", {alias = "vulkansdk"})
-add_requires("vcpkg::vk-bootstrap", {alias = "vk-bootstrap"})
+add_requires("vk-bootstrap", {alias = "vk-bootstrap"})
 add_requires("vcpkg::cityhash", {alias = "cityhash"})
 add_requires("vcpkg::rttr", {alias = "rttr"})
 add_requires("vcpkg::glm", {alias = "glm"})
