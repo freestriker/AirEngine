@@ -17,8 +17,8 @@ namespace AirEngine
 			private:
 				pointer _object;
 			public:
-				inline Iterator(pointer object)
-					: _object(object)
+				inline Iterator(reference object)
+					: _object(&object)
 				{
 				}
 				inline Iterator()
@@ -35,7 +35,7 @@ namespace AirEngine
 				}
 				inline Iterator& operator++() 
 				{ 
-					_object = static_cast<ChildBrotherTreeNode<T>*>(_object)->YoungerBrother();
+					_object = &static_cast<ChildBrotherTreeNode<T>*>(_object)->YoungerBrother();
 					return *this;
 				}
 				inline Iterator operator++(int)
@@ -72,17 +72,30 @@ namespace AirEngine
 			ChildBrotherTreeNode<T>* _elderBrotherNode;
 			ChildBrotherTreeNode<T>* _youngerBrotherNode;
 			ChildBrotherTreeNode<T>* _childNode;
+		protected:
+			virtual void OnAttachToTree()
+			{
+
+			}
+			virtual void OnDetachFromTree()
+			{
+
+			}
 		public:
 			inline ChildBrotherTreeNode();
-			inline T* Parent();
-			inline T* ElderBrother();
-			inline T* YoungerBrother();
-			inline T* Child();
-			inline void AddChild(T* child);
-			inline void AddElderBrother(T* newBrother);
-			inline void AddEldestBrother(T* newBrother);
-			inline void AddYoungerBrother(T* newBrother);
-			inline void AddYoungestBrother(T* newBrother);
+			inline bool HaveParent() const;
+			inline bool HaveElderBrother() const;
+			inline bool HaveYoungerBrother() const;
+			inline bool HaveChild() const;
+			inline T& Parent();
+			inline T& ElderBrother();
+			inline T& YoungerBrother();
+			inline T& Child();
+			inline void AddChild(T& child);
+			inline void AddElderBrother(T& newBrother);
+			inline void AddEldestBrother(T& newBrother);
+			inline void AddYoungerBrother(T& newBrother);
+			inline void AddYoungestBrother(T& newBrother);
 			inline void RemoveSelf();
 			inline ChildBrotherTreeNode<T>::Iterator ChildIterator();
 			inline ChildBrotherTreeNode<T>::Iterator BrotherIterator();
@@ -97,29 +110,49 @@ namespace AirEngine
 		{
 		}
 		template<typename T>
-		inline T* ChildBrotherTreeNode<T>::Parent()
+		inline bool ChildBrotherTreeNode<T>::HaveParent() const
 		{
-			return static_cast<T*>(_parentNode);
+			return _parentNode != nullptr;
 		}
 		template<typename T>
-		inline T* ChildBrotherTreeNode<T>::YoungerBrother()
+		inline bool ChildBrotherTreeNode<T>::HaveElderBrother() const
 		{
-			return static_cast<T*>(_youngerBrotherNode);
+			return _parentNode != nullptr;
 		}
 		template<typename T>
-		inline T* ChildBrotherTreeNode<T>::ElderBrother()
+		inline bool ChildBrotherTreeNode<T>::HaveYoungerBrother() const
 		{
-			return static_cast<T*>(_elderBrotherNode);
+			return _youngerBrotherNode != nullptr;
 		}
 		template<typename T>
-		inline T* ChildBrotherTreeNode<T>::Child()
+		inline bool ChildBrotherTreeNode<T>::HaveChild() const
 		{
-			return static_cast<T*>(_childNode);
+			return _childNode != nullptr;
 		}
 		template<typename T>
-		inline void ChildBrotherTreeNode<T>::AddChild(T* newChild)
+		inline T& ChildBrotherTreeNode<T>::Parent()
 		{
-			ChildBrotherTreeNode<T>* newChildNode = static_cast<ChildBrotherTreeNode<T>*>(newChild);
+			return static_cast<T&>(*_parentNode);
+		}
+		template<typename T>
+		inline T& ChildBrotherTreeNode<T>::YoungerBrother()
+		{
+			return static_cast<T&>(*_youngerBrotherNode);
+		}
+		template<typename T>
+		inline T& ChildBrotherTreeNode<T>::ElderBrother()
+		{
+			return static_cast<T&>(*_elderBrotherNode);
+		}
+		template<typename T>
+		inline T& ChildBrotherTreeNode<T>::Child()
+		{
+			return static_cast<T&>(*_childNode);
+		}
+		template<typename T>
+		inline void ChildBrotherTreeNode<T>::AddChild(T& newChild)
+		{
+			ChildBrotherTreeNode<T>& newChildNode = static_cast<ChildBrotherTreeNode<T>&>(newChild);
 
 			if (_childNode)
 			{
@@ -127,69 +160,77 @@ namespace AirEngine
 			}
 			else
 			{
-				newChildNode->_parentNode = this;
-				newChildNode->_youngerBrotherNode = nullptr;
-				newChildNode->_elderBrotherNode = nullptr;
-				_childNode = newChild;
+				newChildNode._parentNode = this;
+				newChildNode._youngerBrotherNode = nullptr;
+				newChildNode._elderBrotherNode = nullptr;
+				_childNode = &newChild;
+
+				newChildNode.OnAttachToTree();
 			}
 		}
 		template<typename T>
-		inline void ChildBrotherTreeNode<T>::AddElderBrother(T* newBrother)
+		inline void ChildBrotherTreeNode<T>::AddElderBrother(T& newBrother)
 		{
-			ChildBrotherTreeNode<T>* newBrotherNode = static_cast<ChildBrotherTreeNode<T>*>(newBrother);
+			ChildBrotherTreeNode<T>& newBrotherNode = static_cast<ChildBrotherTreeNode<T>&>(newBrother);
 
-			newBrotherNode->_parentNode = _parentNode;
+			newBrotherNode._parentNode = _parentNode;
 			if (_elderBrotherNode)
 			{
-				_elderBrotherNode->_youngerBrotherNode = newBrotherNode;
-				newBrotherNode->_youngerBrotherNode = this;
-				newBrotherNode->_elderBrotherNode = _elderBrotherNode;
-				_elderBrotherNode = newBrotherNode;
+				_elderBrotherNode->_youngerBrotherNode = &newBrotherNode;
+				newBrotherNode._youngerBrotherNode = this;
+				newBrotherNode._elderBrotherNode = _elderBrotherNode;
+				_elderBrotherNode = &newBrotherNode;
 			}
 			else
 			{
-				_parentNode->_childNode = newBrotherNode;
-				newBrotherNode->_elderBrotherNode = nullptr;
-				newBrotherNode->_youngerBrotherNode = this;
-				_elderBrotherNode = newBrotherNode;
+				_parentNode->_childNode = &newBrotherNode;
+				newBrotherNode._elderBrotherNode = nullptr;
+				newBrotherNode._youngerBrotherNode = this;
+				_elderBrotherNode = &newBrotherNode;
 			}
+
+			newBrotherNode.OnAttachToTree();
 		}
 		template<typename T>
-		inline void ChildBrotherTreeNode<T>::AddEldestBrother(T* newBrother)
+		inline void ChildBrotherTreeNode<T>::AddEldestBrother(T& newBrother)
 		{
-			ChildBrotherTreeNode<T>* newBrotherNode = static_cast<ChildBrotherTreeNode<T>*>(newBrother);
+			ChildBrotherTreeNode<T>& newBrotherNode = static_cast<ChildBrotherTreeNode<T>&>(newBrother);
 
-			newBrotherNode->_parentNode = _parentNode;
+			newBrotherNode._parentNode = _parentNode;
 
-			newBrotherNode->_youngerBrotherNode = _parentNode->_childNode;
-			_parentNode->_childNode->_elderBrotherNode = newBrotherNode;
-			_parentNode->_childNode = newBrotherNode;
-			newBrotherNode->_elderBrotherNode = nullptr;
+			newBrotherNode._youngerBrotherNode = _parentNode->_childNode;
+			_parentNode->_childNode->_elderBrotherNode = &newBrotherNode;
+			_parentNode->_childNode = &newBrotherNode;
+			newBrotherNode._elderBrotherNode = nullptr;
+
+			newBrotherNode.OnAttachToTree();
 		}
 		template<typename T>
-		inline void ChildBrotherTreeNode<T>::AddYoungerBrother(T* newBrother)
+		inline void ChildBrotherTreeNode<T>::AddYoungerBrother(T& newBrother)
 		{
-			ChildBrotherTreeNode<T>* newBrotherNode = static_cast<ChildBrotherTreeNode<T>*>(newBrother);
+			ChildBrotherTreeNode<T>& newBrotherNode = static_cast<ChildBrotherTreeNode<T>&>(newBrother);
 
-			newBrotherNode->_parentNode = _parentNode;
+			newBrotherNode._parentNode = _parentNode;
 			if (_youngerBrotherNode)
 			{
-				_youngerBrotherNode->_elderBrotherNode = newBrotherNode;
-				newBrotherNode->_elderBrotherNode = this;
-				newBrotherNode->_youngerBrotherNode = _youngerBrotherNode;
-				_youngerBrotherNode = newBrotherNode;
+				_youngerBrotherNode->_elderBrotherNode = &newBrotherNode;
+				newBrotherNode._elderBrotherNode = this;
+				newBrotherNode._youngerBrotherNode = _youngerBrotherNode;
+				_youngerBrotherNode = &newBrotherNode;
 			}
 			else
 			{
-				newBrotherNode->_elderBrotherNode = this;
-				newBrotherNode->_youngerBrotherNode = nullptr;
-				_youngerBrotherNode = newBrotherNode;
+				newBrotherNode._elderBrotherNode = this;
+				newBrotherNode._youngerBrotherNode = nullptr;
+				_youngerBrotherNode = &newBrotherNode;
 			}
+
+			newBrotherNode.OnAttachToTree();
 		}
 		template<typename T>
-		inline void ChildBrotherTreeNode<T>::AddYoungestBrother(T* newBrother)
+		inline void ChildBrotherTreeNode<T>::AddYoungestBrother(T& newBrother)
 		{
-			ChildBrotherTreeNode<T>* newBrotherNode = static_cast<ChildBrotherTreeNode<T>*>(newBrother);
+			ChildBrotherTreeNode<T>& newBrotherNode = static_cast<ChildBrotherTreeNode<T>&>(newBrother);
 
 			ChildBrotherTreeNode<T>* lastNode = this;
 			while (lastNode->_youngerBrotherNode)
@@ -197,14 +238,18 @@ namespace AirEngine
 				lastNode = lastNode->_youngerBrotherNode;
 			}
 
-			lastNode->_youngerBrotherNode = newBrotherNode;
-			newBrotherNode->_parentNode = _parentNode;
-			newBrotherNode->_elderBrotherNode = lastNode;
-			newBrotherNode->_youngerBrotherNode = nullptr;
+			lastNode->_youngerBrotherNode = &newBrotherNode;
+			newBrotherNode._parentNode = _parentNode;
+			newBrotherNode._elderBrotherNode = lastNode;
+			newBrotherNode._youngerBrotherNode = nullptr;
+
+			newBrotherNode.OnAttachToTree();
 		}
 		template<typename T>
 		inline void ChildBrotherTreeNode<T>::RemoveSelf()
 		{
+			OnDetachFromTree();
+
 			if (_parentNode)
 			{
 				if (_elderBrotherNode)

@@ -1,12 +1,14 @@
 #include "Bootstrapper.hpp"
 #include <algorithm>
 #include "Manager/GraphicDeviceManager.hpp"
+#include "Manager/SceneManager.hpp"
 
 using namespace AirEngine::Runtime;
 
 AirEngine::Runtime::Core::Bootstrapper::Bootstrapper()
 	:_managerTable{}
 {
+	ResetManager(std::make_shared<Manager::SceneManager>());
 	ResetManager(std::make_shared<Manager::GraphicDeviceManager>());
 }
 
