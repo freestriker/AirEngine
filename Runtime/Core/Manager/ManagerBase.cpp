@@ -8,8 +8,3 @@ AirEngine::Runtime::Core::Manager::ManagerBase::ManagerBase(const std::string& n
 AirEngine::Runtime::Core::Manager::ManagerBase::~ManagerBase()
 {
 }
-
-const std::string& AirEngine::Runtime::Core::Manager::ManagerBase::Name() const
-{
-	return _name;
-}

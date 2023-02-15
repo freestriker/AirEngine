@@ -1,23 +1,41 @@
 ﻿#pragma once
 #include <QApplication>
 #include <QWindow>
-#include "../Runtime/Core/Bootstrapper.hpp"
+#include "../Runtime/Core/Boot/Bootstrapper.hpp"
 #include <iostream>
 #include "../Runtime/Core/Manager/GraphicDeviceManager.hpp"
 #include "../Runtime/Core/Manager/SceneManager.hpp"
 #include "../Runtime/Core/Scene/SceneObject.hpp"
 #include "../Runtime/Core/Scene/Scene.hpp"
 #include <qdebug.h>
+#include "../Runtime/Utility/InternedString.hpp"
 
 using namespace AirEngine::Runtime;
+using namespace AirEngine::Runtime::Utility;
 
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
 
     {
-        std::unique_ptr<AirEngine::Runtime::Core::Bootstrapper> bootstrapper = std::unique_ptr<AirEngine::Runtime::Core::Bootstrapper>(new AirEngine::Runtime::Core::Bootstrapper());
+        std::unique_ptr<AirEngine::Runtime::Core::Boot::Bootstrapper> bootstrapper = std::unique_ptr<AirEngine::Runtime::Core::Boot::Bootstrapper>(new AirEngine::Runtime::Core::Boot::Bootstrapper());
         bootstrapper->Boot();
+    }
+
+    {
+        std::string stdString = "stdString";
+        std::string_view stdStringView = "stdStringView";
+        const char* constCharPtr = "constCharPtr";
+
+        InternedString is0 = InternedString(stdString);
+        InternedString is1 = InternedString(stdStringView);
+        InternedString is2 = InternedString(constCharPtr);
+
+        bool isNull = is0.IsNULL();
+        auto size = is0.Size();
+        bool same = is0 == is1;
+        bool less = is0 < is1;
+        auto hash = std::hash<InternedString>()(is0);
     }
 
     auto&& mainScene = Core::Manager::SceneManager::Scene("MainScene");
