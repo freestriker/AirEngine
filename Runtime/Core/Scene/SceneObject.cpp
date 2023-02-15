@@ -2,6 +2,7 @@
 #include <rttr/registration>
 #include "Component.hpp"
 #include "Scene.hpp"
+#include <cassert>
 
 RTTR_REGISTRATION
 {
@@ -14,7 +15,7 @@ AirEngine::Runtime::Core::Scene::SceneObject::SceneObject()
 
 }
 
-AirEngine::Runtime::Core::Scene::SceneObject::SceneObject(const std::string_view& name)
+AirEngine::Runtime::Core::Scene::SceneObject::SceneObject(const std::string_view& name, bool active, bool isManualUpdate)
 	: Object()
 	, ChildBrotherTreeNode()
 	, _scene()
@@ -24,6 +25,20 @@ AirEngine::Runtime::Core::Scene::SceneObject::SceneObject(const std::string_view
 	, _quaternion{ BASE_QUATERNION }
 	, _scale{ BASE_SCALE }
 	, _modelMatrix{ BASE_MATRIX }
+	, _sceneObjectMetaData(
+		IF_SET_BITS(isManualUpdate, 0, IS_MANUAL_UPDATE_BITS) |
+		IF_SET_BITS(active, 0, IS_ACTIVE_BITS)
+	)
+{
+}
+
+AirEngine::Runtime::Core::Scene::SceneObject::SceneObject(const std::string_view& name, bool isManuallyUpdated)
+	: SceneObject(name, true, isManuallyUpdated)
+{
+}
+
+AirEngine::Runtime::Core::Scene::SceneObject::SceneObject(const std::string_view& name)
+	: SceneObject(name, true, false)
 {
 
 }
@@ -47,10 +62,12 @@ AirEngine::Runtime::Core::Scene::Component& AirEngine::Runtime::Core::Scene::Sce
 
 void AirEngine::Runtime::Core::Scene::SceneObject::AttachComponent(Component& component)
 {
+	assert(component._sceneObject == nullptr);
+
 	component._sceneObject = this;
 	_components.emplace_back(&component);
 
-	if (component.IsSceneDependent() && IsInScene())
+	if (component.IsSceneDependent() && IsSettled())
 	{
 		component.OnAttachToScene();
 	}
@@ -60,6 +77,8 @@ void AirEngine::Runtime::Core::Scene::SceneObject::AttachComponent(Component& co
 		component.OnAttachToSceneObject();
 	}
 
+	//if (IsManualUpdate()) return;
+
 	if (component.IsPositionDependent()) 
 	{
 		component.OnChangePosition();
@@ -68,26 +87,25 @@ void AirEngine::Runtime::Core::Scene::SceneObject::AttachComponent(Component& co
 
 void AirEngine::Runtime::Core::Scene::SceneObject::DetachComponent(Component& component)
 {
-	if (component._sceneObject == this)
+	assert(component._sceneObject == this);
+
+	for (auto iter = _components.begin(); iter != _components.end(); ++iter)
 	{
-		for (auto iter = _components.begin(); iter != _components.end(); ++iter)
+		if (*iter == &component)
 		{
-			if (*iter == &component)
+			if (component.IsSceneObjectDependent())
 			{
-				if (component.IsSceneObjectDependent())
-				{
-					component.OnDetachFromSceneObject();
-				}
-
-				if (component.IsSceneDependent() && IsInScene())
-				{
-					component.OnDetachFromScene();
-				}
-
-				component._sceneObject = nullptr;
-				_components.erase(iter);
-				break;
+				component.OnDetachFromSceneObject();
 			}
+
+			if (component.IsSceneDependent() && IsSettled())
+			{
+				component.OnDetachFromScene();
+			}
+
+			component._sceneObject = nullptr;
+			_components.erase(iter);
+			break;
 		}
 	}
 }
@@ -96,21 +114,21 @@ void AirEngine::Runtime::Core::Scene::SceneObject::SetTranslation(const glm::vec
 {
 	_translation = translation;
 
-	AutoUpdateAllPosition();
+	AutoUpdatePosition();
 }
 
 void AirEngine::Runtime::Core::Scene::SceneObject::SetScale(const glm::vec3& scale)
 {
 	_scale = scale;
 
-	AutoUpdateAllPosition();
+	AutoUpdatePosition();
 }
 
 void AirEngine::Runtime::Core::Scene::SceneObject::SetQuaternion(const glm::vec3& quaternion)
 {
 	_quaternion = quaternion;
 
-	AutoUpdateAllPosition();
+	AutoUpdatePosition();
 }
 
 void AirEngine::Runtime::Core::Scene::SceneObject::SetTranslationQuaternionScale(const glm::vec3& translation, const glm::vec3& quaternion, const glm::vec3& scale)
@@ -119,30 +137,48 @@ void AirEngine::Runtime::Core::Scene::SceneObject::SetTranslationQuaternionScale
 	_scale = scale;
 	_quaternion = quaternion;
 
-	AutoUpdateAllPosition();
+	AutoUpdatePosition();
 }
+//
+//void AirEngine::Runtime::Core::Scene::SceneObject::ManualUpdatePosition()
+//{
+//	ManualUpdatePosition(HaveParent() ? Parent().ModelMatrix() : BASE_MATRIX);
+//}
+//
+//void AirEngine::Runtime::Core::Scene::SceneObject::ManualUpdatePosition(const glm::mat4& modelMatrix)
+//{
+//	UpdateModelMatrix(modelMatrix);
+//	for (auto iter = ChildIterator(); iter; ++iter)
+//	{
+//		iter->ManualUpdatePosition(_modelMatrix);
+//	}
+//	for (auto& component : _components)
+//	{
+//		if (component->IsPositionDependent()) component->OnChangePosition();
+//	}
+//}
 
 void AirEngine::Runtime::Core::Scene::SceneObject::OnAttachToTree()
 {
-	if (Parent().IsInScene())
+	if (Parent().IsSettled())
 	{
-		AutoUpdateAllAttachToSettledSceneObject();
+		AutoAttachToSettledParent();
 	}
 	else
 	{
-		AutoUpdateAllAttachToVagrantSceneObject();
+		AutoAttachToVagrantParent();
 	}
 }
 
 void AirEngine::Runtime::Core::Scene::SceneObject::OnDetachFromTree()
 {
-	if (Parent().IsInScene())
+	if (Parent().IsSettled())
 	{
-		AutoUpdateAllDetachFromSettledSceneObject();
+		AutoDetachFromSettledParent();
 	}
 	else
 	{
-		AutoUpdateAllDetachFromVagrantSceneObject();
+		AutoDetachFromVagrantParent();
 	}
 }
 
@@ -160,94 +196,102 @@ void AirEngine::Runtime::Core::Scene::SceneObject::UpdateModelMatrix(const glm::
 	_modelMatrix = parentModelMatrix * relativeModelMatrix;
 }
 
-void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdateAllAttachToSettledSceneObject()
+void AirEngine::Runtime::Core::Scene::SceneObject::AutoAttachToSettledParent()
 {
 	_scene = &Parent().Scene();
 	UpdateModelMatrix(Parent().ModelMatrix());
+
 	for (auto iter = ChildIterator(); iter; ++iter)
 	{
-		iter->AutoUpdateAllAttachToSettledSceneObject(_modelMatrix);
+		iter->AutoAttachToSettledParent();
 	}
 	for (auto& component : _components)
 	{
-		if (component->IsSceneDependent() && IsInScene()) component->OnAttachToScene();
+		if (component->IsSceneDependent()) component->OnAttachToScene();
+
 		if (component->IsPositionDependent()) component->OnChangePosition();
 	}
+	//_scene = &Parent().Scene();
+	//if (!IsManualUpdate())
+	//{
+	//	UpdateModelMatrix(Parent().ModelMatrix());
+	//}
+	//for (auto iter = ChildIterator(); iter; ++iter)
+	//{
+	//	iter->AutoAttachToSettledParent();
+	//}
+	//for (auto& component : _components)
+	//{
+	//	if (component->IsSceneDependent()) component->OnAttachToScene();
+
+	//	if (IsManualUpdate()) continue;
+	//	if (component->IsPositionDependent()) component->OnChangePosition();
+	//}
 }
 
-void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdateAllAttachToSettledSceneObject(const glm::mat4& parentModelMatrix)
-{
-	_scene = &Parent().Scene();
-	UpdateModelMatrix(parentModelMatrix);
-	for (auto iter = ChildIterator(); iter; ++iter)
-	{
-		iter->AutoUpdateAllAttachToSettledSceneObject(_modelMatrix);
-	}
-	for (auto& component : _components)
-	{
-		if (component->IsSceneDependent() && IsInScene()) component->OnAttachToScene();
-		if (component->IsPositionDependent()) component->OnChangePosition();
-	}
-}
-
-void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdateAllAttachToVagrantSceneObject()
+void AirEngine::Runtime::Core::Scene::SceneObject::AutoAttachToVagrantParent()
 {
 	UpdateModelMatrix(Parent().ModelMatrix());
+
 	for (auto iter = ChildIterator(); iter; ++iter)
 	{
-		iter->AutoUpdateAllAttachToVagrantSceneObject(_modelMatrix);
+		iter->AutoAttachToVagrantParent();
 	}
+
 	for (auto& component : _components)
 	{
 		if (component->IsPositionDependent()) component->OnChangePosition();
 	}
+	//if (IsManualUpdate()) return;
+
+	//UpdateModelMatrix(Parent().ModelMatrix());
+
+	//for (auto iter = ChildIterator(); iter; ++iter)
+	//{
+	//	iter->AutoAttachToVagrantParent();
+	//}
+
+	//for (auto& component : _components)
+	//{
+	//	if (component->IsPositionDependent()) component->OnChangePosition();
+	//}
 }
 
-void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdateAllAttachToVagrantSceneObject(const glm::mat4& parentModelMatrix)
-{
-	UpdateModelMatrix(parentModelMatrix);
-	for (auto iter = ChildIterator(); iter; ++iter)
-	{
-		iter->AutoUpdateAllAttachToVagrantSceneObject(_modelMatrix);
-	}
-	for (auto& component : _components)
-	{
-		if (component->IsPositionDependent()) component->OnChangePosition();
-	}
-}
-
-void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdateAllDetachFromSettledSceneObject()
+void AirEngine::Runtime::Core::Scene::SceneObject::AutoDetachFromSettledParent()
 {
 	for (auto& component : _components)
 	{
-		if (component->IsSceneDependent() && IsInScene()) component->OnDetachFromScene();
+		if (component->IsSceneDependent()) component->OnDetachFromScene();
 	}
 	for (auto iter = ChildIterator(); iter; ++iter)
 	{
-		iter->AutoUpdateAllDetachFromSettledSceneObject();
+		iter->AutoDetachFromSettledParent();
 	}
 	_scene = nullptr;
 }
 
-void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdateAllDetachFromVagrantSceneObject()
+void AirEngine::Runtime::Core::Scene::SceneObject::AutoDetachFromVagrantParent()
 {
 	for (auto iter = ChildIterator(); iter; ++iter)
 	{
-		iter->AutoUpdateAllDetachFromVagrantSceneObject();
+		iter->AutoDetachFromVagrantParent();
 	}
 }
 
-void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdateAllPosition()
+void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdatePosition()
 {
-	AutoUpdateAllPosition(HaveParent() ? Parent().ModelMatrix() : BASE_MATRIX);
+	//if (IsManualUpdate()) return;
+
+	AutoUpdatePosition(HaveParent() ? Parent().ModelMatrix() : BASE_MATRIX);
 }
 
-void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdateAllPosition(const glm::mat4& modelMatrix)
+void AirEngine::Runtime::Core::Scene::SceneObject::AutoUpdatePosition(const glm::mat4& modelMatrix)
 {
 	UpdateModelMatrix(modelMatrix);
 	for (auto iter = ChildIterator(); iter; ++iter)
 	{
-		iter->AutoUpdateAllPosition(_modelMatrix);
+		//if (iter->IsManualUpdate()) continue;
+		iter->AutoUpdatePosition(_modelMatrix);
 	}
 	for (auto& component : _components)
 	{

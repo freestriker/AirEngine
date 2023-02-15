@@ -24,17 +24,19 @@ int main(int argc, char* argv[])
     auto&& rootSceneObject = mainScene.RootSceneObject();
     rootSceneObject.SetScale({ 2, 2, 2 });
 
-    Core::Scene::SceneObject* sceneObject0 = new Core::Scene::SceneObject("0");
-    Core::Scene::SceneObject* sceneObject1 = new Core::Scene::SceneObject("1");
-    Core::Scene::SceneObject* sceneObject2 = new Core::Scene::SceneObject("2");
-    Core::Scene::SceneObject* sceneObject00 = new Core::Scene::SceneObject("00");
-    Core::Scene::SceneObject* sceneObject01 = new Core::Scene::SceneObject("01");
-    Core::Scene::SceneObject* sceneObject000 = new Core::Scene::SceneObject("000");
+    Core::Scene::SceneObject* sceneObject0 = new Core::Scene::SceneObject("0", true);
+    Core::Scene::SceneObject* sceneObject1 = new Core::Scene::SceneObject("1", true);
+    Core::Scene::SceneObject* sceneObject2 = new Core::Scene::SceneObject("2", true);
+    Core::Scene::SceneObject* sceneObject00 = new Core::Scene::SceneObject("00", false);
+    Core::Scene::SceneObject* sceneObject01 = new Core::Scene::SceneObject("01", false);
+    Core::Scene::SceneObject* sceneObject000 = new Core::Scene::SceneObject("000", true);
+
+    sceneObject00->AddChild(*sceneObject000);
+    
+    sceneObject00->SetScale({ 5, 5, 5 });
 
     sceneObject0->AddChild(*sceneObject00);
     sceneObject0->AddChild(*sceneObject01);
-
-    sceneObject00->AddChild(*sceneObject000);
 
     sceneObject0->SetScale({ 3, 3, 3 });
 

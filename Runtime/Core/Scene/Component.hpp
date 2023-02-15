@@ -26,7 +26,7 @@ namespace AirEngine
 				private:
 					SceneObject* _sceneObject;
 					using ComponentMetaDataType = uint32_t;
-					ComponentMetaDataType _componentMetaDataType;
+					ComponentMetaDataType _componentMetaData;
 					static constexpr ComponentMetaDataType IS_ACTIVE_BITS = 1u;
 					static constexpr ComponentMetaDataType IS_SCENE_DEPENDENT_BITS = 1u << 1u;
 					static constexpr ComponentMetaDataType IS_SCENE_OBJECT_DEPENDENT_BITS = 1u << 2u;
@@ -58,24 +58,24 @@ namespace AirEngine
 
 					bool inline Active()const
 					{
-						return _componentMetaDataType & IS_ACTIVE_BITS;
+						return _componentMetaData & IS_ACTIVE_BITS;
 					}
 					void SetActive(bool active)
 					{
 						OnSetActive(active);
-						_componentMetaDataType = IF_SET_BITS(active, _componentMetaDataType, IS_ACTIVE_BITS);
+						_componentMetaData = IF_SET_BITS(active, _componentMetaData, IS_ACTIVE_BITS);
 					}
 					bool IsSceneDependent() const
 					{
-						return _componentMetaDataType & IS_SCENE_DEPENDENT_BITS;
+						return _componentMetaData & IS_SCENE_DEPENDENT_BITS;
 					}
 					bool IsSceneObjectDependent() const
 					{
-						return _componentMetaDataType & IS_SCENE_OBJECT_DEPENDENT_BITS;
+						return _componentMetaData & IS_SCENE_OBJECT_DEPENDENT_BITS;
 					}
 					bool IsPositionDependent() const
 					{
-						return _componentMetaDataType & IS_POSITION_DEPENDENT_BITS;
+						return _componentMetaData & IS_POSITION_DEPENDENT_BITS;
 					}
 					RTTR_ENABLE(Object)
 				};
