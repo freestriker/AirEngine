@@ -13,6 +13,8 @@
 #include "../../Utility/ChildBrotherTreeNode.hpp"
 #include "Component.hpp"
 
+#define IF_SET_BITS(setOrNot, source, bits) ((setOrNot) ? ((source) | (bits)) : ((source) & !(bits)))
+
 namespace AirEngine
 {
 	namespace Runtime
@@ -28,6 +30,10 @@ namespace AirEngine
 				{
 					friend class Scene;
 				private:
+					using SceneObjectMetaDataType = uint32_t;
+					SceneObjectMetaDataType _sceneObjectMetaData;
+					static constexpr SceneObjectMetaDataType IS_ACTIVE_BITS = 1u;
+					static constexpr SceneObjectMetaDataType IS_MANUAL_UPDATE_BITS = 1u << 1u;
 					std::string _name;
 					Scene* _scene;
 					std::vector<Component*> _components;
@@ -42,10 +48,20 @@ namespace AirEngine
 					static constexpr glm::vec3 BASE_TRANSLATION = glm::vec3(0);
 				public:
 					SceneObject();
+					SceneObject(const std::string_view& name, bool active, bool isManuallyUpdated);
+					SceneObject(const std::string_view& name, bool isManuallyUpdated);
 					SceneObject(const std::string_view& name);
 					~SceneObject();
 					NO_COPY_MOVE(SceneObject)
 
+					bool inline Active()const
+					{
+						return (_sceneObjectMetaData & IS_ACTIVE_BITS) == IS_ACTIVE_BITS;
+					}
+					void SetActive(bool active)
+					{
+						_sceneObjectMetaData = IF_SET_BITS(active, _sceneObjectMetaData, IS_ACTIVE_BITS);
+					}
 					inline std::string& Name()
 					{
 						return _name;
@@ -54,9 +70,21 @@ namespace AirEngine
 					{
 						return *_scene;
 					}
-					inline bool IsInScene()const
+					inline bool IsSettled()const
 					{
 						return _scene != nullptr;
+					}
+					inline bool IsVagrant()const
+					{
+						return _scene == nullptr;
+					}
+					bool IsManualUpdate() const
+					{
+						return (_sceneObjectMetaData & IS_MANUAL_UPDATE_BITS) == IS_MANUAL_UPDATE_BITS;
+					}
+					void SetIsManualUpdate(bool isManualUpdate) const
+					{
+						IF_SET_BITS(isManualUpdate, _sceneObjectMetaData, IS_MANUAL_UPDATE_BITS);
 					}
 
 					void AttachComponent(Component& component);
@@ -87,18 +115,19 @@ namespace AirEngine
 					void SetScale(const glm::vec3& scale);
 					void SetQuaternion(const glm::vec3& quaternion);
 					void SetTranslationQuaternionScale(const glm::vec3& translation, const glm::vec3& quaternion, const glm::vec3& scale);
+					//void ManualUpdatePosition();
+					//void ManualUpdatePosition(const glm::mat4& modelMatrix);
 				private:
 					void OnAttachToTree()override;
 					void OnDetachFromTree()override;
 					void UpdateModelMatrix(const glm::mat4& parentModelMatrix);
-					void AutoUpdateAllAttachToSettledSceneObject();
-					void AutoUpdateAllAttachToSettledSceneObject(const glm::mat4& parentModelMatrix);
-					void AutoUpdateAllAttachToVagrantSceneObject();
-					void AutoUpdateAllAttachToVagrantSceneObject(const glm::mat4& parentModelMatrix);
-					void AutoUpdateAllDetachFromSettledSceneObject();
-					void AutoUpdateAllDetachFromVagrantSceneObject();
-					void AutoUpdateAllPosition();
-					void AutoUpdateAllPosition(const glm::mat4& modelMatrix);
+					void AutoAttachToSettledParent();
+					void AutoAttachToVagrantParent();
+					void AutoDetachFromSettledParent();
+					void AutoDetachFromVagrantParent();
+					void AutoUpdatePosition();
+					void AutoUpdatePosition(const glm::mat4& modelMatrix);
+
 					RTTR_ENABLE(Object)
 				};
 				template<class TComponent>

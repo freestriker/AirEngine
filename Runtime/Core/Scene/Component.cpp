@@ -18,7 +18,7 @@ AirEngine::Runtime::Core::Scene::Component::Component(bool active)
 }
 
 AirEngine::Runtime::Core::Scene::Component::Component(bool isSceneDependent, bool isSceneObjectDependent, bool isPositionDependent, bool active)
-	: _componentMetaDataType(
+	: _componentMetaData(
 		IF_SET_BITS(isSceneDependent, 0, IS_SCENE_DEPENDENT_BITS) | 
 		IF_SET_BITS(isSceneObjectDependent, 0, IS_SCENE_OBJECT_DEPENDENT_BITS) | 
 		IF_SET_BITS(isPositionDependent, 0, IS_POSITION_DEPENDENT_BITS) | 
@@ -30,6 +30,7 @@ AirEngine::Runtime::Core::Scene::Component::Component(bool isSceneDependent, boo
 
 void AirEngine::Runtime::Core::Scene::Component::OnAttachToScene()
 {
+
 }
 
 void AirEngine::Runtime::Core::Scene::Component::OnDetachFromScene()
