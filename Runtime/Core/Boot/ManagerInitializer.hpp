@@ -13,6 +13,9 @@ namespace AirEngine
 			{
 				class ManagerBase;
 
+			}
+			namespace Boot
+			{
 				using ManagerInitializer = std::function<void()>;
 
 				struct ManagerInitializerWrapper

@@ -13,7 +13,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
 	return VK_FALSE;
 }
 
-std::vector<AirEngine::Runtime::Core::Manager::ManagerInitializerWrapper> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::OnGetManagerInitializers()
+std::vector<AirEngine::Runtime::Core::Boot::ManagerInitializerWrapper> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::OnGetManagerInitializers()
 {
 	return {
 		{
@@ -59,11 +59,6 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::OnFinishInitialize
 AirEngine::Runtime::Core::Manager::GraphicDeviceManager::GraphicDeviceManager()
 	: ManagerBase("GraphicDeviceManager")
 {
-}
-
-VkInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkInstance_()
-{
-	return _vkInstance;
 }
 
 AirEngine::Runtime::Core::Manager::GraphicDeviceManager::~GraphicDeviceManager()

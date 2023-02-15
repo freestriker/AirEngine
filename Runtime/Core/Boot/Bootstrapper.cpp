@@ -1,24 +1,26 @@
 #include "Bootstrapper.hpp"
 #include <algorithm>
-#include "Manager/GraphicDeviceManager.hpp"
-#include "Manager/SceneManager.hpp"
+#include "../Manager/GraphicDeviceManager.hpp"
+#include "../Manager/SceneManager.hpp"
+#include "../Manager/ThirdPartyLibraryManager.hpp"
 
 using namespace AirEngine::Runtime;
 
-AirEngine::Runtime::Core::Bootstrapper::Bootstrapper()
+AirEngine::Runtime::Core::Boot::Bootstrapper::Bootstrapper()
 	:_managerTable{}
 {
+	ResetManager(std::make_shared<Manager::ThirdPartyLibraryManager>());
 	ResetManager(std::make_shared<Manager::SceneManager>());
 	ResetManager(std::make_shared<Manager::GraphicDeviceManager>());
 }
 
-AirEngine::Runtime::Core::Bootstrapper::~Bootstrapper()
+AirEngine::Runtime::Core::Boot::Bootstrapper::~Bootstrapper()
 {
 }
 
-void Core::Bootstrapper::Boot()
+void Core::Boot::Bootstrapper::Boot()
 {
-	std::vector<Manager::ManagerInitializerWrapper> initializers{};
+	std::vector<Boot::ManagerInitializerWrapper> initializers{};
 	for (auto& managerPair : _managerTable)
 	{
 		auto temp = managerPair.second->OnGetManagerInitializers();
@@ -40,7 +42,7 @@ void Core::Bootstrapper::Boot()
 	}
 }
 
-void AirEngine::Runtime::Core::Bootstrapper::ResetManager(std::shared_ptr<Manager::ManagerBase> manager)
+void AirEngine::Runtime::Core::Boot::Bootstrapper::ResetManager(std::shared_ptr<Manager::ManagerBase> manager)
 {
 	_managerTable[manager->Name()] = manager;
 }

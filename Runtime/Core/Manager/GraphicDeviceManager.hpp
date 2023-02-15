@@ -1,6 +1,7 @@
 #pragma once
 #include "ManagerBase.hpp"
 #include <vulkan/vulkan_core.h>
+#include "../Boot/ManagerInitializer.hpp"
 
 namespace AirEngine
 {
@@ -18,10 +19,13 @@ namespace AirEngine
 					NO_MOVE(GraphicDeviceManager)
 				protected:
 					static VkInstance _vkInstance;
-					virtual std::vector<ManagerInitializerWrapper> OnGetManagerInitializers() override;
+					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
 				public:
-					static inline VkInstance VkInstance_();
+					static inline VkInstance VkInstance()
+					{
+						return _vkInstance;
+					}
 					GraphicDeviceManager();
 					virtual ~GraphicDeviceManager();
 				};

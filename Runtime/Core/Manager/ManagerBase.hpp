@@ -4,7 +4,7 @@
 #include "../../Utility/ContructorMacro.hpp"
 #include <string>
 #include <vector>
-#include "ManagerInitializer.hpp"
+#include "../Boot/ManagerInitializer.hpp"
 
 namespace AirEngine
 {
@@ -12,24 +12,29 @@ namespace AirEngine
 	{
 		namespace Core
 		{
-			class Bootstrapper;
+			namespace Boot
+			{
+				class Bootstrapper;
+			}
 			namespace Manager
 			{
 				class DLL_API ManagerBase
 				{
-					friend class Core::Bootstrapper;
+					friend class Boot::Bootstrapper;
 				private:
 					const std::string _name;
 				protected:
 					ManagerBase(const std::string& name);
 					virtual ~ManagerBase();
-					NO_COPY(ManagerBase)
-					NO_MOVE(ManagerBase)
+					NO_COPY_MOVE(ManagerBase)
 
-					virtual std::vector<ManagerInitializerWrapper> OnGetManagerInitializers() = 0;
+					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() = 0;
 					virtual void OnFinishInitialize() = 0;
 				public:
-					const std::string& Name() const;
+					const std::string& Name() const
+					{
+						return _name;
+					}
 				};
 			}
 		}
