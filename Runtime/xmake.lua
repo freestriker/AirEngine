@@ -1,6 +1,7 @@
 
 target("Runtime")
-    set_kind("shared")
+    add_rules("qt.shared")
     add_files("**.cpp")
     add_headerfiles(("**.hpp"))
     add_defines("DLL_EXPORTS")
+    add_frameworks("QtGui")

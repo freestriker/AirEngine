@@ -17,9 +17,8 @@ add_packages("rttr")
 add_packages("glm")
 
 set_languages("cxx17")
-add_cxxflags("cl::/Zc:__cplusplus /permissive")
 add_defines("NOMINMAX")
-add_ldflags("/SUBSYSTEM:CONSOLE")
 set_arch("x64")
+add_ldflags("/SUBSYSTEM:CONSOLE")
 
 includes("Runtime", "Demo")
