@@ -9,10 +9,89 @@
 #include "../Runtime/Core/Scene/Scene.hpp"
 #include <qdebug.h>
 #include "../Runtime/Utility/InternedString.hpp"
+#include "../Runtime/Utility/Fiber.hpp"
+#include <sstream>
 
 using namespace AirEngine::Runtime;
 using namespace AirEngine::Runtime::Utility;
+static constexpr int WORKER_THREAD_COUNT = 16;
+static std::mutex endMutex{};
+static Fiber::condition_variable_any endConditionVariable{};
+static bool isEnd = false;
+static std::array< std::thread*, WORKER_THREAD_COUNT> workerThreads;   
+static std::thread* mainThread;
 
+
+void Test() {
+    //std::cout << "main thread started " << std::this_thread::get_id() << std::endl;
+    auto hardwareThreadCount = std::thread::hardware_concurrency();
+    auto showThreadIdTask = [](const std::string& name)->void
+    {
+        std::stringstream ss{};
+        ss << name << ": " << std::this_thread::get_id() << ".\n";
+        std::cout << ss.str();
+    };
+    auto worker = []()->void
+    {
+        Fiber::use_scheduling_algorithm< Fiber::algo::work_stealing >(WORKER_THREAD_COUNT + 1);
+        std::unique_lock<std::mutex> lock(endMutex);
+        endConditionVariable.wait(lock, []() { return isEnd; });
+    };
+    auto mainLoopTask = [&showThreadIdTask]()->void
+    {
+        while (true)
+        {
+            ThisFiber::yield();
+            showThreadIdTask("MainLoop");
+            std::array< Fiber::fiber, 40> perFrameTasks;
+            for (int i = 0; i < perFrameTasks.size(); i++)
+            {
+                perFrameTasks[i] = Fiber::fiber(showThreadIdTask, std::to_string(i));
+            }
+            ThisFiber::yield();
+            ThisFiber::yield();
+            ThisFiber::yield();
+            ThisFiber::yield();
+            ThisFiber::yield();
+            for (int i = 0; i < perFrameTasks.size(); i++)
+            {
+                perFrameTasks[i].join();
+            }
+        }
+    };
+    auto leader = [&mainLoopTask, &showThreadIdTask]()->void
+    {
+        Fiber::fiber(mainLoopTask).detach();
+
+        Fiber::use_scheduling_algorithm< Fiber::algo::work_stealing >(WORKER_THREAD_COUNT + 1);
+        std::unique_lock<std::mutex> lock(endMutex);
+        endConditionVariable.wait(lock, []() { return isEnd; });
+        std::cout << "End leader.\n";
+    };
+
+    mainThread = new std::thread(leader);
+    for (auto& workerThread : workerThreads)
+    {
+        workerThread = new std::thread(worker);
+    }
+
+    //while (true)
+    //{
+    //    if (std::cin.)
+    //    {
+    //        {
+    //            std::unique_lock<std::mutex> lock(endMutex);
+    //            isEnd = true;
+    //        }
+    //        endConditionVariable.notify_all();
+    //        for (std::thread& t : threads) {
+    //            t.join();
+    //        }
+    //        break;
+    //    }
+    //    std::this_thread::yield();
+    //}
+}
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
@@ -64,8 +143,10 @@ int main(int argc, char* argv[])
 
     sceneObject0->SetScale({ 2, 2, 2 });
 
+    Test();
+
     QWindow* window = new QWindow();
     window->show();    
+    app.exec();
 
-    return app.exec();
 }
