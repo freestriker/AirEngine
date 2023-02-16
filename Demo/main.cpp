@@ -23,6 +23,7 @@ static std::thread* mainThread;
 
 
 void Test() {
+
     //std::cout << "main thread started " << std::this_thread::get_id() << std::endl;
     auto hardwareThreadCount = std::thread::hardware_concurrency();
     auto showThreadIdTask = [](const std::string& name)->void
@@ -145,8 +146,6 @@ int main(int argc, char* argv[])
 
     Test();
 
-    QWindow* window = new QWindow();
-    window->show();    
     app.exec();
 
 }
