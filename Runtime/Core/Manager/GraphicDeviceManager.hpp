@@ -5,6 +5,7 @@
 #include <QVulkanInstance>
 #include <qvulkaninstance.h>
 #include <VkBootstrap.h>
+#include <vk_mem_alloc.h>
 
 namespace AirEngine
 {
@@ -34,12 +35,15 @@ namespace AirEngine
 					static vkb::Device _vkbDevice;
 					static vkb::Swapchain _vkbSwapchain;
 
+					static VmaAllocator _vmaAllocator;
+
 					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
 					static void CreateVulkanInstance();
 					static void CreateSurfaceWindow(QWindow& window);
 					static void CreateDevice();
 					static void CreateSwapchain();
+					static void CreateMemoryAllocator();
 				public:
 					static inline VkInstance VkInstance()
 					{
@@ -84,6 +88,10 @@ namespace AirEngine
 					static inline vkb::Swapchain& VkbSwapchain()
 					{
 						return _vkbSwapchain;
+					}
+					static inline VmaAllocator VmaAllocator()
+					{
+						return _vmaAllocator;
 					}
 					GraphicDeviceManager();
 					virtual ~GraphicDeviceManager();

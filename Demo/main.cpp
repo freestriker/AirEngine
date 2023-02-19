@@ -11,16 +11,84 @@
 #include "../Runtime/Utility/InternedString.hpp"
 #include "../Runtime/Utility/Fiber.hpp"
 #include <sstream>
+#include "../Runtime/Graphic/Instance/Buffer.hpp"
+#include "../Runtime/Graphic/Instance/Memory.hpp"
 
 using namespace AirEngine::Runtime;
 using namespace AirEngine::Runtime::Utility;
+using namespace AirEngine::Runtime::Core::Manager;
+using namespace AirEngine::Runtime::Graphic::Instance;
 static constexpr int WORKER_THREAD_COUNT = 16;
 static std::mutex endMutex{};
 static Fiber::condition_variable_any endConditionVariable{};
 static bool isEnd = false;
 static std::array< std::thread*, WORKER_THREAD_COUNT> workerThreads;   
 static std::thread* mainThread;
+void Test();
 
+int main(int argc, char* argv[])
+{
+    QApplication app(argc, argv);
+
+    {
+        std::unique_ptr<AirEngine::Runtime::Core::Boot::Bootstrapper> bootstrapper = std::unique_ptr<AirEngine::Runtime::Core::Boot::Bootstrapper>(new AirEngine::Runtime::Core::Boot::Bootstrapper());
+        bootstrapper->Boot();
+    }
+
+    {
+        std::string stdString = "stdString";
+        std::string_view stdStringView = "stdStringView";
+        const char* constCharPtr = "constCharPtr";
+
+        InternedString is0 = InternedString(stdString);
+        InternedString is1 = InternedString(stdStringView);
+        InternedString is2 = InternedString(constCharPtr);
+
+        bool isNull = is0.IsNULL();
+        auto size = is0.Size();
+        bool same = is0 == is1;
+        bool less = is0 < is1;
+        auto hash = std::hash<InternedString>()(is0);
+    }
+
+    auto&& mainScene = Core::Manager::SceneManager::Scene("MainScene");
+    auto&& rootSceneObject = mainScene.RootSceneObject();
+    rootSceneObject.SetScale({ 2, 2, 2 });
+
+    Core::Scene::SceneObject* sceneObject0 = new Core::Scene::SceneObject("0", true);
+    Core::Scene::SceneObject* sceneObject1 = new Core::Scene::SceneObject("1", true);
+    Core::Scene::SceneObject* sceneObject2 = new Core::Scene::SceneObject("2", true);
+    Core::Scene::SceneObject* sceneObject00 = new Core::Scene::SceneObject("00", false);
+    Core::Scene::SceneObject* sceneObject01 = new Core::Scene::SceneObject("01", false);
+    Core::Scene::SceneObject* sceneObject000 = new Core::Scene::SceneObject("000", true);
+
+    sceneObject00->AddChild(*sceneObject000);
+    
+    sceneObject00->SetScale({ 5, 5, 5 });
+
+    sceneObject0->AddChild(*sceneObject00);
+    sceneObject0->AddChild(*sceneObject01);
+
+    sceneObject0->SetScale({ 3, 3, 3 });
+
+    rootSceneObject.AddChild(*sceneObject0);
+    rootSceneObject.AddChild(*sceneObject1);
+    rootSceneObject.AddChild(*sceneObject2);
+
+    sceneObject0->SetScale({ 2, 2, 2 });
+
+    //Test();
+
+    std::shared_ptr<Buffer> buffer(new Buffer(65536, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT));
+    std::shared_ptr<Buffer> pureBuffer(new Buffer(65536, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT));
+    auto data = buffer->Memory()->Map();
+    std::vector<int> src(10, 5);
+    memcpy(data, src.data(), sizeof(int) * src.size());
+    buffer->Memory()->Unmap();
+    pureBuffer->SetMemory(buffer->Memory());
+    app.exec();
+
+}
 
 void Test() {
 
@@ -75,77 +143,4 @@ void Test() {
     {
         workerThread = new std::thread(worker);
     }
-
-    //while (true)
-    //{
-    //    if (std::cin.)
-    //    {
-    //        {
-    //            std::unique_lock<std::mutex> lock(endMutex);
-    //            isEnd = true;
-    //        }
-    //        endConditionVariable.notify_all();
-    //        for (std::thread& t : threads) {
-    //            t.join();
-    //        }
-    //        break;
-    //    }
-    //    std::this_thread::yield();
-    //}
-}
-int main(int argc, char* argv[])
-{
-    QApplication app(argc, argv);
-
-    {
-        std::unique_ptr<AirEngine::Runtime::Core::Boot::Bootstrapper> bootstrapper = std::unique_ptr<AirEngine::Runtime::Core::Boot::Bootstrapper>(new AirEngine::Runtime::Core::Boot::Bootstrapper());
-        bootstrapper->Boot();
-    }
-
-    {
-        std::string stdString = "stdString";
-        std::string_view stdStringView = "stdStringView";
-        const char* constCharPtr = "constCharPtr";
-
-        InternedString is0 = InternedString(stdString);
-        InternedString is1 = InternedString(stdStringView);
-        InternedString is2 = InternedString(constCharPtr);
-
-        bool isNull = is0.IsNULL();
-        auto size = is0.Size();
-        bool same = is0 == is1;
-        bool less = is0 < is1;
-        auto hash = std::hash<InternedString>()(is0);
-    }
-
-    auto&& mainScene = Core::Manager::SceneManager::Scene("MainScene");
-    auto&& rootSceneObject = mainScene.RootSceneObject();
-    rootSceneObject.SetScale({ 2, 2, 2 });
-
-    Core::Scene::SceneObject* sceneObject0 = new Core::Scene::SceneObject("0", true);
-    Core::Scene::SceneObject* sceneObject1 = new Core::Scene::SceneObject("1", true);
-    Core::Scene::SceneObject* sceneObject2 = new Core::Scene::SceneObject("2", true);
-    Core::Scene::SceneObject* sceneObject00 = new Core::Scene::SceneObject("00", false);
-    Core::Scene::SceneObject* sceneObject01 = new Core::Scene::SceneObject("01", false);
-    Core::Scene::SceneObject* sceneObject000 = new Core::Scene::SceneObject("000", true);
-
-    sceneObject00->AddChild(*sceneObject000);
-    
-    sceneObject00->SetScale({ 5, 5, 5 });
-
-    sceneObject0->AddChild(*sceneObject00);
-    sceneObject0->AddChild(*sceneObject01);
-
-    sceneObject0->SetScale({ 3, 3, 3 });
-
-    rootSceneObject.AddChild(*sceneObject0);
-    rootSceneObject.AddChild(*sceneObject1);
-    rootSceneObject.AddChild(*sceneObject2);
-
-    sceneObject0->SetScale({ 2, 2, 2 });
-
-    Test();
-
-    app.exec();
-
 }
