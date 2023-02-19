@@ -2,6 +2,7 @@
 #include <iostream>
 #include <mutex>
 #include <QWindow>
+#include <vk_mem_alloc.h>
 
 VkInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkInstance = VK_NULL_HANDLE;
 VkSurfaceKHR AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkSurface{ VK_NULL_HANDLE };
@@ -16,6 +17,8 @@ vkb::Instance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbInsta
 vkb::PhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbPhysicalDevice{};
 vkb::Device AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbDevice{};
 vkb::Swapchain AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbSwapchain{};
+
+VmaAllocator AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vmaAllocator{ VK_NULL_HANDLE };
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
@@ -32,6 +35,7 @@ std::vector<AirEngine::Runtime::Core::Boot::ManagerInitializerWrapper> AirEngine
 		{ 0, 1, []()->void { CreateSurfaceWindow(*new QWindow()); } },
 		{ 0, 2, CreateDevice },
 		{ 0, 3, CreateSwapchain },
+		{ 0, 4, CreateMemoryAllocator },
 	};
 }
 
@@ -113,6 +117,17 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateSwapchain()
 	auto swapchainResult = swapchainBuilder.build();
 	_vkbSwapchain = swapchainResult.value();
 	_vkSwapchain = _vkbSwapchain.swapchain;
+}
+
+void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAllocator()
+{
+	VmaAllocatorCreateInfo allocatorCreateInfo{};
+	//allocatorCreateInfo.vulkanApiVersion = VK_VERSION_1_3;
+	allocatorCreateInfo.physicalDevice = _vkPhysicalDevice;
+	allocatorCreateInfo.device = _vkDevice;
+	allocatorCreateInfo.instance = _vkInstance;
+
+	vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator);
 }
 
 AirEngine::Runtime::Core::Manager::GraphicDeviceManager::GraphicDeviceManager()
