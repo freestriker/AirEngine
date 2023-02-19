@@ -16,6 +16,7 @@ namespace AirEngine
 				class DLL_API Memory final
 				{
 					friend class Buffer;
+					friend class Image;
 				private:
 					const VmaAllocation _vmaAllocation;
 					const uint32_t _memoryType;
@@ -28,7 +29,7 @@ namespace AirEngine
 					~Memory();
 					NO_COPY_MOVE(Memory)
 					
-					inline VkDeviceMemory VkDeviceMemory()const
+					inline VkDeviceMemory VkHandle()const
 					{
 						return _vkDeviceMemory;
 					}
