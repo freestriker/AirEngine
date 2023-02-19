@@ -13,6 +13,7 @@
 #include <sstream>
 #include "../Runtime/Graphic/Instance/Buffer.hpp"
 #include "../Runtime/Graphic/Instance/Memory.hpp"
+#include "../Runtime/Graphic/Instance/Image.hpp"
 
 using namespace AirEngine::Runtime;
 using namespace AirEngine::Runtime::Utility;
@@ -86,6 +87,16 @@ int main(int argc, char* argv[])
     memcpy(data, src.data(), sizeof(int) * src.size());
     buffer->Memory()->Unmap();
     pureBuffer->SetMemory(buffer->Memory());
+
+    std::shared_ptr<Image> image(new Image(
+        VK_FORMAT_B8G8R8A8_SRGB, 
+        {128, 128, 1}, 
+        VkImageType::VK_IMAGE_TYPE_2D, 
+        1, 1,
+        VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+        VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+    ));
+
     app.exec();
 
 }

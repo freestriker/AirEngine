@@ -27,7 +27,7 @@ namespace AirEngine
 					Buffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, std::shared_ptr<Memory> memory);
 					Buffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage);
 					~Buffer();
-					inline VkBuffer VkBuffer() const
+					inline VkBuffer VkHandle() const
 					{
 						return _vkBuffer;
 					}
