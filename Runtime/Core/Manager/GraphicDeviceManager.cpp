@@ -20,6 +20,8 @@ vkb::Swapchain AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbSwap
 
 VmaAllocator AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vmaAllocator{ VK_NULL_HANDLE };
 
+std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::Queue>> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_queueMap{ };
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
 	std::string s = pCallbackData->pMessage;
@@ -34,8 +36,8 @@ std::vector<AirEngine::Runtime::Core::Boot::ManagerInitializerWrapper> AirEngine
 		{ 0, 0, CreateVulkanInstance },
 		{ 0, 1, []()->void { CreateSurfaceWindow(*new QWindow()); } },
 		{ 0, 2, CreateDevice },
-		{ 0, 3, CreateSwapchain },
-		{ 0, 4, CreateMemoryAllocator },
+		{ 0, 4, CreateSwapchain },
+		{ 0, 5, CreateMemoryAllocator },
 	};
 }
 
@@ -91,8 +93,6 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	vkb::PhysicalDeviceSelector physicalDeviceSelector(_vkbInstance);
 	auto physicalDeviceResult = physicalDeviceSelector
 		.set_surface(_vkSurface)
-		.require_dedicated_transfer_queue()
-		.require_separate_compute_queue()
 		.require_present(true)
 		.select();
 	if (!physicalDeviceResult) {
@@ -101,20 +101,76 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	_vkbPhysicalDevice = physicalDeviceResult.value();
 	_vkPhysicalDevice = _vkbPhysicalDevice.physical_device;
 
+	std::vector<vkb::CustomQueueDescription> customQueueDescriptions;
+	uint32_t graphicQueueFamily = 0;
+	uint32_t presentQueueFamily = 0;
+	uint32_t transferQueueFamily = 0;
+	auto queue_families = _vkbPhysicalDevice.get_queue_families();
+	for (uint32_t i = 0; i < (uint32_t)queue_families.size(); i++) 
+	{
+		if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) 
+		{
+			customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 2, {1.0f}));
+			graphicQueueFamily = i;
+			presentQueueFamily = i;
+			break;
+		}
+	}
+	if (_vkbPhysicalDevice.has_dedicated_transfer_queue()) 
+	{
+		for (uint32_t i = 0; i < (uint32_t)queue_families.size(); i++) 
+		{
+			if ((queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+				(queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0 &&
+				(queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)
+			{
+				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
+				transferQueueFamily = i;
+				break;
+			}
+		}
+	}
+	else if (_vkbPhysicalDevice.has_separate_transfer_queue()) 
+	{
+		for (uint32_t i = 0; i < (uint32_t)queue_families.size(); i++) 
+		{
+			if ((queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+				((queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
+			{
+				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
+				transferQueueFamily = i;
+				break;
+			}
+		}
+	}
+
 	vkb::DeviceBuilder deviceBuilder(_vkbPhysicalDevice);
 	auto deviceResult = deviceBuilder
+		.custom_queue_setup(customQueueDescriptions)
 		.build();
-	if (!deviceResult) {
+	if (!deviceResult) 
+	{
 		qFatal((std::string("Failed to create Vulkan device. Error: ") + std::string(deviceResult.error().message())).c_str());
 	}
 	_vkbDevice = deviceResult.value();
 	_vkDevice = _vkbDevice.device;
+
+	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::graphics).value(), Utility::InternedString("GraphicQueue"))));
+	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::transfer).value(), Utility::InternedString("TransferQueue"))));
+	_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::present).value(), Utility::InternedString("PresentQueue"))));
 }
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateSwapchain()
 {
 	vkb::SwapchainBuilder swapchainBuilder(_vkbDevice);
-	auto swapchainResult = swapchainBuilder.build();
+	auto swapchainResult = swapchainBuilder.set_desired_format({ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
+		.set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)
+		.set_pre_transform_flags(VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+		.set_composite_alpha_flags(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
+		.set_clipped(false)
+		.set_image_array_layer_count(1)
+		.set_image_usage_flags(VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+		.build();
 	_vkbSwapchain = swapchainResult.value();
 	_vkSwapchain = _vkbSwapchain.swapchain;
 }

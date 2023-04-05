@@ -1,4 +1,3 @@
-
 target("Runtime")
     add_rules("qt.shared")
     add_files("**.cpp")

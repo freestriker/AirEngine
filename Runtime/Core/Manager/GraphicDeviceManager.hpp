@@ -6,6 +6,9 @@
 #include <qvulkaninstance.h>
 #include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
+#include <unordered_map>
+#include "../../Utility/InternedString.hpp"
+#include "../../Graphic/Instance/Queue.hpp"
 
 namespace AirEngine
 {
@@ -36,6 +39,8 @@ namespace AirEngine
 					static vkb::Swapchain _vkbSwapchain;
 
 					static VmaAllocator _vmaAllocator;
+
+					static std::unordered_map<Utility::InternedString, std::unique_ptr<Graphic::Instance::Queue>> _queueMap;
 
 					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
@@ -92,6 +97,11 @@ namespace AirEngine
 					static inline VmaAllocator VmaAllocator()
 					{
 						return _vmaAllocator;
+					}
+
+					static inline Graphic::Instance::Queue& Queue(Utility::InternedString queueName)
+					{
+						return *_queueMap[queueName];
 					}
 					GraphicDeviceManager();
 					virtual ~GraphicDeviceManager();
