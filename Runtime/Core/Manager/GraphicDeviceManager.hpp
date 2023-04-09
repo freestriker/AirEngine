@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include "../../Utility/InternedString.hpp"
 #include "../../Graphic/Instance/Queue.hpp"
+#include <QWindow>
 
 namespace AirEngine
 {
@@ -45,11 +46,15 @@ namespace AirEngine
 					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
 					static void CreateVulkanInstance();
-					static void CreateSurfaceWindow(QWindow& window);
+					static void CreateWindowSurface();
 					static void CreateDevice();
 					static void CreateSwapchain();
 					static void CreateMemoryAllocator();
 				public:
+					void PopulateWindow(QWindow* window)
+					{
+						_window = window;
+					}
 					static inline VkInstance VkInstance()
 					{
 						return _vkInstance;
