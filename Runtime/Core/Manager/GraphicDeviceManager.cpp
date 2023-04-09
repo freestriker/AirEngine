@@ -3,6 +3,7 @@
 #include <mutex>
 #include <QWindow>
 #include <vk_mem_alloc.h>
+#include <qapplicationstatic.h>
 
 VkInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkInstance = VK_NULL_HANDLE;
 VkSurfaceKHR AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkSurface{ VK_NULL_HANDLE };
@@ -34,7 +35,7 @@ std::vector<AirEngine::Runtime::Core::Boot::ManagerInitializerWrapper> AirEngine
 {
 	return {
 		{ 0, 0, CreateVulkanInstance },
-		{ 0, 1, []()->void { CreateSurfaceWindow(*new QWindow()); } },
+		{ 0, 1, CreateWindowSurface },
 		{ 0, 2, CreateDevice },
 		{ 0, 4, CreateSwapchain },
 		{ 0, 5, CreateMemoryAllocator },
@@ -77,22 +78,28 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstan
 	if (!qResult) qFatal("Create vulkan instance failed.");
 }
 
-void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateSurfaceWindow(QWindow& window)
+void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateWindowSurface()
 {
-	_window = &window;
-	window.setSurfaceType(QSurface::VulkanSurface);
-	window.show();
-	window.setVulkanInstance(&_qVulkanInstance);
+	_window = new QWindow();
+	_window->resize(1600, 900);
+	_window->setSurfaceType(QSurface::VulkanSurface);
+	_window->show();
+	_window->setVulkanInstance(&_qVulkanInstance);
 	auto same = _vkInstance == _qVulkanInstance.vkInstance();
 	if (!same) qFatal("Create vulkan instance failed.");
-	_vkSurface = _qVulkanInstance.surfaceForWindow(&window);
+	_vkSurface = _qVulkanInstance.surfaceForWindow(_window);
 }
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 {
+	VkPhysicalDeviceShaderAtomicFloatFeaturesEXT vkPhysicalDeviceShaderAtomicFloatFeaturesEXT{};
+	vkPhysicalDeviceShaderAtomicFloatFeaturesEXT.shaderSharedFloat32Atomics = VK_TRUE;
+
 	vkb::PhysicalDeviceSelector physicalDeviceSelector(_vkbInstance);
 	auto physicalDeviceResult = physicalDeviceSelector
 		.set_surface(_vkSurface)
+		.add_required_extension(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME)
+		.add_required_extension_features(vkPhysicalDeviceShaderAtomicFloatFeaturesEXT)
 		.require_present(true)
 		.select();
 	if (!physicalDeviceResult) {
@@ -162,8 +169,36 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateSwapchain()
 {
+	//vkb::SwapchainBuilder swapchainBuilder(_vkbDevice);
+	//swapchainBuilder = swapchainBuilder.set_desired_format({ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR });
+	//swapchainBuilder = swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR);
+	//swapchainBuilder = swapchainBuilder.set_pre_transform_flags(VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+	//swapchainBuilder = swapchainBuilder.set_composite_alpha_flags(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
+	//swapchainBuilder = swapchainBuilder.set_clipped(false);
+	//swapchainBuilder = swapchainBuilder.set_image_array_layer_count(1);
+	//swapchainBuilder = swapchainBuilder.set_image_usage_flags(VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+	//auto swapchainResult = swapchainBuilder.build();
+	
+	//VkSwapchainCreateInfoKHR createInfo{};
+	//createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	//createInfo.surface = _vkSurface;
+	//createInfo.minImageCount = 3;
+	//createInfo.imageFormat = VK_FORMAT_B8G8R8A8_SRGB;
+	//createInfo.imageColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+	//createInfo.imageExtent = { static_cast<uint32_t>(_window->geometry().width() * _window->devicePixelRatio()), static_cast<uint32_t>(_window->geometry().height() * _window->devicePixelRatio())};
+	//createInfo.imageArrayLayers = 1;
+	//createInfo.imageUsage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	//createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	//createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+	//createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	//createInfo.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+	//createInfo.clipped = VK_TRUE;
+	//createInfo.oldSwapchain = VK_NULL_HANDLE;
+	//auto p = vkGetInstanceProcAddr(_vkInstance, "vkCreateSwapchainKHR");
+	//auto r = vkCreateSwapchainKHR(_vkDevice, &createInfo, nullptr, &_vkSwapchain);
+
 	vkb::SwapchainBuilder swapchainBuilder(_vkbDevice);
-	auto swapchainResult = swapchainBuilder.set_desired_format({ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
+	auto swapchainResult = swapchainBuilder.set_desired_format({ VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
 		.set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)
 		.set_pre_transform_flags(VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
 		.set_composite_alpha_flags(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)

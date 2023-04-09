@@ -3,12 +3,14 @@
 #include "../Manager/GraphicDeviceManager.hpp"
 #include "../Manager/SceneManager.hpp"
 #include "../Manager/ThirdPartyLibraryManager.hpp"
+#include "../Manager/FiberManager.hpp"
 
 using namespace AirEngine::Runtime;
 
 AirEngine::Runtime::Core::Boot::Bootstrapper::Bootstrapper()
 	:_managerTable{}
 {
+	ResetManager(std::make_shared<Manager::FiberManager>());
 	ResetManager(std::make_shared<Manager::ThirdPartyLibraryManager>());
 	ResetManager(std::make_shared<Manager::SceneManager>());
 	ResetManager(std::make_shared<Manager::GraphicDeviceManager>());
