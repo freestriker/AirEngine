@@ -19,7 +19,7 @@ namespace AirEngine
 		{
 			namespace Scene
 			{
-				class DLL_API Scene final
+				class AIR_ENGINE_API Scene final
 					: public Object
 				{
 				private:

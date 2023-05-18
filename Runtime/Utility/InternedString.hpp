@@ -12,7 +12,7 @@ namespace AirEngine
 	{
 		namespace Utility
 		{
-			class DLL_API InternedString final
+			class AIR_ENGINE_API InternedString final
 			{
 			private:
 				static constexpr uint32_t IS_USED_MASK = 1u << 29u;

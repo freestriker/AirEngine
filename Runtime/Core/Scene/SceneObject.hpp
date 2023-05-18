@@ -24,7 +24,7 @@ namespace AirEngine
 			namespace Scene
 			{
 				class Scene;
-				class DLL_API SceneObject final
+				class AIR_ENGINE_API SceneObject final
 					: public Object
 					, public AirEngine::Utility::ChildBrotherTreeNode<SceneObject>
 				{

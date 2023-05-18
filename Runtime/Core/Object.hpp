@@ -12,7 +12,7 @@ namespace AirEngine
 	{
 		namespace Core
 		{
-			class DLL_API Object
+			class AIR_ENGINE_API Object
 			{
 			public:
 				Object();

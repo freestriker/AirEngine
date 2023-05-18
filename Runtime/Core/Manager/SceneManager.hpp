@@ -16,7 +16,7 @@ namespace AirEngine
 			}
 			namespace Manager
 			{
-				class DLL_API SceneManager
+				class AIR_ENGINE_API SceneManager
 					: public ManagerBase
 				{
 				private:

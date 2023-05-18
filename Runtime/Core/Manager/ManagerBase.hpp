@@ -18,7 +18,7 @@ namespace AirEngine
 			}
 			namespace Manager
 			{
-				class DLL_API ManagerBase
+				class AIR_ENGINE_API ManagerBase
 				{
 					friend class Boot::Bootstrapper;
 				private:

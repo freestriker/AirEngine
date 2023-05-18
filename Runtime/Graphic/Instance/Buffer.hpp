@@ -15,7 +15,7 @@ namespace AirEngine
 			namespace Instance
 			{
 				class Memory;
-				class DLL_API Buffer final
+				class AIR_ENGINE_API Buffer final
 				{
 				private:
 					VkBuffer _vkBuffer;

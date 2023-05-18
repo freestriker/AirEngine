@@ -11,7 +11,7 @@ namespace AirEngine
 		{
 			namespace Command
 			{
-				class DLL_API Fence final
+				class AIR_ENGINE_API Fence final
 				{
 				private:
 					VkFence _vkFence;

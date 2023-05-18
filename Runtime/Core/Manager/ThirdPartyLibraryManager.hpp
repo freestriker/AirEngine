@@ -15,7 +15,7 @@ namespace AirEngine
 			}
 			namespace Manager
 			{
-				class DLL_API ThirdPartyLibraryManager
+				class AIR_ENGINE_API ThirdPartyLibraryManager
 					: public ManagerBase
 				{
 				private:

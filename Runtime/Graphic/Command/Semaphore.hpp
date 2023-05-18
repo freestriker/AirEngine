@@ -11,7 +11,7 @@ namespace AirEngine
 		{
 			namespace Command
 			{
-				class DLL_API Semaphore final
+				class AIR_ENGINE_API Semaphore final
 				{
 				private:
 					VkSemaphore _vkSemaphore;

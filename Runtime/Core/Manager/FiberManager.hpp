@@ -13,7 +13,7 @@ namespace AirEngine
 		{
 			namespace Manager
 			{
-				class DLL_API FiberManager
+				class AIR_ENGINE_API FiberManager
 					: public ManagerBase
 				{
 				private:
