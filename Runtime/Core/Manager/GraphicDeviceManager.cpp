@@ -93,6 +93,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateWindowSurfac
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 {
 	VkPhysicalDeviceShaderAtomicFloatFeaturesEXT vkPhysicalDeviceShaderAtomicFloatFeaturesEXT{};
+	vkPhysicalDeviceShaderAtomicFloatFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
 	vkPhysicalDeviceShaderAtomicFloatFeaturesEXT.shaderSharedFloat32Atomics = VK_TRUE;
 
 	vkb::PhysicalDeviceSelector physicalDeviceSelector(_vkbInstance);
@@ -117,7 +118,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	{
 		if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) 
 		{
-			customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 2, {1.0f}));
+			customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 2, {1.0f, 1.0f}));
 			graphicQueueFamily = i;
 			presentQueueFamily = i;
 			break;
@@ -212,11 +213,16 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateSwapchain()
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAllocator()
 {
+	VmaVulkanFunctions vulkanFunctions = {};
+	vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
+	vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
+
 	VmaAllocatorCreateInfo allocatorCreateInfo{};
 	//allocatorCreateInfo.vulkanApiVersion = VK_VERSION_1_3;
 	allocatorCreateInfo.physicalDevice = _vkPhysicalDevice;
 	allocatorCreateInfo.device = _vkDevice;
 	allocatorCreateInfo.instance = _vkInstance;
+	allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
 	vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator);
 }

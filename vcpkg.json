@@ -1,0 +1,35 @@
+{
+    "name": "cmaketest",
+    "dependencies": [
+        {
+            "name": "boost-fiber"
+        },
+        {
+            "name": "cityhash", 
+            "features": ["sse"]
+        },
+        {
+            "name": "glm"
+        },
+        {
+            "name": "opencv4", 
+            "features": ["openexr"]
+        },
+        {
+            "name": "qtbase", 
+            "features": ["vulkan"]
+        },
+        {
+            "name": "rttr"
+        },
+        {
+            "name": "vk-bootstrap"
+        },
+        {
+            "name": "vulkan"
+        },
+        {
+            "name": "vulkan-memory-allocator"
+        }
+    ]
+}
