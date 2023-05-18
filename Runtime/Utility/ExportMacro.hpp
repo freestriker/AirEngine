@@ -3,6 +3,8 @@
 
 #if defined(DLL_EXPORTS)
 #  define DLL_API Q_DECL_EXPORT
-#else
+#elif defined(DLL_IMPORTS)
 #  define DLL_API Q_DECL_IMPORT
+#else
+#  define DLL_API
 #endif

@@ -1,9 +1,4 @@
-# Xmake cache
-.xmake/
-build/
+Build/
 .vscode/
-*xmake*/
-# MacOS Cache
-.DS_Store
 
 

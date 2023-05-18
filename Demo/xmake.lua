@@ -1,5 +1,0 @@
-target("Demo")
-    add_rules("qt.widgetapp")
-    add_files("**.cpp")
-    add_headerfiles(("**.hpp"))
-    add_deps("Runtime")

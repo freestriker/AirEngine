@@ -13,7 +13,7 @@
 #include "../../Utility/ChildBrotherTreeNode.hpp"
 #include "Component.hpp"
 
-#define IF_SET_BITS(setOrNot, source, bits) ((setOrNot) ? ((source) | (bits)) : ((source) & !(bits)))
+#include "../../Utility/BitOperationMacro.hpp"
 
 namespace AirEngine
 {
