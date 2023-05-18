@@ -20,7 +20,7 @@ namespace AirEngine
 		{
 			namespace Instance
 			{
-				class DLL_API Queue final
+				class AIR_ENGINE_API Queue final
 				{
 					friend class Core::Manager::GraphicDeviceManager;
 				private:

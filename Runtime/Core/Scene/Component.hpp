@@ -19,7 +19,7 @@ namespace AirEngine
 			namespace Scene
 			{
 				class SceneObject;
-				class DLL_API Component
+				class AIR_ENGINE_API Component
 					: public Object
 				{
 					friend class SceneObject;

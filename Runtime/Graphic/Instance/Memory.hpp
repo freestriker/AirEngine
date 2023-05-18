@@ -13,7 +13,7 @@ namespace AirEngine
 		{
 			namespace Instance
 			{
-				class DLL_API Memory final
+				class AIR_ENGINE_API Memory final
 				{
 					friend class Buffer;
 					friend class Image;

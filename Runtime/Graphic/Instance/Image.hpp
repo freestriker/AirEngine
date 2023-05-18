@@ -14,7 +14,8 @@ namespace AirEngine
 			namespace Instance
 			{
 				class Memory;
-				class DLL_API Image final
+				class 
+					Image final
 				{
 				private:
 					VkFormat _format;

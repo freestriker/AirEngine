@@ -16,7 +16,7 @@ namespace AirEngine
 		{
 			namespace Boot
 			{
-				class DLL_API Bootstrapper final
+				class AIR_ENGINE_API Bootstrapper final
 				{
 				private:
 					std::map<std::string, std::shared_ptr<Manager::ManagerBase>> _managerTable;

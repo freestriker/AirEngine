@@ -19,7 +19,7 @@ namespace AirEngine
 		{
 			namespace Manager
 			{
-				class DLL_API GraphicDeviceManager
+				class AIR_ENGINE_API GraphicDeviceManager
 					: public ManagerBase
 				{
 				private:
