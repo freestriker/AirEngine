@@ -26,7 +26,7 @@ void AirEngine::Runtime::Core::Manager::FiberManager::BootThread()
             _fiberInitializers.clear();
         }
 
-		Fiber::use_scheduling_algorithm< Fiber::algo::work_stealing >(hardwareThreadCount);
+		Fiber::use_scheduling_algorithm< Fiber::algo::work_stealing >(hardwareThreadCount, true);
 		std::unique_lock<std::mutex> lock(_endMutex);
 		_endConditionVariable.wait(lock, []() { return _isEnded; });
 	};

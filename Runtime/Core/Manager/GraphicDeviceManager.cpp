@@ -17,6 +17,7 @@ VmaAllocator AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vmaAlloca
 
 std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::Queue>> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_queueMap{ };
 
+#ifndef NDEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
 	std::string s = pCallbackData->pMessage;
@@ -24,6 +25,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
 	std::cout << s;
 	return VK_FALSE;
 }
+#endif // !NDEBUG
 
 std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::OnGetManagerInitializers()
 {
@@ -48,7 +50,10 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstan
 		.set_engine_version(VK_VERSION_1_3)
 		.set_app_name("AiEngine")
 		.set_app_version(VK_VERSION_1_3)
-		.enable_validation_layers()
+#ifdef NDEBUG
+		.enable_validation_layers(false)
+#else
+		.enable_validation_layers(true)
 		.set_debug_messenger_type(
 			//VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 			VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
@@ -61,6 +66,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstan
 			VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
 		)
 		.set_debug_callback(DebugCallback)
+#endif
 		.build();
 	if (!vkbResult) qFatal("Create vulkan instance failed.");
 	_vkbInstance = vkbResult.value();
