@@ -4,7 +4,7 @@
 
 std::unordered_map<std::string, AirEngine::Runtime::Core::Scene::Scene*> AirEngine::Runtime::Core::Manager::SceneManager::_sceneMap{};
 
-std::vector<AirEngine::Runtime::Core::Boot::ManagerInitializerWrapper> AirEngine::Runtime::Core::Manager::SceneManager::OnGetManagerInitializers()
+std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::SceneManager::OnGetManagerInitializers()
 {
 	return
 	{
