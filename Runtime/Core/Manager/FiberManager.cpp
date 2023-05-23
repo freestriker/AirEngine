@@ -3,6 +3,7 @@
 #include <sstream>
 #include <array>
 
+std::vector<AirEngine::Runtime::Utility::Initializer> AirEngine::Runtime::Core::Manager::FiberManager::_fiberInitializers{ };
 bool AirEngine::Runtime::Core::Manager::FiberManager::_isEnded{false};
 bool AirEngine::Runtime::Core::Manager::FiberManager::_isBooted{false};
 std::mutex AirEngine::Runtime::Core::Manager::FiberManager::_endMutex{  };
@@ -14,33 +15,16 @@ void AirEngine::Runtime::Core::Manager::FiberManager::BootThread()
 {
 	auto hardwareThreadCount{ std::thread::hardware_concurrency() - 1 };
 	using namespace AirEngine::Runtime::Utility;
-    auto showThreadIdTask = [](const std::string& name)->void
-    {
-        //std::stringstream ss{};
-        //ss << name << ": " << std::this_thread::get_id() << ".\n";
-        //std::cout << ss.str();
-    };
-    auto mainLoopTask = [showThreadIdTask]()->void
-    {
-        while (true)
-        {
-            ThisFiber::yield();
-            showThreadIdTask("MainLoop");
-            std::array< Fiber::fiber, 40> perFrameTasks{};
-            for (int i = 0; i < perFrameTasks.size(); i++)
-            {
-                perFrameTasks[i] = Fiber::fiber(showThreadIdTask, std::to_string(i));
-            }
-            ThisFiber::yield();
-            for (int i = 0; i < perFrameTasks.size(); i++)
-            {
-                perFrameTasks[i].join();
-            }                      
-        }
-    };
-    auto worker = [hardwareThreadCount, mainLoopTask](uint32_t workerIndex)->void
+    auto worker = [hardwareThreadCount](uint32_t workerIndex)->void
 	{
-		if (workerIndex == 0) _mainLoopFiber = std::move(Fiber::fiber(mainLoopTask));
+		if (workerIndex == 0) 
+        {
+            for (auto& _initializer : _fiberInitializers)
+            {
+                _initializer();
+            }
+            _fiberInitializers.clear();
+        }
 
 		Fiber::use_scheduling_algorithm< Fiber::algo::work_stealing >(hardwareThreadCount);
 		std::unique_lock<std::mutex> lock(_endMutex);
@@ -53,7 +37,7 @@ void AirEngine::Runtime::Core::Manager::FiberManager::BootThread()
 	}
 }
 
-std::vector<AirEngine::Runtime::Core::Boot::ManagerInitializerWrapper> AirEngine::Runtime::Core::Manager::FiberManager::OnGetManagerInitializers()
+std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::FiberManager::OnGetManagerInitializers()
 {
 	return
 	{
@@ -77,4 +61,9 @@ AirEngine::Runtime::Core::Manager::FiberManager::FiberManager()
 
 AirEngine::Runtime::Core::Manager::FiberManager::~FiberManager()
 {
+}
+
+void AirEngine::Runtime::Core::Manager::FiberManager::AddFiberInitializers(const std::vector<Utility::Initializer>& initializer)
+{
+    _fiberInitializers.assign(initializer.begin(), initializer.end());
 }

@@ -1,8 +1,8 @@
 #pragma once
 #include "ManagerBase.hpp"
 #include <memory>
-#include "../Boot/ManagerInitializer.hpp"
-#include "qwindow.h"
+#include "../../Utility/Initializer.hpp"
+#include "../../Utility/Fiber.hpp"
 
 namespace AirEngine
 {
@@ -23,8 +23,11 @@ namespace AirEngine
 					NO_COPY_MOVE(RenderManager)
 					static void CreateMainWindow();
 					static void CreateSwapchain();
+					static void AddRenderLoop();
+					static void RenderLoop();
+					static Utility::Fiber::fiber _renderLoopFiber;
 				protected:
-					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() override;
+					virtual std::vector<Utility::InitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
 				public:
 					RenderManager();

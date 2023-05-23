@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <QApplication>
 #include <QWindow>
-#include "../Runtime/Core/Boot/Bootstrapper.hpp"
+#include "../Runtime/Core/Bootstrapper.hpp"
 #include <iostream>
 #include "../Runtime/Core/Manager/GraphicDeviceManager.hpp"
 #include "../Runtime/Core/Manager/SceneManager.hpp"
@@ -26,9 +26,10 @@ int main(int argc, char* argv[])
     QApplication app(argc, argv);
 
     {
-        std::unique_ptr<AirEngine::Runtime::Core::Boot::Bootstrapper> bootstrapper = std::unique_ptr<AirEngine::Runtime::Core::Boot::Bootstrapper>(new AirEngine::Runtime::Core::Boot::Bootstrapper());
+        std::unique_ptr<AirEngine::Runtime::Core::Bootstrapper> bootstrapper = std::unique_ptr<AirEngine::Runtime::Core::Bootstrapper>(new AirEngine::Runtime::Core::Bootstrapper());
         bootstrapper->Boot();
     }
+    std::this_thread::sleep_for(std::chrono::seconds(20));
     app.exec();
 
     //{

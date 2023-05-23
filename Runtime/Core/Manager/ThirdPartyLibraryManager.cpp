@@ -3,7 +3,7 @@
 #include "../Scene/Scene.hpp"
 #include "../../Utility/InternedString.hpp"
 
-std::vector<AirEngine::Runtime::Core::Boot::ManagerInitializerWrapper> AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnGetManagerInitializers()
+std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnGetManagerInitializers()
 {
 	return
 	{

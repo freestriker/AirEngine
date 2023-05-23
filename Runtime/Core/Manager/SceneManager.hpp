@@ -2,7 +2,7 @@
 #include "ManagerBase.hpp"
 #include <memory>
 #include <rttr/type.h>
-#include "../Boot/ManagerInitializer.hpp"
+#include "../../Utility/Initializer.hpp"
 
 namespace AirEngine
 {
@@ -22,7 +22,7 @@ namespace AirEngine
 				private:
 					NO_COPY_MOVE(SceneManager)
 				protected:
-					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() override;
+					virtual std::vector<Utility::InitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
 				public:
 					SceneManager();

@@ -21,7 +21,7 @@ namespace AirEngine
 				private:
 					NO_COPY_MOVE(ThirdPartyLibraryManager)
 				protected:
-					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() override;
+					virtual std::vector<Utility::InitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
 				public:
 					ThirdPartyLibraryManager();

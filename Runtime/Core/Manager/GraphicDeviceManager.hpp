@@ -1,7 +1,7 @@
 #pragma once
 #include "ManagerBase.hpp"
 #include <vulkan/vulkan_core.h>
-#include "../Boot/ManagerInitializer.hpp"
+#include "../../Utility/Initializer.hpp"
 #include <QVulkanInstance>
 #include <qvulkaninstance.h>
 #include <VkBootstrap.h>
@@ -38,7 +38,7 @@ namespace AirEngine
 
 					static std::unordered_map<Utility::InternedString, std::unique_ptr<Graphic::Instance::Queue>> _queueMap;
 
-					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() override;
+					virtual std::vector<Utility::InitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
 					static void CreateVulkanInstance();
 					static void CreateDevice();

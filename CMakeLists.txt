@@ -37,4 +37,4 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:CONSOLE")
 add_definitions(-DNOMINMAX)
 
 add_subdirectory (Runtime)
-add_subdirectory (Demo) 
+add_subdirectory (Demo)
