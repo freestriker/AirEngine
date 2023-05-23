@@ -9,8 +9,6 @@ VkInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkInstance 
 VkPhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkPhysicalDevice{ VK_NULL_HANDLE };
 VkDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkDevice{ VK_NULL_HANDLE };
 
-QVulkanInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_qVulkanInstance{};
-
 vkb::Instance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbInstance{};
 vkb::PhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbPhysicalDevice{};
 vkb::Device AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbDevice{};
@@ -67,9 +65,6 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstan
 	if (!vkbResult) qFatal("Create vulkan instance failed.");
 	_vkbInstance = vkbResult.value();
 	_vkInstance = _vkbInstance.instance;
-	_qVulkanInstance.setVkInstance(_vkInstance);
-	bool qResult = _qVulkanInstance.create();
-	if (!qResult) qFatal("Create vulkan instance failed.");
 }
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()

@@ -28,8 +28,6 @@ namespace AirEngine
 					static VkPhysicalDevice _vkPhysicalDevice;
 					static VkDevice _vkDevice;
 
-					static QVulkanInstance _qVulkanInstance;
-
 					static vkb::Instance _vkbInstance;
 					static vkb::PhysicalDevice _vkbPhysicalDevice;
 					static vkb::Device _vkbDevice;
@@ -55,10 +53,6 @@ namespace AirEngine
 					static inline VkDevice VkDevice()
 					{
 						return _vkDevice;
-					}
-					static inline QVulkanInstance& QVulkanInstance()
-					{
-						return _qVulkanInstance;
 					}
 					static inline vkb::Instance& VkbInstance()
 					{

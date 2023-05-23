@@ -16,8 +16,12 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnFinishPresent()
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnSetVulkanHandle()
 {
-	setVulkanInstance(&Manager::GraphicDeviceManager::QVulkanInstance());
-	_vkSurface = Manager::GraphicDeviceManager::QVulkanInstance().surfaceForWindow(this);
+	_qVulkanInstance.setVkInstance(Manager::GraphicDeviceManager::VkInstance());
+	bool qResult = _qVulkanInstance.create();
+	if (!qResult) qFatal("Create vulkan instance failed.");
+
+	setVulkanInstance(&_qVulkanInstance);
+	_vkSurface = _qVulkanInstance.surfaceForWindow(this);
 }
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateVulkanSwapchain()
@@ -38,6 +42,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateVulkanSwapchain()
 AirEngine::Runtime::Core::FrontEnd::Window::Window()
 	: QWindow()
 	, WindowFrontEndBase()
+	, _qVulkanInstance()
 {
 	setMinimumSize({ 1600, 900 });
 	setMaximumSize({ 1600, 900 });

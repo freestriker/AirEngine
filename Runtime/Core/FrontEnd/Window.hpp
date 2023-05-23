@@ -3,6 +3,7 @@
 #include "../../Utility/ContructorMacro.hpp"
 #include <qwindow.h>
 #include "FrontEndBase.hpp"
+#include <qvulkaninstance.h>
 
 namespace AirEngine
 {
@@ -22,10 +23,15 @@ namespace AirEngine
 					void OnFinishPresent() override;
 					void OnSetVulkanHandle() override;
 					void OnCreateVulkanSwapchain() override;
+					QVulkanInstance _qVulkanInstance;
 				public:
 					NO_COPY_MOVE(Window)
 					Window();
 					~Window() = default;
+					inline QVulkanInstance& QVulkanInstance()
+					{
+						return _qVulkanInstance;
+					}
 				};
 			}
 		}
