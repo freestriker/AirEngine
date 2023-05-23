@@ -1,23 +1,19 @@
 ﻿#include "GraphicDeviceManager.hpp"
 #include <iostream>
 #include <mutex>
-#include <QWindow>
 #include <vk_mem_alloc.h>
-#include <qapplicationstatic.h>
+#include "RenderManager.hpp"
+#include "../FrontEnd/FrontEndBase.hpp"
 
 VkInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkInstance = VK_NULL_HANDLE;
-VkSurfaceKHR AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkSurface{ VK_NULL_HANDLE };
 VkPhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkPhysicalDevice{ VK_NULL_HANDLE };
 VkDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkDevice{ VK_NULL_HANDLE };
-VkSwapchainKHR AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkSwapchain{ VK_NULL_HANDLE };
 
 QVulkanInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_qVulkanInstance{};
-QWindow* AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_window{ nullptr };
 
 vkb::Instance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbInstance{};
 vkb::PhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbPhysicalDevice{};
 vkb::Device AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbDevice{};
-vkb::Swapchain AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbSwapchain{};
 
 VmaAllocator AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vmaAllocator{ VK_NULL_HANDLE };
 
@@ -35,10 +31,8 @@ std::vector<AirEngine::Runtime::Core::Boot::ManagerInitializerWrapper> AirEngine
 {
 	return {
 		{ 0, 0, CreateVulkanInstance },
-		{ 0, 1, CreateWindowSurface },
 		{ 0, 2, CreateDevice },
-		{ 0, 4, CreateSwapchain },
-		{ 0, 5, CreateMemoryAllocator },
+		{ 0, 4, CreateMemoryAllocator },
 	};
 }
 
@@ -78,32 +72,30 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstan
 	if (!qResult) qFatal("Create vulkan instance failed.");
 }
 
-void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateWindowSurface()
-{
-	_window = new QWindow();
-	_window->resize(1600, 900);
-	_window->setSurfaceType(QSurface::VulkanSurface);
-	_window->show();
-	_window->setVulkanInstance(&_qVulkanInstance);
-	auto same = _vkInstance == _qVulkanInstance.vkInstance();
-	if (!same) qFatal("Create vulkan instance failed.");
-	_vkSurface = _qVulkanInstance.surfaceForWindow(_window);
-}
-
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 {
+	const bool isWindow{ RenderManager::FrontEnd().IsWindow() };
+
 	VkPhysicalDeviceShaderAtomicFloatFeaturesEXT vkPhysicalDeviceShaderAtomicFloatFeaturesEXT{};
 	vkPhysicalDeviceShaderAtomicFloatFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
 	vkPhysicalDeviceShaderAtomicFloatFeaturesEXT.shaderSharedFloat32Atomics = VK_TRUE;
 
 	vkb::PhysicalDeviceSelector physicalDeviceSelector(_vkbInstance);
-	auto physicalDeviceResult = physicalDeviceSelector
-		.set_surface(_vkSurface)
+	physicalDeviceSelector = physicalDeviceSelector
 		.add_required_extension(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME)
-		.add_required_extension_features(vkPhysicalDeviceShaderAtomicFloatFeaturesEXT)
-		.require_present(true)
-		.select();
-	if (!physicalDeviceResult) {
+		.add_required_extension_features(vkPhysicalDeviceShaderAtomicFloatFeaturesEXT);
+	if (isWindow)
+	{
+		physicalDeviceSelector.set_surface(dynamic_cast<FrontEnd::WindowFrontEndBase&>(RenderManager::FrontEnd()).VkSurface());
+		physicalDeviceSelector.require_present(true);
+	}
+	else
+	{
+		physicalDeviceSelector.require_present(false);
+	}
+	auto physicalDeviceResult = physicalDeviceSelector.select();
+	if (!physicalDeviceResult) 
+	{
 		qFatal((std::string("Failed to select Vulkan Physical Device. Error: ") + std::string(physicalDeviceResult.error().message())).c_str());
 	}
 	_vkbPhysicalDevice = physicalDeviceResult.value();
@@ -111,16 +103,24 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 
 	std::vector<vkb::CustomQueueDescription> customQueueDescriptions;
 	uint32_t graphicQueueFamily = 0;
-	uint32_t presentQueueFamily = 0;
 	uint32_t transferQueueFamily = 0;
+	uint32_t presentQueueFamily = 0;
 	auto queue_families = _vkbPhysicalDevice.get_queue_families();
 	for (uint32_t i = 0; i < (uint32_t)queue_families.size(); i++) 
 	{
 		if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) 
 		{
-			customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 2, {1.0f, 1.0f}));
-			graphicQueueFamily = i;
-			presentQueueFamily = i;
+			if (isWindow)
+			{
+				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
+				presentQueueFamily = i;
+			}
+			else
+			{
+				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 2, {1.0f, 1.0f}));
+				graphicQueueFamily = i;
+				presentQueueFamily = i;
+			}
 			break;
 		}
 	}
@@ -165,50 +165,10 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 
 	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::graphics).value(), Utility::InternedString("GraphicQueue"))));
 	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::transfer).value(), Utility::InternedString("TransferQueue"))));
-	_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::present).value(), Utility::InternedString("PresentQueue"))));
-}
-
-void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateSwapchain()
-{
-	//vkb::SwapchainBuilder swapchainBuilder(_vkbDevice);
-	//swapchainBuilder = swapchainBuilder.set_desired_format({ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR });
-	//swapchainBuilder = swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR);
-	//swapchainBuilder = swapchainBuilder.set_pre_transform_flags(VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
-	//swapchainBuilder = swapchainBuilder.set_composite_alpha_flags(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
-	//swapchainBuilder = swapchainBuilder.set_clipped(false);
-	//swapchainBuilder = swapchainBuilder.set_image_array_layer_count(1);
-	//swapchainBuilder = swapchainBuilder.set_image_usage_flags(VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-	//auto swapchainResult = swapchainBuilder.build();
-	
-	//VkSwapchainCreateInfoKHR createInfo{};
-	//createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	//createInfo.surface = _vkSurface;
-	//createInfo.minImageCount = 3;
-	//createInfo.imageFormat = VK_FORMAT_B8G8R8A8_SRGB;
-	//createInfo.imageColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-	//createInfo.imageExtent = { static_cast<uint32_t>(_window->geometry().width() * _window->devicePixelRatio()), static_cast<uint32_t>(_window->geometry().height() * _window->devicePixelRatio())};
-	//createInfo.imageArrayLayers = 1;
-	//createInfo.imageUsage = VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	//createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	//createInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-	//createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	//createInfo.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
-	//createInfo.clipped = VK_TRUE;
-	//createInfo.oldSwapchain = VK_NULL_HANDLE;
-	//auto p = vkGetInstanceProcAddr(_vkInstance, "vkCreateSwapchainKHR");
-	//auto r = vkCreateSwapchainKHR(_vkDevice, &createInfo, nullptr, &_vkSwapchain);
-
-	vkb::SwapchainBuilder swapchainBuilder(_vkbDevice);
-	auto swapchainResult = swapchainBuilder.set_desired_format({ VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
-		.set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)
-		.set_pre_transform_flags(VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
-		.set_composite_alpha_flags(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
-		.set_clipped(false)
-		.set_image_array_layer_count(1)
-		.set_image_usage_flags(VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT)
-		.build();
-	_vkbSwapchain = swapchainResult.value();
-	_vkSwapchain = _vkbSwapchain.swapchain;
+	if (isWindow)
+	{
+		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::present).value(), Utility::InternedString("PresentQueue"))));
+	}
 }
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAllocator()

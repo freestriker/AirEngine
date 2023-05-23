@@ -9,7 +9,6 @@
 #include <unordered_map>
 #include "../../Utility/InternedString.hpp"
 #include "../../Graphic/Instance/Queue.hpp"
-#include <QWindow>
 
 namespace AirEngine
 {
@@ -26,18 +25,14 @@ namespace AirEngine
 					NO_COPY_MOVE(GraphicDeviceManager)
 				protected:
 					static VkInstance _vkInstance;
-					static VkSurfaceKHR _vkSurface;
 					static VkPhysicalDevice _vkPhysicalDevice;
 					static VkDevice _vkDevice;
-					static VkSwapchainKHR _vkSwapchain;
 
 					static QVulkanInstance _qVulkanInstance;
-					static QWindow* _window;
 
 					static vkb::Instance _vkbInstance;
 					static vkb::PhysicalDevice _vkbPhysicalDevice;
 					static vkb::Device _vkbDevice;
-					static vkb::Swapchain _vkbSwapchain;
 
 					static VmaAllocator _vmaAllocator;
 
@@ -46,22 +41,12 @@ namespace AirEngine
 					virtual std::vector<Boot::ManagerInitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
 					static void CreateVulkanInstance();
-					static void CreateWindowSurface();
 					static void CreateDevice();
-					static void CreateSwapchain();
 					static void CreateMemoryAllocator();
 				public:
-					void PopulateWindow(QWindow* window)
-					{
-						_window = window;
-					}
 					static inline VkInstance VkInstance()
 					{
 						return _vkInstance;
-					}
-					static inline VkSurfaceKHR VkSurfaceKHR()
-					{
-						return _vkSurface;
 					}
 					static inline VkPhysicalDevice VkPhysicalDevice()
 					{
@@ -71,17 +56,9 @@ namespace AirEngine
 					{
 						return _vkDevice;
 					}
-					static inline VkSwapchainKHR VkSwapchainKHR()
-					{
-						return _vkSwapchain;
-					}
 					static inline QVulkanInstance& QVulkanInstance()
 					{
 						return _qVulkanInstance;
-					}
-					static inline QWindow& Window()
-					{
-						return *_window;
 					}
 					static inline vkb::Instance& VkbInstance()
 					{
@@ -94,10 +71,6 @@ namespace AirEngine
 					static inline vkb::Device& VkbDevice()
 					{
 						return _vkbDevice;
-					}
-					static inline vkb::Swapchain& VkbSwapchain()
-					{
-						return _vkbSwapchain;
 					}
 					static inline VmaAllocator VmaAllocator()
 					{
