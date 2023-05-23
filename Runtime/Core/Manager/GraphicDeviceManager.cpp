@@ -163,11 +163,11 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	_vkbDevice = deviceResult.value();
 	_vkDevice = _vkbDevice.device;
 
-	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::graphics).value(), Utility::InternedString("GraphicQueue"))));
-	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::transfer).value(), Utility::InternedString("TransferQueue"))));
+	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::graphics).value(), graphicQueueFamily, Utility::InternedString("GraphicQueue"))));
+	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::transfer).value(), transferQueueFamily, Utility::InternedString("TransferQueue"))));
 	if (isWindow)
 	{
-		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::present).value(), Utility::InternedString("PresentQueue"))));
+		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::present).value(), presentQueueFamily, Utility::InternedString("PresentQueue"))));
 	}
 }
 

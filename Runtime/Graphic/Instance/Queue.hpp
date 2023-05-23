@@ -27,10 +27,12 @@ namespace AirEngine
 					VkQueue _queue;
 					Utility::Fiber::mutex _mutex;
 					Utility::InternedString _name;
-					Queue(VkQueue queue, Utility::InternedString name)
+					uint32_t _familyIndex;
+					Queue(VkQueue queue, uint32_t familyIndex, Utility::InternedString name)
 						: _queue(queue)
 						, _mutex()
 						, _name(name)
+						, _familyIndex(familyIndex)
 					{
 
 					}
@@ -48,6 +50,10 @@ namespace AirEngine
 					inline Utility::InternedString Name()const
 					{
 						return _name;
+					}
+					inline uint32_t FamilyIndex()const
+					{
+						return _familyIndex;
 					}
 				};
 			}
