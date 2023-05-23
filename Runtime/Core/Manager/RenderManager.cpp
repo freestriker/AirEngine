@@ -4,18 +4,26 @@
 #include "RenderManager.hpp"
 #include "GraphicDeviceManager.hpp"
 #include "../FrontEnd/Window.hpp"
+#include "../FrontEnd/DummyWindow.hpp"
 
 AirEngine::Runtime::Core::FrontEnd::FrontEndBase* AirEngine::Runtime::Core::Manager::RenderManager::_frontEnd{nullptr};
 
 void AirEngine::Runtime::Core::Manager::RenderManager::CreateMainWindow()
 {
+	//_frontEnd = new FrontEnd::DummyWindow();
 	_frontEnd = new FrontEnd::Window();
-	dynamic_cast<FrontEnd::WindowFrontEndBase*>(_frontEnd)->OnSetVulkanHandle();
+	if (_frontEnd->IsWindow())
+	{
+		dynamic_cast<FrontEnd::WindowFrontEndBase*>(_frontEnd)->OnSetVulkanHandle();
+	}
 }
 
 void AirEngine::Runtime::Core::Manager::RenderManager::CreateSwapchain()
 {
-	dynamic_cast<FrontEnd::WindowFrontEndBase*>(_frontEnd)->OnCreateVulkanSwapchain();
+	if (_frontEnd->IsWindow())
+	{
+		dynamic_cast<FrontEnd::WindowFrontEndBase*>(_frontEnd)->OnCreateVulkanSwapchain();
+	}
 }
 
 std::vector<AirEngine::Runtime::Core::Boot::ManagerInitializerWrapper> AirEngine::Runtime::Core::Manager::RenderManager::OnGetManagerInitializers()
