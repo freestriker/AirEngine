@@ -12,8 +12,9 @@ AirEngine::Runtime::Utility::Fiber::fiber AirEngine::Runtime::Core::Manager::Ren
 
 void AirEngine::Runtime::Core::Manager::RenderManager::CreateMainWindow()
 {
-	_frontEnd = new FrontEnd::DummyWindow();
-	//_frontEnd = new FrontEnd::Window();
+	//_frontEnd = new FrontEnd::DummyWindow();
+	_frontEnd = new FrontEnd::Window();
+    _frontEnd->OnCreate();
 	if (_frontEnd->IsWindow())
 	{
 		dynamic_cast<FrontEnd::WindowFrontEndBase*>(_frontEnd)->OnSetVulkanHandle();

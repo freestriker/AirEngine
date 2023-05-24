@@ -18,6 +18,7 @@ namespace AirEngine
 					, public WindowFrontEndBase
 				{
 				private:
+					void OnCreate() override;
 					void OnPreparePresent() override;
 					void OnPresent() override;
 					void OnFinishPresent() override;
