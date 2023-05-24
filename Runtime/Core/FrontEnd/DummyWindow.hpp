@@ -16,6 +16,7 @@ namespace AirEngine
 					: public FrontEndBase
 				{
 				private:
+					void OnCreate() override;
 					void OnPreparePresent() override;
 					void OnPresent() override;
 					void OnFinishPresent() override;

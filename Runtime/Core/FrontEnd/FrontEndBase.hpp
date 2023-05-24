@@ -26,6 +26,7 @@ namespace AirEngine
 					FrontEndBase();
 					FrontEndBase(const bool isWindow);
 					virtual ~FrontEndBase() = default;
+					virtual void OnCreate() = 0;
 					virtual void OnPreparePresent() = 0;
 					virtual void OnPresent() = 0;
 					virtual void OnFinishPresent() = 0;

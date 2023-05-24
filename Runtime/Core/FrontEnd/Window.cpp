@@ -1,6 +1,16 @@
 ﻿#include "Window.hpp"
 #include "../Manager/GraphicDeviceManager.hpp"
+#include <qapplication.h>
 
+
+void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
+{
+	setMinimumSize({ 1600, 900 });
+	setMaximumSize({ 1600, 900 });
+	//resize(1600, 900);
+	setSurfaceType(QSurface::VulkanSurface);
+	show();
+}
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnPreparePresent()
 {
@@ -44,9 +54,4 @@ AirEngine::Runtime::Core::FrontEnd::Window::Window()
 	, WindowFrontEndBase()
 	, _qVulkanInstance()
 {
-	setMinimumSize({ 1600, 900 });
-	setMaximumSize({ 1600, 900 });
-	//resize(1600, 900);
-	setSurfaceType(QSurface::VulkanSurface);
-	show();
 }

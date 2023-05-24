@@ -23,14 +23,14 @@ void Test();
 
 int main(int argc, char* argv[])
 {
-    //QApplication app(argc, argv);
+    QApplication app(argc, argv);
 
     {
         std::unique_ptr<AirEngine::Runtime::Core::Bootstrapper> bootstrapper = std::unique_ptr<AirEngine::Runtime::Core::Bootstrapper>(new AirEngine::Runtime::Core::Bootstrapper());
         bootstrapper->Boot();
     }
-    std::this_thread::sleep_for(std::chrono::seconds(20));
-    //app.exec();
+    //std::this_thread::sleep_for(std::chrono::seconds(20));
+    app.exec();
 
     //{
     //    std::string stdString = "stdString";
