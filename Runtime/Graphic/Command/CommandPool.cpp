@@ -7,7 +7,7 @@ AirEngine::Runtime::Graphic::Command::CommandPool::CommandPool(const Utility::In
 	, _flags(flags)
 {
 	VkCommandPoolCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	createInfo.flags = flags;
 	createInfo.queueFamilyIndex = _queue->FamilyIndex();
 
