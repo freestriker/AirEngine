@@ -1,10 +1,12 @@
 ﻿#pragma once
 #include <cstdint>
-#include <string_view>
 #include <array>
 #include <mutex>
 #include "ContructorMacro.hpp"
 #include "ExportMacro.hpp"
+#ifndef NDEBUG
+#include <string_view>
+#endif // !NDEBUG
 
 namespace AirEngine
 {
@@ -101,6 +103,7 @@ namespace AirEngine
 					static constexpr uint32_t MEMORY_BLOCK_INDEX_MASK = (1u << MEMORY_BLOCK_INDEX_BITS) - 1u;
 				private:
 					uint32_t slotHashProbe3_stringEntryHandle29;
+
 				public:
 					inline const bool IsUsed() const;
 					inline const bool IsTargetSlot(const HashInfo& hashInfo) const;
@@ -147,31 +150,56 @@ namespace AirEngine
 				static StringEntryMemoryManager stringEntryMemoryManager;
 			private:
 				uint32_t _empty2_isUsed1_StringEntryHandle29;
+#ifndef NDEBUG
+				std::string_view _debugStringView;
+#endif // !NDEBUG
 			public:
 				inline InternedString()
 					: _empty2_isUsed1_StringEntryHandle29(0u)
+#ifndef NDEBUG
+					, _debugStringView()
+#endif // !NDEBUG
 				{
 				}
 				~InternedString() = default;
 				inline InternedString(const std::string_view& string)
 					: _empty2_isUsed1_StringEntryHandle29(MakeInterned(string))
+#ifndef NDEBUG
+					, _debugStringView()
+#endif // !NDEBUG
 				{
+#ifndef NDEBUG
+					const StringEntry* stringEntry = stringEntryMemoryManager.GetStringEntry(StringEntryHandle(_empty2_isUsed1_StringEntryHandle29));
+					_debugStringView = std::string_view(stringEntry->GetData(), stringEntry->GetStringEntryHeader().GetSize());
+#endif // !NDEBUG
 				}
 				inline InternedString(const InternedString& internedString)
 					: _empty2_isUsed1_StringEntryHandle29(internedString._empty2_isUsed1_StringEntryHandle29)
+#ifndef NDEBUG
+					, _debugStringView(internedString._debugStringView)
+#endif // !NDEBUG
 				{
 				}
 				inline void operator=(const InternedString& internedString)
 				{
 					_empty2_isUsed1_StringEntryHandle29 = internedString._empty2_isUsed1_StringEntryHandle29;
+#ifndef NDEBUG
+					_debugStringView = internedString._debugStringView;
+#endif // !NDEBUG
 				}
 				inline InternedString(InternedString&& internedString) noexcept
 					: _empty2_isUsed1_StringEntryHandle29(std::move(internedString._empty2_isUsed1_StringEntryHandle29))
+#ifndef NDEBUG
+					, _debugStringView(std::move(internedString._debugStringView))
+#endif // !NDEBUG
 				{
 				}
 				inline void operator=(InternedString&& internedString) noexcept
 				{
 					_empty2_isUsed1_StringEntryHandle29 = std::move(internedString._empty2_isUsed1_StringEntryHandle29);
+#ifndef NDEBUG
+					_debugStringView = std::move(internedString._debugStringView);
+#endif // !NDEBUG
 				}
 				inline bool operator==(const InternedString& r) const
 				{
