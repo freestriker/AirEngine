@@ -133,7 +133,7 @@ inline const bool InternedString::Slot::IsUsed() const
 
 inline const bool InternedString::Slot::IsTargetSlot(const HashInfo& hashInfo) const
 {
-	if (GetSlotHashProbe() == hashInfo.GetSlotHashProbe())
+	if (GetSlotHashProbe() == (hashInfo.GetSlotHashProbe() | IS_USED_MASK))
 	{
 		const StringEntry* stringEntry = stringEntryMemoryManager.GetStringEntry(GetStringEntryHandle());
 		if (stringEntry->GetStringEntryHeader() == hashInfo.GetStringEntryHeader() && 0 == strncmp(stringEntry->GetData(), hashInfo.GetData(), stringEntry->GetStringEntryHeader().GetSize()))
