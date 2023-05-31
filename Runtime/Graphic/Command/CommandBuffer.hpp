@@ -13,10 +13,12 @@ namespace AirEngine
 			namespace Instance
 			{
 				class Queue;
+				class Image;
 			}
 			namespace Command
 			{
 				class CommandPool;
+				class Barrier;
 				class AIR_ENGINE_API CommandBuffer final
 				{
 					friend class CommandPool;
@@ -35,6 +37,8 @@ namespace AirEngine
 					{
 						return _vkCommandBuffer;
 					}
+					void AddPipelineBarrier(const Barrier& barrier, VkDependencyFlags dependencyFlags = 0);
+					void ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const VkClearColorValue& color);
 				};
 			}
 		}
