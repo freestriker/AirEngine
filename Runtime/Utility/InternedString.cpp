@@ -31,7 +31,7 @@ const uint32_t InternedString::MakeInterned(const std::string_view& string)
 
 	uint32_t slotValue = 0u;
 	{
-		std::unique_lock<std::mutex> lock(slotPool.mutex);
+		std::unique_lock<boost::fibers::mutex> lock(slotPool.mutex);
 
 		slotPool.CheckUsageRateAndResize();
 
@@ -255,7 +255,7 @@ inline const InternedString::StringEntryHandle InternedString::StringEntryMemory
 
 	StringEntryHandle stringEntryHandle{};
 	{
-		std::unique_lock<std::mutex> lock(mutex);
+		std::unique_lock<boost::fibers::mutex> lock(mutex);
 
 		if (((static_cast<uint32_t>(currentMemoryBlockAlignedCursor) + alignedSize) << 1) >= MAX_MEMORY_BLOCK_SIZE)
 		{
