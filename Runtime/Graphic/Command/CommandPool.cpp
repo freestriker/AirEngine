@@ -1,5 +1,6 @@
 ﻿#include "CommandPool.hpp"
 #include "../../Core/Manager/GraphicDeviceManager.hpp"
+#include "CommandBuffer.hpp"
 
 AirEngine::Runtime::Graphic::Command::CommandPool::CommandPool(const Utility::InternedString queueName, VkCommandPoolCreateFlags flags)
 	: _vkCommandPool(VK_NULL_HANDLE)
@@ -18,4 +19,17 @@ AirEngine::Runtime::Graphic::Command::CommandPool::CommandPool(const Utility::In
 AirEngine::Runtime::Graphic::Command::CommandPool::~CommandPool()
 {
 	vkDestroyCommandPool(Core::Manager::GraphicDeviceManager::VkDevice(), _vkCommandPool, nullptr);
+}
+
+AirEngine::Runtime::Graphic::Command::CommandBuffer& AirEngine::Runtime::Graphic::Command::CommandPool::CreateCommandBuffer(Utility::InternedString commandBufferName, VkCommandBufferLevel level)
+{
+	auto&& commandBuffer = new Command::CommandBuffer(commandBufferName, this, level);
+	_commandBufferMap.insert({ commandBufferName, commandBuffer });
+	return *commandBuffer;
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandPool::DestroyCommandBuffer(Utility::InternedString commandBufferName)
+{
+	delete _commandBufferMap[commandBufferName];
+	_commandBufferMap.erase(commandBufferName);
 }

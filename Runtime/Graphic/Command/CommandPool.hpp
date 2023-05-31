@@ -3,6 +3,7 @@
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/InternedString.hpp"
+#include <map>
 
 namespace AirEngine
 {
@@ -16,12 +17,14 @@ namespace AirEngine
 			}
 			namespace Command
 			{
+				class CommandBuffer;
 				class AIR_ENGINE_API CommandPool final
 				{
 				private:
 					VkCommandPool _vkCommandPool;
 					Instance::Queue* _queue;
 					VkCommandPoolCreateFlags _flags;
+					std::map<Utility::InternedString, Command::CommandBuffer*> _commandBufferMap;
 				public:
 					CommandPool(const Utility::InternedString queueName, VkCommandPoolCreateFlags flags = 0);
 					~CommandPool();
@@ -39,6 +42,13 @@ namespace AirEngine
 					{
 						return *_queue;
 					}
+
+					inline Command::CommandBuffer& GetCommandBuffer(Utility::InternedString commandBufferName)
+					{
+						return *_commandBufferMap[commandBufferName];
+					}
+					Command::CommandBuffer& CreateCommandBuffer(Utility::InternedString commandBufferName, VkCommandBufferLevel level);
+					void DestroyCommandBuffer(Utility::InternedString commandBufferName);
 				};
 			}
 		}
