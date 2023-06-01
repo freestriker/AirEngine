@@ -22,6 +22,7 @@ namespace AirEngine
 			{
 				class Semaphore;
 				class CommandBuffer;
+				class Fence;
 			}
 			namespace Instance
 			{
@@ -56,7 +57,7 @@ namespace AirEngine
 
 					}
 					NO_COPY_MOVE(Queue)
-					void Submit(const std::vector<CommandBufferSubmitInfo>& submitInfos);
+					void Submit(const std::vector<CommandBufferSubmitInfo>& submitInfos, const Command::Fence* fence);
 				public:
 					~Queue() = default;
 					inline Utility::Fiber::mutex& Mutex()
@@ -76,28 +77,28 @@ namespace AirEngine
 						return _familyIndex;
 					}
 
-					void ImmediateIndividualSubmit(const CommandBufferSubmitInfo& submitInfo)
+					void ImmediateIndividualSubmit(const CommandBufferSubmitInfo& submitInfo, const Command::Fence& fence = *static_cast<Command::Fence*>(nullptr))
 					{
 						std::unique_lock< Utility::Fiber::mutex> lock(_mutex);
 
-						Submit({ submitInfo });
+						Submit({ submitInfo }, &fence);
 					}
-					void ImmediateConcentrateSubmit()
+					void ImmediateConcentrateSubmit(const Command::Fence& fence = *static_cast<Command::Fence*>(nullptr))
 					{
 						std::unique_lock< Utility::Fiber::mutex> lock(_mutex);
 
-						Submit(_submitInfos);
+						Submit(_submitInfos, &fence);
 						_submitInfos.clear();
 					}
-					void ImmediateConcentrateSubmit(const CommandBufferSubmitInfo& submitInfo)
+					void ImmediateConcentrateSubmit(const CommandBufferSubmitInfo& submitInfo, const Command::Fence& fence = *static_cast<Command::Fence*>(nullptr))
 					{
 						std::unique_lock< Utility::Fiber::mutex> lock(_mutex);
 
 						_submitInfos.emplace_back(submitInfo);
-						Submit(_submitInfos);
+						Submit(_submitInfos, &fence);
 						_submitInfos.clear();
 					}
-					inline void DelayedConcentrateSubmit(const CommandBufferSubmitInfo& submitInfo)
+					inline void DelayedConcentrateSubmit(const CommandBufferSubmitInfo& submitInfo, const Command::Fence& fence = *static_cast<Command::Fence*>(nullptr))
 					{
 						std::unique_lock< Utility::Fiber::mutex> lock(_mutex);
 
