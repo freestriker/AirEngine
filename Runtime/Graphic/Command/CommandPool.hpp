@@ -47,7 +47,7 @@ namespace AirEngine
 					{
 						return *_commandBufferMap[commandBufferName];
 					}
-					Command::CommandBuffer& CreateCommandBuffer(Utility::InternedString commandBufferName, VkCommandBufferLevel level);
+					Command::CommandBuffer& CreateCommandBuffer(Utility::InternedString commandBufferName, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 					void DestroyCommandBuffer(Utility::InternedString commandBufferName);
 				};
 			}
