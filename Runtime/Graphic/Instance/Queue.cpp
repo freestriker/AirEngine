@@ -1,5 +1,6 @@
 ﻿#include "Queue.hpp"
 #include "../Command/Semaphore.hpp"
+#include "../Command/Fence.hpp"
 #include "../Command/CommandBuffer.hpp"
 #include <qlogging.h>
 
@@ -34,7 +35,7 @@ constexpr VkSubmitInfo2 EMPTY_VK_SUBMIT_INFO
 	nullptr
 };
 
-void AirEngine::Runtime::Graphic::Instance::Queue::Submit(const std::vector<CommandBufferSubmitInfo>& submitInfos)
+void AirEngine::Runtime::Graphic::Instance::Queue::Submit(const std::vector<CommandBufferSubmitInfo>& submitInfos, const Command::Fence* fence)
 {
 	uint32_t semaphoreInfoCount = 0;
 	uint32_t commandBufferInfoCount = 0;
@@ -80,7 +81,7 @@ void AirEngine::Runtime::Graphic::Instance::Queue::Submit(const std::vector<Comm
 		}
 	}
 
-	auto result = vkQueueSubmit2(_vkQueue, uint32_t(vkSubmitInfos.size()), vkSubmitInfos.data(), VK_NULL_HANDLE);
+	auto result = vkQueueSubmit2(_vkQueue, uint32_t(vkSubmitInfos.size()), vkSubmitInfos.data(), fence != nullptr ? fence->VkHandle() : VK_NULL_HANDLE);
 	if (result != VK_SUCCESS)
 	{
 		qFatal("Failed to submit command buffers.");

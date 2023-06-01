@@ -21,13 +21,13 @@ namespace AirEngine
 					~Fence();
 					NO_COPY_MOVE(Fence)
 
-					inline VkFence& VkHandle()
+					inline VkFence VkHandle() const
 					{
 						return _vkFence;
 					}
-					void Reset();
-					void Wait();
-					VkResult Status();
+					void Reset() const;
+					void Wait() const;
+					VkResult Status() const;
 				};
 			}
 		}
