@@ -19,6 +19,7 @@ void AirEngine::Runtime::Core::Manager::FiberManager::BootThread()
 	{
 		if (workerIndex == 0) 
         {
+			int n = _fiberInitializers.size();
             for (auto& _initializer : _fiberInitializers)
             {
                 _initializer();
@@ -65,5 +66,5 @@ AirEngine::Runtime::Core::Manager::FiberManager::~FiberManager()
 
 void AirEngine::Runtime::Core::Manager::FiberManager::AddFiberInitializers(const std::vector<Utility::Initializer>& initializer)
 {
-    _fiberInitializers.assign(initializer.begin(), initializer.end());
+    _fiberInitializers.insert(_fiberInitializers.end(), initializer.begin(), initializer.end());
 }

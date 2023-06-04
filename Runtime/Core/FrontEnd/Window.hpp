@@ -20,6 +20,7 @@ namespace AirEngine
 				class Semaphore;
 				class Fence;
 				class CommandPool;
+				class CommandBuffer;
 			}
 		}
 		namespace Core
@@ -31,28 +32,29 @@ namespace AirEngine
 					, public WindowFrontEndBase
 				{
 				private:
-					struct Frame {
-						Graphic::Command::Fence* fence = nullptr;
-						bool fenceWaitable = false;
-						Graphic::Command::Semaphore* imageSemaphore = nullptr;
-						Graphic::Command::Semaphore* drawSemaphore = nullptr;
-						Graphic::Command::Semaphore* presTransSemaphore = nullptr;
-						bool imageAcquired = false;
-						bool imageSemWaitable = false;
+					struct FrameResource {
+						Graphic::Command::Fence* acquireFence = nullptr;
+						Graphic::Command::Semaphore* acquireSemaphore = nullptr;
+					};
+					struct ImageResource {
+						Graphic::Instance::Image* image = nullptr;
+						Graphic::Command::Semaphore* transferSemaphore = nullptr;
 					};
 
 				private:
 					void OnCreate() override;
-					void OnPreparePresent() override;
+					void OnAcquireImage() override;
 					void OnPresent() override;
-					void OnFinishPresent() override;
 					void OnSetVulkanHandle() override;
 					void OnCreateVulkanSwapchain() override;
 					QVulkanInstance _qVulkanInstance;
-					std::vector<Frame> _frames;
-					std::vector<Graphic::Instance::Image*> _swapchainImages;
-					uint32_t _swapchainCurrentFrameIndex;
+					std::vector<FrameResource> _frameResources;
+					std::vector<ImageResource> _imageResources;
+					uint32_t _curFrameIndex;
+					uint32_t _curImageIndex;
 					Graphic::Command::CommandPool* _commandPool;
+					Graphic::Command::CommandBuffer* _commandBuffer;
+					Graphic::Command::Fence* _transferFence;
 				public:
 					NO_COPY_MOVE(Window)
 					Window();

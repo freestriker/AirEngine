@@ -5,6 +5,7 @@
 #include "Manager/ThirdPartyLibraryManager.hpp"
 #include "Manager/FiberManager.hpp"
 #include "Manager/RenderManager.hpp"
+#include "Manager/LogicManager.hpp"
 
 using namespace AirEngine::Runtime;
 
@@ -16,6 +17,7 @@ AirEngine::Runtime::Core::Bootstrapper::Bootstrapper()
 	ResetManager(std::make_shared<Manager::SceneManager>());
 	ResetManager(std::make_shared<Manager::GraphicDeviceManager>());
 	ResetManager(std::make_shared<Manager::RenderManager>());
+	ResetManager(std::make_shared<Manager::LogicManager>());
 }
 
 AirEngine::Runtime::Core::Bootstrapper::~Bootstrapper()

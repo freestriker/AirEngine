@@ -34,20 +34,20 @@ namespace AirEngine
 			template<class TMutex, class TConditionVariable>
 			inline void Condition<TMutex, TConditionVariable>::Wait()
 			{
-				std::unique_lock<std::mutex> lock(_mutex);
+				std::unique_lock<TMutex> lock(_mutex);
 				_conditionVariable.wait(lock, [this] { return this->_ready; });
 			}
 			template<class TMutex, class TConditionVariable>
 			inline void Condition<TMutex, TConditionVariable>::Awake()
 			{
-				std::unique_lock<std::mutex> lock(_mutex);
+				std::unique_lock<TMutex> lock(_mutex);
 				_ready = true;
 				_conditionVariable.notify_all();
 			}
 			template<class TMutex, class TConditionVariable>
 			inline void Condition<TMutex, TConditionVariable>::Reset()
 			{
-				std::unique_lock<std::mutex> lock(_mutex);
+				std::unique_lock<TMutex> lock(_mutex);
 				_ready = false;
 			}
 			template<class TMutex, class TConditionVariable>

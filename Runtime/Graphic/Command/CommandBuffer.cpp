@@ -28,6 +28,30 @@ AirEngine::Runtime::Graphic::Command::CommandBuffer::~CommandBuffer()
     vkFreeCommandBuffers(Core::Manager::GraphicDeviceManager::VkDevice(), _commandPool->VkHandle(), 1, &_vkCommandBuffer);
 }
 
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::Reset()
+{
+    if (_commandPool->VkCreateFlags() & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
+    {
+        vkResetCommandBuffer(_vkCommandBuffer, VkCommandBufferResetFlagBits::VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+    }
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::BeginRecord(VkCommandBufferUsageFlags flags)
+{
+    VkCommandBufferBeginInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    info.pNext = nullptr;
+    info.flags = flags;
+    info.pInheritanceInfo = nullptr;
+
+    auto&& result = vkBeginCommandBuffer(_vkCommandBuffer, &info);
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::EndRecord()
+{
+    vkEndCommandBuffer(_vkCommandBuffer);
+}
+
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::AddPipelineBarrier(const Barrier& barrier, VkDependencyFlags dependencyFlags)
 {
     VkDependencyInfo info{};
@@ -52,6 +76,6 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::ClearColorImage(const 
     range.levelCount = image.MipmapLevelCount();
     range.baseArrayLayer = 0;
     range.layerCount = image.LayerCount();
-
+    
     vkCmdClearColorImage(_vkCommandBuffer, image.VkHandle(), imageLayout, &color, 1, &range);
 }

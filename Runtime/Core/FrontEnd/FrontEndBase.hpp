@@ -19,6 +19,7 @@ namespace AirEngine
 				class AIR_ENGINE_API FrontEndBase
 				{
 					friend class Manager::RenderManager;
+				public:
 				private:
 					const bool _isWindow;
 				protected:
@@ -27,9 +28,8 @@ namespace AirEngine
 					FrontEndBase(const bool isWindow);
 					virtual ~FrontEndBase() = default;
 					virtual void OnCreate() = 0;
-					virtual void OnPreparePresent() = 0;
+					virtual void OnAcquireImage() = 0;
 					virtual void OnPresent() = 0;
-					virtual void OnFinishPresent() = 0;
 				public:
 					inline bool IsWindow() const
 					{

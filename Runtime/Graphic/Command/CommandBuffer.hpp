@@ -3,6 +3,7 @@
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/InternedString.hpp"
+#include <glm/vec4.hpp>
 
 namespace AirEngine
 {
@@ -37,9 +38,23 @@ namespace AirEngine
 					{
 						return _vkCommandBuffer;
 					}
+					void Reset();
+					void BeginRecord(VkCommandBufferUsageFlags flags = 0);
+					void EndRecord();
 					void AddPipelineBarrier(const Barrier& barrier, VkDependencyFlags dependencyFlags = 0);
 					void ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const VkClearColorValue& color);
+					template<typename TColorChannel>
+					void ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color);
 				};
+				template<typename TColorChannel>
+				inline void CommandBuffer::ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color)
+				{
+					VkClearColorValue vkColor{};
+					auto&& vkColorRef = reinterpret_cast<glm::vec<4, TColorChannel, glm::defaultp>&>(vkColor);
+					vkColorRef = color;
+
+					ClearColorImage(image, imageLayout, vkColor);
+				}
 			}
 		}
 	}

@@ -8,7 +8,10 @@
 #include "FiberManager.hpp"
 
 AirEngine::Runtime::Core::FrontEnd::FrontEndBase* AirEngine::Runtime::Core::Manager::RenderManager::_frontEnd{nullptr};
+AirEngine::Runtime::Core::Manager::RenderManager::Status AirEngine::Runtime::Core::Manager::RenderManager::_status{ AirEngine::Runtime::Core::Manager::RenderManager::Status::NONE};
 AirEngine::Runtime::Utility::Fiber::fiber AirEngine::Runtime::Core::Manager::RenderManager::_renderLoopFiber{ };
+AirEngine::Runtime::Utility::Condition<AirEngine::Runtime::Utility::Fiber::mutex, AirEngine::Runtime::Utility::Fiber::condition_variable> AirEngine::Runtime::Core::Manager::RenderManager::_beginRenderCondition{ };
+AirEngine::Runtime::Utility::Condition<AirEngine::Runtime::Utility::Fiber::mutex, AirEngine::Runtime::Utility::Fiber::condition_variable> AirEngine::Runtime::Core::Manager::RenderManager::_endPresentCondition{ };
 
 void AirEngine::Runtime::Core::Manager::RenderManager::CreateMainWindow()
 {
@@ -35,37 +38,30 @@ void AirEngine::Runtime::Core::Manager::RenderManager::AddRenderLoop()
         []()->void
         {
             _renderLoopFiber = std::move(Utility::Fiber::fiber(RenderLoop));
-}
-        });
-   
+		}
+    });
 }
 
 void AirEngine::Runtime::Core::Manager::RenderManager::RenderLoop()
 {
 	while (true)
 	{
-        using namespace AirEngine::Runtime::Utility;
-        
-        auto threadId0 = std::this_thread::get_id();
-        int i = 2;
-        i = i * 3;
-        ThisFiber::yield();
-        auto threadId1 = std::this_thread::get_id();
-        //if (threadId0 != threadId1) std::cout << "Change thread1." << std::endl;
-        i = i + 2;
-        i = i * 3;
-        ThisFiber::yield();
-        auto threadId2 = std::this_thread::get_id();
-        //if (threadId0 != threadId2) std::cout << "Change thread2." << std::endl;
-        i = i + 2;
-        i = i * 3;
-        ThisFiber::yield();
-        auto threadId3 = std::this_thread::get_id();
-        //if (threadId0 != threadId3) std::cout << "Change thread3." << std::endl;
-        i = i + 2;
-        i = i * 3;
-        ThisFiber::yield();
-        std::cout << "Render loop.\n";
+		_status = Status::ACQUIRE;
+        _frontEnd->OnAcquireImage();
+
+		_status = Status::READY;
+		_beginRenderCondition.Wait();
+		_beginRenderCondition.Reset();
+
+		_status = Status::RENDERING;
+		//render
+		std::cout << "Render loop.\n";
+		Utility::ThisFiber::sleep_for(std::chrono::milliseconds(5));
+
+		_status = Status::PRESENT;
+		_frontEnd->OnPresent();
+
+		_endPresentCondition.Awake();
     }
 }
 
@@ -92,4 +88,20 @@ AirEngine::Runtime::Core::Manager::RenderManager::RenderManager()
 
 AirEngine::Runtime::Core::Manager::RenderManager::~RenderManager()
 {
+}
+
+bool AirEngine::Runtime::Core::Manager::RenderManager::TryBeginRender()
+{
+	if (_status == Status::READY)
+	{
+		_beginRenderCondition.Awake();
+		return true;
+	}
+	return false;
+}
+
+void AirEngine::Runtime::Core::Manager::RenderManager::EndRender()
+{
+	_endPresentCondition.Wait();
+	_endPresentCondition.Reset();
 }
