@@ -43,6 +43,7 @@ namespace AirEngine
 						return *_queue;
 					}
 
+					void Reset();
 					inline Command::CommandBuffer& GetCommandBuffer(Utility::InternedString commandBufferName)
 					{
 						return *_commandBufferMap[commandBufferName];

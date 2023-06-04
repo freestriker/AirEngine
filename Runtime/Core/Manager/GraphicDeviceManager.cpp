@@ -44,15 +44,19 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::OnFinishInitialize
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstance()
 {
 	_vkInstance = VK_NULL_HANDLE;
-	vkb::InstanceBuilder instanceBuilder;
-	auto vkbResult = instanceBuilder
+
+	vkb::InstanceBuilder instanceBuilder;	
+	instanceBuilder = instanceBuilder
 		.set_engine_name("AiEngine")
 		.set_engine_version(VK_VERSION_1_3)
 		.set_app_name("AiEngine")
 		.set_app_version(VK_VERSION_1_3)
+		.require_api_version(VKB_VK_API_VERSION_1_3);
 #ifdef NDEBUG
+	instanceBuilder = instanceBuilder
 		.enable_validation_layers(false)
 #else
+	instanceBuilder = instanceBuilder
 		.enable_validation_layers(true)
 		.set_debug_messenger_type(
 			//VkDebugUtilsMessageTypeFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
@@ -65,10 +69,12 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstan
 			VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 			VkDebugUtilsMessageSeverityFlagBitsEXT::VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
 		)
-		.set_debug_callback(DebugCallback)
+		.set_debug_callback(DebugCallback);
 #endif
-		.build();
+
+	auto vkbResult = instanceBuilder.build();
 	if (!vkbResult) qFatal("Create vulkan instance failed.");
+
 	_vkbInstance = vkbResult.value();
 	_vkInstance = _vkbInstance.instance;
 }
@@ -79,12 +85,20 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 
 	VkPhysicalDeviceShaderAtomicFloatFeaturesEXT vkPhysicalDeviceShaderAtomicFloatFeaturesEXT{};
 	vkPhysicalDeviceShaderAtomicFloatFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
+	vkPhysicalDeviceShaderAtomicFloatFeaturesEXT.pNext = nullptr;
 	vkPhysicalDeviceShaderAtomicFloatFeaturesEXT.shaderSharedFloat32Atomics = VK_TRUE;
+
+	VkPhysicalDeviceSynchronization2Features vkPhysicalDeviceSynchronization2Features{};
+	vkPhysicalDeviceSynchronization2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+	vkPhysicalDeviceSynchronization2Features.pNext = nullptr;
+	vkPhysicalDeviceSynchronization2Features.synchronization2 = VK_TRUE;
 
 	vkb::PhysicalDeviceSelector physicalDeviceSelector(_vkbInstance);
 	physicalDeviceSelector = physicalDeviceSelector
 		.add_required_extension(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME)
-		.add_required_extension_features(vkPhysicalDeviceShaderAtomicFloatFeaturesEXT);
+		.add_required_extension_features(vkPhysicalDeviceShaderAtomicFloatFeaturesEXT)
+		.add_required_extension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
+		.add_required_extension_features(vkPhysicalDeviceSynchronization2Features);
 	if (isWindow)
 	{
 		physicalDeviceSelector.set_surface(dynamic_cast<FrontEnd::WindowFrontEndBase&>(RenderManager::FrontEnd()).VkSurface());
@@ -113,13 +127,13 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 		{
 			if (isWindow)
 			{
-				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
+				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 2, { 1.0f, 1.0f }));
+				graphicQueueFamily = i;
 				presentQueueFamily = i;
 			}
 			else
 			{
-				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 2, {1.0f, 1.0f}));
-				graphicQueueFamily = i;
+				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
 				presentQueueFamily = i;
 			}
 			break;
@@ -164,11 +178,19 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	_vkbDevice = deviceResult.value();
 	_vkDevice = _vkbDevice.device;
 
-	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::graphics).value(), graphicQueueFamily, Utility::InternedString("GraphicQueue"))));
-	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::transfer).value(), transferQueueFamily, Utility::InternedString("TransferQueue"))));
+
+	VkQueue queue = VK_NULL_HANDLE;
+
+	vkGetDeviceQueue(_vkDevice, graphicQueueFamily, 0, &queue);
+	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("GraphicQueue"))));
+
+	vkGetDeviceQueue(_vkDevice, transferQueueFamily, 0, &queue);
+	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(queue, transferQueueFamily, Utility::InternedString("TransferQueue"))));
+
 	if (isWindow)
 	{
-		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(_vkbDevice.get_queue(vkb::QueueType::present).value(), presentQueueFamily, Utility::InternedString("PresentQueue"))));
+		vkGetDeviceQueue(_vkDevice, graphicQueueFamily, 1, &queue);
+		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("GraphicQueue"))));
 	}
 }
 
@@ -179,7 +201,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAlloca
 	vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
 
 	VmaAllocatorCreateInfo allocatorCreateInfo{};
-	//allocatorCreateInfo.vulkanApiVersion = VK_VERSION_1_3;
+	allocatorCreateInfo.vulkanApiVersion = VKB_VK_API_VERSION_1_3;
 	allocatorCreateInfo.physicalDevice = _vkPhysicalDevice;
 	allocatorCreateInfo.device = _vkDevice;
 	allocatorCreateInfo.instance = _vkInstance;

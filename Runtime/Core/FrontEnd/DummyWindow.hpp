@@ -17,9 +17,8 @@ namespace AirEngine
 				{
 				private:
 					void OnCreate() override;
-					void OnPreparePresent() override;
+					void OnAcquireImage() override;
 					void OnPresent() override;
-					void OnFinishPresent() override;
 				public:
 					NO_COPY_MOVE(DummyWindow)
 					DummyWindow();

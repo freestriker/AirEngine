@@ -3,6 +3,7 @@
 #include <memory>
 #include "../../Utility/Initializer.hpp"
 #include "../../Utility/Fiber.hpp"
+#include "../../Utility/Condition.hpp"
 
 namespace AirEngine
 {
@@ -20,12 +21,23 @@ namespace AirEngine
 					: public ManagerBase
 				{
 				private:
+					enum class Status
+					{
+						ACQUIRE,
+						READY,
+						RENDERING,
+						PRESENT,
+						NONE
+					};
 					NO_COPY_MOVE(RenderManager)
 					static void CreateMainWindow();
 					static void CreateSwapchain();
 					static void AddRenderLoop();
 					static void RenderLoop();
 					static Utility::Fiber::fiber _renderLoopFiber;
+					static Status _status;
+					static Utility::Condition<Utility::Fiber::mutex, Utility::Fiber::condition_variable> _beginRenderCondition;
+					static Utility::Condition<Utility::Fiber::mutex, Utility::Fiber::condition_variable> _endPresentCondition;
 				protected:
 					virtual std::vector<Utility::InitializerWrapper> OnGetManagerInitializers() override;
 					virtual void OnFinishInitialize() override;
@@ -36,6 +48,8 @@ namespace AirEngine
 					{
 						return *_frontEnd;
 					}
+					static bool TryBeginRender();
+					static void EndRender();
 				protected:
 					static FrontEnd::FrontEndBase* _frontEnd;
 				public:

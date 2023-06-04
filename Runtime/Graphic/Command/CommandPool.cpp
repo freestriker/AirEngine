@@ -21,6 +21,11 @@ AirEngine::Runtime::Graphic::Command::CommandPool::~CommandPool()
 	vkDestroyCommandPool(Core::Manager::GraphicDeviceManager::VkDevice(), _vkCommandPool, nullptr);
 }
 
+void AirEngine::Runtime::Graphic::Command::CommandPool::Reset()
+{
+	vkResetCommandPool(Core::Manager::GraphicDeviceManager::VkDevice(), _vkCommandPool, VkCommandPoolResetFlagBits::VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+}
+
 AirEngine::Runtime::Graphic::Command::CommandBuffer& AirEngine::Runtime::Graphic::Command::CommandPool::CreateCommandBuffer(Utility::InternedString commandBufferName, VkCommandBufferLevel level)
 {
 	auto&& commandBuffer = new Command::CommandBuffer(commandBufferName, this, level);
