@@ -9,6 +9,9 @@
             "features": ["sse"]
         },
         {
+            "name": "bdwgc"
+        },
+        {
             "name": "glm"
         },
         {

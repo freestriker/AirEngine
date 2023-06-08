@@ -2,6 +2,8 @@
 #include <iostream>
 #include "../Scene/Scene.hpp"
 #include "../../Utility/InternedString.hpp"
+#include "../../Utility/GarbageCollectInclude.hpp"
+#include "../Scene/SceneObject.hpp"
 
 std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnGetManagerInitializers()
 {
@@ -12,6 +14,15 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 			[this]()->void
 			{
 				Utility::InternedString::Initialize();
+			}
+		},
+		{
+			0, 0,
+			[this]()->void
+			{
+				GC_INIT();
+				auto&& cso = NEW_COLLECTABLE_OBJECT Scene::SceneObject();
+				auto&& tso = NEW_TRACKABLE_OBJECT Scene::SceneObject();
 			}
 		}
 	};

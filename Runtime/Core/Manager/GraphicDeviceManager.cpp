@@ -1,6 +1,5 @@
 ﻿#include "GraphicDeviceManager.hpp"
 #include <iostream>
-#include <mutex>
 #include <vk_mem_alloc.h>
 #include "RenderManager.hpp"
 #include "../FrontEnd/FrontEndBase.hpp"
