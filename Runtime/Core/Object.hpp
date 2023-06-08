@@ -10,6 +10,7 @@
 #ifndef AIR_ENGINE_NEW
 
 #define NEW_COLLECTABLE_OBJECT new(GC)
+#define NEW_COLLECTABLE_PURE_OBJECT new(PointerFreeGC)
 #define NEW_TRACKABLE_OBJECT new(NoGC)
 
 #define AIR_ENGINE_NEW
