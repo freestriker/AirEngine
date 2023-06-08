@@ -22,8 +22,7 @@ namespace AirEngine
 				private:
 					NO_COPY_MOVE(SceneManager)
 				protected:
-					virtual std::vector<Utility::InitializerWrapper> OnGetManagerInitializers() override;
-					virtual void OnFinishInitialize() override;
+					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
 				public:
 					SceneManager();
 					virtual ~SceneManager();

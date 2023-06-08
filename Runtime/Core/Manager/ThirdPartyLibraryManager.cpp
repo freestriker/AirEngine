@@ -5,7 +5,7 @@
 #include "../../Utility/GarbageCollectInclude.hpp"
 #include "../Scene/SceneObject.hpp"
 
-std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnGetManagerInitializers()
+std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnGetInternalInitializers()
 {
 	return
 	{
@@ -26,11 +26,6 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 			}
 		}
 	};
-}
-
-void AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnFinishInitialize()
-{
-	std::cout << "Finish initialize " << Name() << std::endl;
 }
 
 AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::ThirdPartyLibraryManager()

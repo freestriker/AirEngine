@@ -65,7 +65,7 @@ void AirEngine::Runtime::Core::Manager::RenderManager::RenderLoop()
     }
 }
 
-std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::RenderManager::OnGetManagerInitializers()
+std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::RenderManager::OnGetInternalInitializers()
 {
 	return
 	{
@@ -74,12 +74,6 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
         { 1, 0, AddRenderLoop }
 	};
 }
-
-void AirEngine::Runtime::Core::Manager::RenderManager::OnFinishInitialize()
-{
-	std::cout << "Finish initialize " << Name() << std::endl;
-}
-
 
 AirEngine::Runtime::Core::Manager::RenderManager::RenderManager()
 	: ManagerBase("RenderManager")

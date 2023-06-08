@@ -4,7 +4,3 @@ AirEngine::Runtime::Core::Manager::ManagerBase::ManagerBase(const std::string& n
 	: _name(name)
 {
 }
-
-AirEngine::Runtime::Core::Manager::ManagerBase::~ManagerBase()
-{
-}

@@ -30,19 +30,13 @@ void AirEngine::Runtime::Core::Manager::LogicManager::LogicLoop()
     }
 }
 
-std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::LogicManager::OnGetManagerInitializers()
+std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::LogicManager::OnGetInternalInitializers()
 {
 	return
 	{
         { 1, 0, AddLogicLoop }
 	};
 }
-
-void AirEngine::Runtime::Core::Manager::LogicManager::OnFinishInitialize()
-{
-	std::cout << "Finish initialize " << Name() << std::endl;
-}
-
 
 AirEngine::Runtime::Core::Manager::LogicManager::LogicManager()
 	: ManagerBase("LogicManager")

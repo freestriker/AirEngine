@@ -12,6 +12,8 @@
 #define NEW_COLLECTABLE_OBJECT new(GC)
 #define NEW_TRACKABLE_OBJECT new(NoGC)
 
+#define AIR_ENGINE_NEW
+
 #endif // !AIR_ENGINE_NEW
 
 namespace AirEngine

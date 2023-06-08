@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "../../Utility/Initializer.hpp"
+#include <iostream>
 
 namespace AirEngine
 {
@@ -12,21 +13,59 @@ namespace AirEngine
 	{
 		namespace Core
 		{
-			class Bootstrapper;
 			namespace Manager
 			{
+				class MainManager;
 				class AIR_ENGINE_API ManagerBase
 				{
-					friend class Bootstrapper;
+					friend class MainManager;
 				private:
 					const std::string _name;
 				protected:
 					ManagerBase(const std::string& name);
-					virtual ~ManagerBase();
+					virtual ~ManagerBase() = default;
 					NO_COPY_MOVE(ManagerBase)
 
-					virtual std::vector<Utility::InitializerWrapper> OnGetManagerInitializers() = 0;
-					virtual void OnFinishInitialize() = 0;
+					virtual Utility::InitializerWrapper OnGetInitializer()
+					{
+						return {
+							0, 0,
+							[this]()->void {
+								std::cout << _name << "'s initializer.\n";
+							}
+						};
+					}
+					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers()
+					{
+						return {
+							{
+								0, 0,
+								[this]()->void {
+									std::cout << _name << "'s internal initializer.\n";
+								}
+							}
+						};
+					}
+					virtual std::vector<Utility::InitializerWrapper> OnGetInternalFinalizers()
+					{
+						return {
+							{
+								0, 0,
+								[this]()->void {
+									std::cout << _name << "'s internal finalizer.\n";
+								}
+							}
+						};
+					}
+					virtual Utility::InitializerWrapper OnGetFinalizer()
+					{
+						return {
+							0, 0,
+							[this]()->void {
+								std::cout << _name << "'s finalizer.\n";
+							}
+						};
+					}
 				public:
 					const std::string& Name() const
 					{

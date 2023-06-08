@@ -1,35 +1,33 @@
 ﻿#pragma once
 #include <QApplication>
-#include <QWindow>
-#include "../Runtime/Core/Bootstrapper.hpp"
-#include <iostream>
-#include "../Runtime/Core/Manager/GraphicDeviceManager.hpp"
-#include "../Runtime/Core/Manager/SceneManager.hpp"
-#include "../Runtime/Core/Scene/SceneObject.hpp"
-#include "../Runtime/Core/Scene/Scene.hpp"
-#include <qdebug.h>
-#include "../Runtime/Utility/InternedString.hpp"
-#include "../Runtime/Utility/Fiber.hpp"
-#include <sstream>
-#include "../Runtime/Graphic/Instance/Buffer.hpp"
-#include "../Runtime/Graphic/Instance/Memory.hpp"
-#include "../Runtime/Graphic/Instance/Image.hpp"
+#include "../Runtime/Core/Manager/MainManager.hpp"
+//#include <QWindow>
+//#include <iostream>
+//#include "../Runtime/Core/Manager/GraphicDeviceManager.hpp"
+//#include "../Runtime/Core/Manager/SceneManager.hpp"
+//#include "../Runtime/Core/Scene/SceneObject.hpp"
+//#include "../Runtime/Core/Scene/Scene.hpp"
+//#include <qdebug.h>
+//#include "../Runtime/Utility/InternedString.hpp"
+//#include "../Runtime/Utility/Fiber.hpp"
+//#include <sstream>
+//#include "../Runtime/Graphic/Instance/Buffer.hpp"
+//#include "../Runtime/Graphic/Instance/Memory.hpp"
+//#include "../Runtime/Graphic/Instance/Image.hpp"
 
-using namespace AirEngine::Runtime;
-using namespace AirEngine::Runtime::Utility;
-using namespace AirEngine::Runtime::Core::Manager;
-using namespace AirEngine::Runtime::Graphic::Instance;
-void Test();
+//using namespace AirEngine::Runtime;
+//using namespace AirEngine::Runtime::Utility;
+//using namespace AirEngine::Runtime::Core::Manager;
+//using namespace AirEngine::Runtime::Graphic::Instance;
+//void Test();
 
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
 
-    {
-        std::unique_ptr<AirEngine::Runtime::Core::Bootstrapper> bootstrapper = std::unique_ptr<AirEngine::Runtime::Core::Bootstrapper>(new AirEngine::Runtime::Core::Bootstrapper());
-        bootstrapper->Boot();
-    }
-    //std::this_thread::sleep_for(std::chrono::seconds(20));
+    AirEngine::Runtime::Core::Manager::MainManager mainManager{};
+    mainManager.Initialize();
+
     app.exec();
 
     //{
@@ -98,65 +96,65 @@ int main(int argc, char* argv[])
 
 
 }
-
-static constexpr int WORKER_THREAD_COUNT = 16;
-static std::mutex endMutex{};
-static Fiber::condition_variable_any endConditionVariable{};
-static bool isEnd = false;
-static std::array< std::thread, WORKER_THREAD_COUNT> workerThreads;
-static std::thread mainThread{};
-static Fiber::fiber mainLoopFiber{};
-void Test() {
-
-    //std::cout << "main thread started " << std::this_thread::get_id() << std::endl;
-    auto hardwareThreadCount = std::thread::hardware_concurrency();
-    auto showThreadIdTask = [](const std::string& name)->void
-    {
-        std::stringstream ss{};
-        ss << name << ": " << std::this_thread::get_id() << ".\n";
-        std::cout << ss.str();
-    };
-    auto worker = []()->void
-    {
-        Fiber::use_scheduling_algorithm< Fiber::algo::work_stealing >(WORKER_THREAD_COUNT + 1);
-        std::unique_lock<std::mutex> lock(endMutex);
-        endConditionVariable.wait(lock, []() { return isEnd; });
-    };
-    auto mainLoopTask = [&showThreadIdTask]()->void
-    {
-        while (true)
-        {
-            ThisFiber::yield();
-            showThreadIdTask("MainLoop");
-            std::array< Fiber::fiber, 40> perFrameTasks;
-            for (int i = 0; i < perFrameTasks.size(); i++)
-            {
-                perFrameTasks[i] = Fiber::fiber(showThreadIdTask, std::to_string(i));
-            }
-            ThisFiber::yield();
-            ThisFiber::yield();
-            ThisFiber::yield();
-            ThisFiber::yield();
-            ThisFiber::yield();
-            for (int i = 0; i < perFrameTasks.size(); i++)
-            {
-                perFrameTasks[i].join();
-            }
-        }
-    };
-    auto leader = [&mainLoopTask, &showThreadIdTask]()->void
-    {
-        mainLoopFiber = std::move(Fiber::fiber(mainLoopTask));
-
-        Fiber::use_scheduling_algorithm< Fiber::algo::work_stealing >(WORKER_THREAD_COUNT + 1);
-        std::unique_lock<std::mutex> lock(endMutex);
-        endConditionVariable.wait(lock, []() { return isEnd; });
-        std::cout << "End leader.\n";
-    };
-
-    mainThread = std::move(std::thread(leader));
-    for (auto& workerThread : workerThreads)
-    {
-        workerThread = std::move(std::thread(worker));
-    }
-}
+//
+//static constexpr int WORKER_THREAD_COUNT = 16;
+//static std::mutex endMutex{};
+//static Fiber::condition_variable_any endConditionVariable{};
+//static bool isEnd = false;
+//static std::array< std::thread, WORKER_THREAD_COUNT> workerThreads;
+//static std::thread mainThread{};
+//static Fiber::fiber mainLoopFiber{};
+//void Test() {
+//
+//    //std::cout << "main thread started " << std::this_thread::get_id() << std::endl;
+//    auto hardwareThreadCount = std::thread::hardware_concurrency();
+//    auto showThreadIdTask = [](const std::string& name)->void
+//    {
+//        std::stringstream ss{};
+//        ss << name << ": " << std::this_thread::get_id() << ".\n";
+//        std::cout << ss.str();
+//    };
+//    auto worker = []()->void
+//    {
+//        Fiber::use_scheduling_algorithm< Fiber::algo::work_stealing >(WORKER_THREAD_COUNT + 1);
+//        std::unique_lock<std::mutex> lock(endMutex);
+//        endConditionVariable.wait(lock, []() { return isEnd; });
+//    };
+//    auto mainLoopTask = [&showThreadIdTask]()->void
+//    {
+//        while (true)
+//        {
+//            ThisFiber::yield();
+//            showThreadIdTask("MainLoop");
+//            std::array< Fiber::fiber, 40> perFrameTasks;
+//            for (int i = 0; i < perFrameTasks.size(); i++)
+//            {
+//                perFrameTasks[i] = Fiber::fiber(showThreadIdTask, std::to_string(i));
+//            }
+//            ThisFiber::yield();
+//            ThisFiber::yield();
+//            ThisFiber::yield();
+//            ThisFiber::yield();
+//            ThisFiber::yield();
+//            for (int i = 0; i < perFrameTasks.size(); i++)
+//            {
+//                perFrameTasks[i].join();
+//            }
+//        }
+//    };
+//    auto leader = [&mainLoopTask, &showThreadIdTask]()->void
+//    {
+//        mainLoopFiber = std::move(Fiber::fiber(mainLoopTask));
+//
+//        Fiber::use_scheduling_algorithm< Fiber::algo::work_stealing >(WORKER_THREAD_COUNT + 1);
+//        std::unique_lock<std::mutex> lock(endMutex);
+//        endConditionVariable.wait(lock, []() { return isEnd; });
+//        std::cout << "End leader.\n";
+//    };
+//
+//    mainThread = std::move(std::thread(leader));
+//    for (auto& workerThread : workerThreads)
+//    {
+//        workerThread = std::move(std::thread(worker));
+//    }
+//}
