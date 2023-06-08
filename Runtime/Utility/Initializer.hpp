@@ -7,13 +7,13 @@ namespace AirEngine
 	{
 		namespace Utility
 		{
-			using Initializer = std::function<void()>;
+			using Operation = std::function<void()>;
 
 			struct InitializerWrapper
 			{
-				uint32_t initLayer;
-				uint32_t initIndex;
-				Initializer initializer;
+				uint32_t layer;
+				uint32_t index;
+				Operation operation;
 			};
 		}
 	}

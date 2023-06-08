@@ -2,8 +2,6 @@
 #include "ManagerBase.hpp"
 #include <vulkan/vulkan_core.h>
 #include "../../Utility/Initializer.hpp"
-#include <QVulkanInstance>
-#include <qvulkaninstance.h>
 #include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
 #include <unordered_map>
@@ -36,8 +34,7 @@ namespace AirEngine
 
 					static std::unordered_map<Utility::InternedString, std::unique_ptr<Graphic::Instance::Queue>> _queueMap;
 
-					virtual std::vector<Utility::InitializerWrapper> OnGetManagerInitializers() override;
-					virtual void OnFinishInitialize() override;
+					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
 					static void CreateVulkanInstance();
 					static void CreateDevice();
 					static void CreateMemoryAllocator();
