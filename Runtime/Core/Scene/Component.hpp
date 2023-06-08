@@ -30,21 +30,17 @@ namespace AirEngine
 					static constexpr ComponentMetaDataType IS_ACTIVE_BITS = 1u;
 					static constexpr ComponentMetaDataType IS_SCENE_DEPENDENT_BITS = 1u << 1u;
 					static constexpr ComponentMetaDataType IS_SCENE_OBJECT_DEPENDENT_BITS = 1u << 2u;
-					static constexpr ComponentMetaDataType IS_POSITION_DEPENDENT_BITS = 1u << 3u;
 				public:
-					using ComponentCoarsnessType = uint32_t;
-					static constexpr Component::ComponentCoarsnessType COMPONENT_COARSNESS_TYPE = 0;
 				protected:
 					Component();
 					Component(bool active);
-					Component(bool isSceneDependent, bool isSceneObjectDependent, bool isPositionDependent, bool active);
-					virtual ~Component() = default;
+					Component(bool isSceneDependent, bool isSceneObjectDependent, bool active);
+					virtual ~Component();
 					virtual void OnAttachToScene();
 					virtual void OnDetachFromScene();
 					virtual void OnAttachToSceneObject();
 					virtual void OnDetachFromSceneObject();
 					virtual void OnSetActive(bool active);
-					virtual void OnChangePosition();
 					NO_COPY_MOVE(Component)
 				public:
 					inline bool HaveSceneObject()const
@@ -72,10 +68,6 @@ namespace AirEngine
 					bool IsSceneObjectDependent() const
 					{
 						return _componentMetaData & IS_SCENE_OBJECT_DEPENDENT_BITS;
-					}
-					bool IsPositionDependent() const
-					{
-						return _componentMetaData & IS_POSITION_DEPENDENT_BITS;
 					}
 					RTTR_ENABLE(Object)
 				};

@@ -21,8 +21,6 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 			[this]()->void
 			{
 				GC_INIT();
-				auto&& cso = NEW_COLLECTABLE_OBJECT Scene::SceneObject();
-				auto&& tso = NEW_TRACKABLE_OBJECT Scene::SceneObject();
 			}
 		}
 	};

@@ -9,12 +9,12 @@ RTTR_REGISTRATION
 AirEngine::Runtime::Core::Scene::Scene::Scene(const std::string& name)
 	: Object()
 	, _name(name)
-	, _scene("Root")
-	, _componentListMap()
+	, _rootSceneObject("Root")
 {
-	_scene._scene = this;
+	_rootSceneObject._scene = this;
 }
 
 AirEngine::Runtime::Core::Scene::Scene::~Scene()
 {
+	_rootSceneObject._scene = nullptr;
 }

@@ -24,8 +24,7 @@ namespace AirEngine
 				{
 				private:
 					const std::string _name;
-					std::unordered_map <Component::ComponentCoarsnessType, ComponentLinkedList> _componentListMap;
-					SceneObject _scene;
+					SceneObject _rootSceneObject;
 				public:
 					Scene(const std::string& name);
 					~Scene();
@@ -35,13 +34,9 @@ namespace AirEngine
 					{
 						return _name;
 					}
-					inline std::unordered_map<Component::ComponentCoarsnessType, ComponentLinkedList>& CcomponentListMap()
-					{
-						return _componentListMap;
-					}
 					inline SceneObject& RootSceneObject()
 					{
-						return _scene;
+						return _rootSceneObject;
 					}
 
 					RTTR_ENABLE(Object)

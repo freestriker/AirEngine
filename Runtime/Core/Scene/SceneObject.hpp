@@ -33,10 +33,9 @@ namespace AirEngine
 					using SceneObjectMetaDataType = uint32_t;
 					SceneObjectMetaDataType _sceneObjectMetaData;
 					static constexpr SceneObjectMetaDataType IS_ACTIVE_BITS = 1u;
-					static constexpr SceneObjectMetaDataType IS_MANUAL_UPDATE_BITS = 1u << 1u;
 					std::string _name;
 					Scene* _scene;
-					std::vector<Component*> _components;
+					std::vector<Component*, gc_allocator<Component*>> _components;
 					glm::vec3 _translation;
 					glm::quat _quaternion;
 					glm::vec3 _scale;
@@ -48,8 +47,7 @@ namespace AirEngine
 					static constexpr glm::vec3 BASE_TRANSLATION = glm::vec3(0);
 				public:
 					SceneObject();
-					SceneObject(const std::string_view& name, bool active, bool isManuallyUpdated);
-					SceneObject(const std::string_view& name, bool isManuallyUpdated);
+					SceneObject(const std::string_view& name, bool active);
 					SceneObject(const std::string_view& name);
 					~SceneObject();
 					NO_COPY_MOVE(SceneObject)
@@ -77,14 +75,6 @@ namespace AirEngine
 					inline bool IsVagrant()const
 					{
 						return _scene == nullptr;
-					}
-					bool IsManualUpdate() const
-					{
-						return (_sceneObjectMetaData & IS_MANUAL_UPDATE_BITS) == IS_MANUAL_UPDATE_BITS;
-					}
-					void SetIsManualUpdate(bool isManualUpdate) const
-					{
-						IF_SET_BITS(isManualUpdate, _sceneObjectMetaData, IS_MANUAL_UPDATE_BITS);
 					}
 
 					void AttachComponent(Component& component);
@@ -115,8 +105,6 @@ namespace AirEngine
 					void SetScale(const glm::vec3& scale);
 					void SetQuaternion(const glm::vec3& quaternion);
 					void SetTranslationQuaternionScale(const glm::vec3& translation, const glm::vec3& quaternion, const glm::vec3& scale);
-					//void ManualUpdatePosition();
-					//void ManualUpdatePosition(const glm::mat4& modelMatrix);
 				private:
 					void OnAttachToTree()override;
 					void OnDetachFromTree()override;
