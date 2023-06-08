@@ -48,7 +48,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstan
 		.require_api_version(VKB_VK_API_VERSION_1_3);
 #ifdef NDEBUG
 	instanceBuilder = instanceBuilder
-		.enable_validation_layers(false)
+		.enable_validation_layers(false);
 #else
 	instanceBuilder = instanceBuilder
 		.enable_validation_layers(true)
