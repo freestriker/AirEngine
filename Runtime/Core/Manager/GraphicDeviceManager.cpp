@@ -3,6 +3,7 @@
 #include <vk_mem_alloc.h>
 #include "RenderManager.hpp"
 #include "../FrontEnd/FrontEndBase.hpp"
+#include <vulkan/vk_enum_string_helper.h>
 
 VkInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkInstance = VK_NULL_HANDLE;
 VkPhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkPhysicalDevice{ VK_NULL_HANDLE };
@@ -15,6 +16,10 @@ vkb::Device AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbDevice{
 VmaAllocator AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vmaAllocator{ VK_NULL_HANDLE };
 
 std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::Queue>> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_queueMap{ };
+
+std::unordered_map<std::string, VkFormat> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkFormatStringToEnumMap{ };
+std::unordered_map<std::string, VkImageUsageFlagBits> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkImageUsageFlagBitsStringToEnumMap{ };
+std::unordered_map<std::string, VkMemoryPropertyFlagBits> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkMemoryPropertyFlagBitsStringToEnumMap{ };
 
 #ifndef NDEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
@@ -32,6 +37,7 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 		{ 0, 0, CreateVulkanInstance },
 		{ 0, 2, CreateDevice },
 		{ 0, 4, CreateMemoryAllocator },
+		{ 0, 5, PopulateVulkanStringToEnumMap }
 	};
 }
 
@@ -202,6 +208,49 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAlloca
 	allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
 	vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator);
+}
+
+void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::PopulateVulkanStringToEnumMap()
+{
+	{
+		const std::vector<uint32_t> VK_FORMAT_ENUM_FIRST_INDEX_GROUP{0, 1000156000, 1000330000, 1000340000, 1000066000, 1000054000, 1000464000};
+		const std::vector<uint32_t> VK_FORMAT_ENUM_LAST_INDEX_GROUP{184, 1000156033, 1000330003, 1000340001, 1000066013, 1000054007, 1000464000};
+
+		const auto&& GROUP_COUNT = VK_FORMAT_ENUM_FIRST_INDEX_GROUP.size();
+
+		for (uint32_t groupIndex = 0; groupIndex < GROUP_COUNT; groupIndex++)
+		{
+			for (uint32_t formatIndex = VK_FORMAT_ENUM_FIRST_INDEX_GROUP[groupIndex]; formatIndex <= VK_FORMAT_ENUM_LAST_INDEX_GROUP[groupIndex]; formatIndex++)
+			{
+				VkFormat format = VkFormat(formatIndex);
+				std::string formatString = string_VkFormat(format);
+				_vkFormatStringToEnumMap[formatString] = format;
+			}
+		}
+	}
+
+	{
+		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_TRANSFER_SRC_BIT"] = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_TRANSFER_DST_BIT"] = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_SAMPLED_BIT"] = VK_IMAGE_USAGE_SAMPLED_BIT;
+		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_STORAGE_BIT"] = VK_IMAGE_USAGE_STORAGE_BIT;
+		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT"] = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT"] = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT"] = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT"] = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+	}
+
+	{
+		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT"] = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT"] = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_HOST_COHERENT_BIT"] = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_HOST_CACHED_BIT"] = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT"] = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_PROTECTED_BIT"] = VK_MEMORY_PROPERTY_PROTECTED_BIT;
+		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD"] = VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD;
+		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD"] = VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
+		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV"] = VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV;
+	}
 }
 
 AirEngine::Runtime::Core::Manager::GraphicDeviceManager::GraphicDeviceManager()
