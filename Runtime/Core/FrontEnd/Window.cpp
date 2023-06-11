@@ -8,6 +8,8 @@
 #include "../../Graphic/Command/CommandPool.hpp"
 #include "../../Graphic/Command/CommandBuffer.hpp"
 #include "../../Graphic/Instance/Queue.hpp"
+#include "../../AssetLoader/Texture2DLoader.hpp"
+#include "../../Asset/Texture2D.hpp"
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 {
@@ -34,39 +36,82 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
 		&_curImageIndex
 	);
 }
+static AirEngine::Runtime::AssetLoader::Texture2DLoader* texture2DLoader = nullptr;
+static AirEngine::Runtime::AssetLoader::AssetLoadHandle assetLoadHandle{};
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 {
+	if (texture2DLoader == nullptr)
+	{
+		texture2DLoader = new AssetLoader::Texture2DLoader();
+		assetLoadHandle = texture2DLoader->LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
+	}
+
 	auto&& currentFrame = _frameResources[_curFrameIndex];
 	auto&& currentImage = _imageResources[_curImageIndex];
 
 	_commandPool->Reset();
 	_commandBuffer->BeginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	Graphic::Command::Barrier barrier{};
-	barrier.AddImageMemoryBarrier(
-		*currentImage.image,
-		VK_PIPELINE_STAGE_2_NONE,
-		VK_ACCESS_2_NONE,
-		VK_PIPELINE_STAGE_2_CLEAR_BIT,
-		VK_ACCESS_2_TRANSFER_WRITE_BIT,
-		VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
-		VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
-	);
-	_commandBuffer->AddPipelineBarrier(barrier);
-	_commandBuffer->ClearColorImage<float>(*currentImage.image, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, { 1.0f, 1.0f, 1.0f, 1.0f });
-	barrier.ClearImageMemoryBarriers();
-	barrier.AddImageMemoryBarrier(
-		*currentImage.image,
-		VK_PIPELINE_STAGE_2_CLEAR_BIT,
-		VK_ACCESS_2_TRANSFER_WRITE_BIT,
-		VK_PIPELINE_STAGE_2_NONE,
-		VK_ACCESS_2_NONE,
-		VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-		VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
-	);
-	_commandBuffer->AddPipelineBarrier(barrier);
+	if (assetLoadHandle.IsCompleted())
+	{
+		barrier.AddImageMemoryBarrier(
+			*currentImage.image,
+			VK_PIPELINE_STAGE_2_NONE,
+			VK_ACCESS_2_NONE,
+			VK_PIPELINE_STAGE_2_BLIT_BIT,
+			VK_ACCESS_2_TRANSFER_WRITE_BIT,
+			VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
+			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
+		);
+		_commandBuffer->AddPipelineBarrier(barrier);
+		_commandBuffer->Blit(
+			assetLoadHandle.Asset<Asset::Texture2D>().Image(), VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			*currentImage.image, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT,
+			VkFilter::VK_FILTER_LINEAR
+		);
+		barrier.ClearImageMemoryBarriers();
+		barrier.AddImageMemoryBarrier(
+			*currentImage.image,
+			VK_PIPELINE_STAGE_2_BLIT_BIT,
+			VK_ACCESS_2_TRANSFER_WRITE_BIT,
+			VK_PIPELINE_STAGE_2_NONE,
+			VK_ACCESS_2_NONE,
+			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
+		);
+		_commandBuffer->AddPipelineBarrier(barrier);
+	}
+	else
+	{
+		barrier.AddImageMemoryBarrier(
+			*currentImage.image,
+			VK_PIPELINE_STAGE_2_NONE,
+			VK_ACCESS_2_NONE,
+			VK_PIPELINE_STAGE_2_CLEAR_BIT,
+			VK_ACCESS_2_TRANSFER_WRITE_BIT,
+			VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
+			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
+		);
+		_commandBuffer->AddPipelineBarrier(barrier);
+		_commandBuffer->ClearColorImage<float>(*currentImage.image, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, { 1.0f, 1.0f, 1.0f, 1.0f });
+		barrier.ClearImageMemoryBarriers();
+		barrier.AddImageMemoryBarrier(
+			*currentImage.image,
+			VK_PIPELINE_STAGE_2_CLEAR_BIT,
+			VK_ACCESS_2_TRANSFER_WRITE_BIT,
+			VK_PIPELINE_STAGE_2_NONE,
+			VK_ACCESS_2_NONE,
+			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
+		);
+		_commandBuffer->AddPipelineBarrier(barrier);
+	}
 	_commandBuffer->EndRecord();
 
 	_commandPool->Queue().ImmediateIndividualSubmit(
