@@ -15,6 +15,7 @@ namespace AirEngine
 			{
 				class Queue;
 				class Image;
+				class Buffer;
 			}
 			namespace Command
 			{
@@ -30,9 +31,9 @@ namespace AirEngine
 					CommandPool* _commandPool;
 
 					CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, VkCommandBufferLevel level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-					~CommandBuffer();
 					NO_COPY_MOVE(CommandBuffer)
 				public:
+					~CommandBuffer();
 
 					inline VkCommandBuffer VkHandle()
 					{
@@ -45,6 +46,8 @@ namespace AirEngine
 					void ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const VkClearColorValue& color);
 					template<typename TColorChannel>
 					void ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color);
+					void CopyBufferToImage(const Instance::Buffer& buffer, const Instance::Image& image, VkImageLayout imageLayout, VkImageAspectFlags imageAspectFlags);
+					void Blit(const Instance::Image& srcImage, VkImageLayout srcImageLayout, const Instance::Image& dstImage, VkImageLayout dstImageLayout, VkImageAspectFlags imageAspectFlags, VkFilter filter);
 				};
 				template<typename TColorChannel>
 				inline void CommandBuffer::ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color)

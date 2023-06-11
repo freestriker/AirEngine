@@ -3,6 +3,7 @@
 #include "CommandPool.hpp"
 #include "Barrier.hpp"
 #include "../Instance/Image.hpp"
+#include "../Instance/Buffer.hpp"
 
 AirEngine::Runtime::Graphic::Command::CommandBuffer::CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, VkCommandBufferLevel level)
 	: _name(commandBufferName)
@@ -78,4 +79,51 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::ClearColorImage(const 
     range.layerCount = image.LayerCount();
     
     vkCmdClearColorImage(_vkCommandBuffer, image.VkHandle(), imageLayout, &color, 1, &range);
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBufferToImage(const Instance::Buffer& buffer, const Instance::Image& image, VkImageLayout imageLayout, VkImageAspectFlags imageAspectFlags)
+{
+    VkBufferImageCopy copy{};
+    copy.bufferOffset = 0;
+    copy.bufferRowLength = 0;
+    copy.bufferImageHeight = 0;
+    copy.imageSubresource.aspectMask = imageAspectFlags;
+    copy.imageSubresource.baseArrayLayer = 0;
+    copy.imageSubresource.layerCount = 1;
+    copy.imageSubresource.mipLevel = 0;
+    copy.imageOffset = { 0, 0, 0 };
+    copy.imageExtent = image.Extent3D();
+
+    vkCmdCopyBufferToImage(_vkCommandBuffer, buffer.VkHandle(), image.VkHandle(), imageLayout, 1, &copy);
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::Blit(const Instance::Image& srcImage, VkImageLayout srcImageLayout, const Instance::Image& dstImage, VkImageLayout dstImageLayout, VkImageAspectFlags imageAspectFlags, VkFilter filter)
+{
+    if (srcImage.LayerCount() != dstImage.LayerCount()) qFatal("Can not blit to a different layer count image.");
+    if (srcImage.MipmapLevelCount() != dstImage.MipmapLevelCount()) qFatal("Can not blit to a different mipmap level count image.");
+    
+    auto&& layerCount = srcImage.LayerCount();
+    auto&& mipmapLevelCount = srcImage.MipmapLevelCount();
+
+    std::vector<VkImageBlit> blits(mipmapLevelCount);
+    for (uint32_t i = 0; i < mipmapLevelCount; i++)
+    {
+        auto& blit = blits[i];
+        auto srcExtent = srcImage.Extent3D();
+        auto dstExtent = dstImage.Extent3D();
+        blit.srcSubresource.aspectMask = imageAspectFlags;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = layerCount;
+        blit.srcSubresource.mipLevel = i;
+        blit.srcOffsets[0] = { 0, 0, 0 };
+        blit.srcOffsets[1] = { static_cast<int>(srcExtent.width), static_cast<int>(srcExtent.height), static_cast<int>(srcExtent.depth) };
+        blit.dstSubresource.aspectMask = imageAspectFlags;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = layerCount;
+        blit.dstSubresource.mipLevel = i;
+        blit.dstOffsets[0] = { 0, 0, 0 };
+        blit.dstOffsets[1] = { static_cast<int>(dstExtent.width), static_cast<int>(dstExtent.height), static_cast<int>(dstExtent.depth) };
+    }
+
+    vkCmdBlitImage(_vkCommandBuffer, srcImage.VkHandle(), srcImageLayout, dstImage.VkHandle(), dstImageLayout, static_cast<uint32_t>(blits.size()), blits.data(), filter);
 }

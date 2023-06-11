@@ -18,6 +18,7 @@ AirEngine::Runtime::Graphic::Command::CommandPool::CommandPool(const Utility::In
 
 AirEngine::Runtime::Graphic::Command::CommandPool::~CommandPool()
 {
+	_commandBufferMap.clear();
 	vkDestroyCommandPool(Core::Manager::GraphicDeviceManager::VkDevice(), _vkCommandPool, nullptr);
 }
 
@@ -29,12 +30,11 @@ void AirEngine::Runtime::Graphic::Command::CommandPool::Reset()
 AirEngine::Runtime::Graphic::Command::CommandBuffer& AirEngine::Runtime::Graphic::Command::CommandPool::CreateCommandBuffer(Utility::InternedString commandBufferName, VkCommandBufferLevel level)
 {
 	auto&& commandBuffer = new Command::CommandBuffer(commandBufferName, this, level);
-	_commandBufferMap.insert({ commandBufferName, commandBuffer });
+	_commandBufferMap.insert(std::make_pair(commandBufferName, std::move(commandBuffer)));
 	return *commandBuffer;
 }
 
 void AirEngine::Runtime::Graphic::Command::CommandPool::DestroyCommandBuffer(Utility::InternedString commandBufferName)
 {
-	delete _commandBufferMap[commandBufferName];
 	_commandBufferMap.erase(commandBufferName);
 }
