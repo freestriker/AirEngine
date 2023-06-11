@@ -1,6 +1,6 @@
 {
     "texturePath": "../..\\Resources\\Texture\\workshop_2k.exr",
-    "originalFormat": "VK_FORMAT_R32G32B32A32_SFLOAT",
+    "originalFormat": "VK_FORMAT_R16G16B16A16_SFLOAT",
     "format": "VK_FORMAT_B10G11R11_UFLOAT_PACK32",
     "imageLayout": "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL",
     "imageUsageFlags": ["VK_IMAGE_USAGE_TRANSFER_SRC_BIT"],

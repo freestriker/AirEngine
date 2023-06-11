@@ -82,7 +82,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 		{
 			std::filesystem::path imagePath(descriptor.texturePath);
 			if (!std::filesystem::exists(imagePath)) qFatal("Image do not exist.");
-			cvImage = cv::imread(descriptor.texturePath, cv::ImreadModes::IMREAD_ANYCOLOR | cv::ImreadModes::IMREAD_ANYDEPTH | cv::ImreadModes::IMREAD_UNCHANGED);
+			cvImage = cv::imread(descriptor.texturePath, cv::ImreadModes::IMREAD_ANYCOLOR | cv::ImreadModes::IMREAD_ANYDEPTH);
 		}
 
 		//Trim cv image channel count
@@ -92,10 +92,14 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 			{
 				std::vector<cv::Mat> channels(cvImageChannelCount);
 				cv::split(cvImage, channels);
+				if (cvImageChannelCount >= 3)
+				{
+					std::swap(channels[0], channels[2]);
+				}
 				channels.resize(originalCvImageChannelCount);
 				for (int i = cvImageChannelCount; i < originalCvImageChannelCount; i++)
 				{
-					channels[i] = cv::Mat(channels[0].rows, channels[0].cols, channels[0].type()).setTo(0);
+					channels[i] = cv::Mat(channels[0].rows, channels[0].cols, channels[0].type()).setTo(1);
 				}
 				cv::merge(channels, cvImage);
 			}
@@ -132,7 +136,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	memcpy(data, originalCvImage.data, originalCvImageByteSize);
 	stagingBuffer.Memory()->Unmap();
 
-	auto&& imageExtent = VkExtent3D{ uint32_t(originalCvImage.rows), uint32_t(originalCvImage.cols), 1 };
+	auto&& imageExtent = VkExtent3D{ uint32_t(originalCvImage.cols), uint32_t(originalCvImage.rows), 1 };
 	auto&& originalImage = Graphic::Instance::Image(
 		originalFormat,
 		imageExtent,
@@ -157,7 +161,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	Graphic::Command::Barrier barrier{};
 	auto&& transferFence = Graphic::Command::Fence(false);
 
-	commandBuffer.BeginRecord();
+	commandBuffer.BeginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	{
 		barrier.AddImageMemoryBarrier(
 			originalImage,
