@@ -1,0 +1,11 @@
+{
+    "texturePath": "../..\\Resources\\Texture\\workshop_2k.exr",
+    "originalFormat": "VK_FORMAT_R32G32B32A32_SFLOAT",
+    "format": "VK_FORMAT_B10G11R11_UFLOAT_PACK32",
+    "imageLayout": "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL",
+    "imageUsageFlags": ["VK_IMAGE_USAGE_TRANSFER_SRC_BIT"],
+    "memoryPropertyFlags": ["VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT"],
+    "imageAspectFlags": ["VK_IMAGE_ASPECT_COLOR_BIT"],
+    "autoGenerateMipmap": false,
+    "topDown": false
+}
