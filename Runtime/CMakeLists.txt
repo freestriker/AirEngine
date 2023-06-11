@@ -25,6 +25,9 @@ target_link_libraries(Runtime PUBLIC BDWgc::gc BDWgc::cord BDWgc::gccpp BDWgc::g
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC glm::glm)
 
+find_package(nlohmann_json CONFIG REQUIRED)
+target_link_libraries(Runtime PUBLIC nlohmann_json::nlohmann_json)
+
 find_package(OpenCV REQUIRED)
 target_link_libraries(Runtime PUBLIC ${OpenCV_LIBS})
 
