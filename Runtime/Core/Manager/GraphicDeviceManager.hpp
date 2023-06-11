@@ -34,15 +34,10 @@ namespace AirEngine
 
 					static std::unordered_map<Utility::InternedString, std::unique_ptr<Graphic::Instance::Queue>> _queueMap;
 
-					static std::unordered_map<std::string, VkFormat> _vkFormatStringToEnumMap;
-					static std::unordered_map<std::string, VkImageUsageFlagBits> _vkImageUsageFlagBitsStringToEnumMap;
-					static std::unordered_map<std::string, VkMemoryPropertyFlagBits> _vkMemoryPropertyFlagBitsStringToEnumMap;
-
 					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
 					static void CreateVulkanInstance();
 					static void CreateDevice();
 					static void CreateMemoryAllocator();
-					static void PopulateVulkanStringToEnumMap();
 				public:
 					static inline VkInstance VkInstance()
 					{
@@ -77,6 +72,7 @@ namespace AirEngine
 					{
 						return *_queueMap[queueName];
 					}
+
 					GraphicDeviceManager();
 					virtual ~GraphicDeviceManager();
 				};

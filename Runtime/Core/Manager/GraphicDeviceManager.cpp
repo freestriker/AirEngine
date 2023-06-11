@@ -17,10 +17,6 @@ VmaAllocator AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vmaAlloca
 
 std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::Queue>> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_queueMap{ };
 
-std::unordered_map<std::string, VkFormat> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkFormatStringToEnumMap{ };
-std::unordered_map<std::string, VkImageUsageFlagBits> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkImageUsageFlagBitsStringToEnumMap{ };
-std::unordered_map<std::string, VkMemoryPropertyFlagBits> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkMemoryPropertyFlagBitsStringToEnumMap{ };
-
 #ifndef NDEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
@@ -36,8 +32,7 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 	return {
 		{ 0, 0, CreateVulkanInstance },
 		{ 0, 2, CreateDevice },
-		{ 0, 4, CreateMemoryAllocator },
-		{ 0, 5, PopulateVulkanStringToEnumMap }
+		{ 0, 4, CreateMemoryAllocator }
 	};
 }
 
@@ -118,8 +113,8 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 
 	std::vector<vkb::CustomQueueDescription> customQueueDescriptions;
 	uint32_t graphicQueueFamily = 0;
-	uint32_t transferQueueFamily = 0;
-	uint32_t presentQueueFamily = 0;
+	//uint32_t transferQueueFamily = 0;
+	//uint32_t presentQueueFamily = 0;
 	auto queue_families = _vkbPhysicalDevice.get_queue_families();
 	for (uint32_t i = 0; i < (uint32_t)queue_families.size(); i++) 
 	{
@@ -127,45 +122,45 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 		{
 			if (isWindow)
 			{
-				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 2, { 1.0f, 1.0f }));
+				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 3, { 1.0f, 1.0f, 1.0f }));
 				graphicQueueFamily = i;
-				presentQueueFamily = i;
+				//presentQueueFamily = i;
 			}
 			else
 			{
-				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
-				presentQueueFamily = i;
+				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 2, { 1.0f, 1.0f }));
+				//presentQueueFamily = i;
 			}
 			break;
 		}
 	}
-	if (_vkbPhysicalDevice.has_dedicated_transfer_queue()) 
-	{
-		for (uint32_t i = 0; i < (uint32_t)queue_families.size(); i++) 
-		{
-			if ((queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
-				(queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0 &&
-				(queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)
-			{
-				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
-				transferQueueFamily = i;
-				break;
-			}
-		}
-	}
-	else if (_vkbPhysicalDevice.has_separate_transfer_queue()) 
-	{
-		for (uint32_t i = 0; i < (uint32_t)queue_families.size(); i++) 
-		{
-			if ((queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
-				((queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
-			{
-				customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
-				transferQueueFamily = i;
-				break;
-			}
-		}
-	}
+	//if (_vkbPhysicalDevice.has_dedicated_transfer_queue()) 
+	//{
+	//	for (uint32_t i = 0; i < (uint32_t)queue_families.size(); i++) 
+	//	{
+	//		if ((queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+	//			(queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0 &&
+	//			(queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)
+	//		{
+	//			customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
+	//			transferQueueFamily = i;
+	//			break;
+	//		}
+	//	}
+	//}
+	//else if (_vkbPhysicalDevice.has_separate_transfer_queue()) 
+	//{
+	//	for (uint32_t i = 0; i < (uint32_t)queue_families.size(); i++) 
+	//	{
+	//		if ((queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+	//			((queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
+	//		{
+	//			customQueueDescriptions.push_back(vkb::CustomQueueDescription(i, 1, { 1.0f }));
+	//			transferQueueFamily = i;
+	//			break;
+	//		}
+	//	}
+	//}
 
 	vkb::DeviceBuilder deviceBuilder(_vkbPhysicalDevice);
 	auto deviceResult = deviceBuilder
@@ -184,12 +179,12 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	vkGetDeviceQueue(_vkDevice, graphicQueueFamily, 0, &queue);
 	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("GraphicQueue"))));
 
-	vkGetDeviceQueue(_vkDevice, transferQueueFamily, 0, &queue);
-	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(queue, transferQueueFamily, Utility::InternedString("TransferQueue"))));
+	vkGetDeviceQueue(_vkDevice, graphicQueueFamily, 1, &queue);
+	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("TransferQueue"))));
 
 	if (isWindow)
 	{
-		vkGetDeviceQueue(_vkDevice, graphicQueueFamily, 1, &queue);
+		vkGetDeviceQueue(_vkDevice, graphicQueueFamily, 2, &queue);
 		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("GraphicQueue"))));
 	}
 }
@@ -208,49 +203,6 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAlloca
 	allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
 	vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator);
-}
-
-void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::PopulateVulkanStringToEnumMap()
-{
-	{
-		const std::vector<uint32_t> VK_FORMAT_ENUM_FIRST_INDEX_GROUP{0, 1000156000, 1000330000, 1000340000, 1000066000, 1000054000, 1000464000};
-		const std::vector<uint32_t> VK_FORMAT_ENUM_LAST_INDEX_GROUP{184, 1000156033, 1000330003, 1000340001, 1000066013, 1000054007, 1000464000};
-
-		const auto&& GROUP_COUNT = VK_FORMAT_ENUM_FIRST_INDEX_GROUP.size();
-
-		for (uint32_t groupIndex = 0; groupIndex < GROUP_COUNT; groupIndex++)
-		{
-			for (uint32_t formatIndex = VK_FORMAT_ENUM_FIRST_INDEX_GROUP[groupIndex]; formatIndex <= VK_FORMAT_ENUM_LAST_INDEX_GROUP[groupIndex]; formatIndex++)
-			{
-				VkFormat format = VkFormat(formatIndex);
-				std::string formatString = string_VkFormat(format);
-				_vkFormatStringToEnumMap[formatString] = format;
-			}
-		}
-	}
-
-	{
-		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_TRANSFER_SRC_BIT"] = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_TRANSFER_DST_BIT"] = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_SAMPLED_BIT"] = VK_IMAGE_USAGE_SAMPLED_BIT;
-		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_STORAGE_BIT"] = VK_IMAGE_USAGE_STORAGE_BIT;
-		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT"] = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT"] = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT"] = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-		_vkImageUsageFlagBitsStringToEnumMap["VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT"] = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-	}
-
-	{
-		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT"] = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT"] = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_HOST_COHERENT_BIT"] = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_HOST_CACHED_BIT"] = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT"] = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
-		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_PROTECTED_BIT"] = VK_MEMORY_PROPERTY_PROTECTED_BIT;
-		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD"] = VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD;
-		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD"] = VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
-		_vkMemoryPropertyFlagBitsStringToEnumMap["VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV"] = VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV;
-	}
 }
 
 AirEngine::Runtime::Core::Manager::GraphicDeviceManager::GraphicDeviceManager()
