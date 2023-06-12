@@ -10,15 +10,12 @@
 #include "../Utility/Fiber.hpp"
 #include <string>
 #include <memory>
+#include "../Asset/AssetBase.hpp"
 
 namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace Asset
-		{
-			class AssetBase;
-		}
 		namespace AssetLoader
 		{
 			class AIR_ENGINE_API AssetLoaderBase
