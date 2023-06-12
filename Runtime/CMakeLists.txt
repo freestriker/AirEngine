@@ -12,15 +12,18 @@ GROUP_ALL_FILES("${ALL_FILES}")
 
 add_library(Runtime STATIC ${ALL_FILES})
 
+find_package(assimp CONFIG REQUIRED)
+target_link_libraries(Runtime PUBLIC assimp::assimp)
+
+find_package(BDWgc CONFIG REQUIRED)
+target_link_libraries(Runtime PUBLIC BDWgc::gc BDWgc::cord BDWgc::gccpp BDWgc::gctba)
+
 target_include_directories(Runtime PUBLIC ${Boost_INCLUDE_DIRS})
 find_package(Boost COMPONENTS fiber REQUIRED)
 target_link_libraries(Runtime PUBLIC Boost::fiber)
 
 find_package(cityhash CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC cityhash)
-
-find_package(BDWgc CONFIG REQUIRED)
-target_link_libraries(Runtime PUBLIC BDWgc::gc BDWgc::cord BDWgc::gccpp BDWgc::gctba)
 
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC glm::glm)
@@ -40,11 +43,11 @@ target_link_libraries(Runtime PUBLIC Qt::Widgets Qt6::Widgets Qt::WidgetsPrivate
 find_package(rttr CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC RTTR::Core_Lib)
 
-find_package(Vulkan REQUIRED)
-target_link_libraries(Runtime PUBLIC Vulkan::Vulkan)
-
 find_package(vk-bootstrap CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC vk-bootstrap::vk-bootstrap)
+
+find_package(Vulkan REQUIRED)
+target_link_libraries(Runtime PUBLIC Vulkan::Vulkan)
 
 find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC unofficial::vulkan-memory-allocator::vulkan-memory-allocator)
