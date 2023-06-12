@@ -28,9 +28,10 @@ namespace AirEngine
 				AssetSet _gcHoldAssetSet;
 				std::unordered_map<AssetLoadContext::PathHashValue, std::unique_ptr<AssetLoadContext>> _assetLoadContextMap;
 				Utility::Fiber::mutex _loaderMutex;
-				const std::string supportedSuffixName;
+				const std::string _supportedSuffixName;
+				const std::string _name;
 			protected:
-				AssetLoaderBase(const std::string& supportedSuffixName);
+				AssetLoaderBase(const std::string& name, const std::string& supportedSuffixName);
 				virtual ~AssetLoaderBase();
 				NO_COPY_MOVE(AssetLoaderBase);
 				virtual Asset::AssetBase* OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading) = 0;
@@ -38,7 +39,11 @@ namespace AirEngine
 			public:
 				inline const std::string& SupportedSuffixName()const
 				{
-					return supportedSuffixName;
+					return _supportedSuffixName;
+				}
+				inline const std::string& Name()const
+				{
+					return _name;
 				}
 				AssetLoadHandle LoadAsset(const std::string& path);
 				void UnloadAsset(const std::string& path);
