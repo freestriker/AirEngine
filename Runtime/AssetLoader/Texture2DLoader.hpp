@@ -18,26 +18,26 @@ namespace AirEngine
 			private:
 				struct Descriptor
 				{
-					std::string texturePath;
+					std::vector<std::string> perMipmapLevelTexturePath;
+					std::string mipmapGenerateType;
 					std::string originalFormat;
 					std::string format;
 					std::string imageLayout;
 					std::vector<std::string> imageUsageFlags;
 					std::vector<std::string> memoryPropertyFlags;
 					std::vector<std::string> imageAspectFlags;
-					bool autoGenerateMipmap;
 					bool topDown;
 
 					NLOHMANN_DEFINE_TYPE_INTRUSIVE(
 						Descriptor,
-						texturePath,
+						perMipmapLevelTexturePath,
+						mipmapGenerateType,
 						originalFormat,
 						format,
 						imageLayout,
 						imageUsageFlags,
 						memoryPropertyFlags,
 						imageAspectFlags,
-						autoGenerateMipmap,
 						topDown
 					)
 				};

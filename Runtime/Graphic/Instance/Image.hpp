@@ -130,6 +130,28 @@ namespace AirEngine
 					{
 						_memory.reset();
 					}
+					static std::vector<VkExtent3D> GetPerMipmapLevelExtent3D(const VkExtent3D& extent, uint32_t mipMapLevelCount)
+					{
+						std::vector<VkExtent3D> pmlImageExtent(mipMapLevelCount);
+						pmlImageExtent[0] = extent;
+						for (int mipMapLevelIndex = 1; mipMapLevelIndex < mipMapLevelCount; mipMapLevelIndex++)
+						{
+							auto width = pmlImageExtent[mipMapLevelIndex - 1].width / 2;
+							width = std::max(1u, width);
+							auto height = pmlImageExtent[mipMapLevelIndex - 1].height / 2;
+							height = std::max(1u, height);
+							auto depth = pmlImageExtent[mipMapLevelIndex - 1].depth / 2;
+							depth = std::max(1u, depth);
+							VkExtent3D extent = { width, height, depth };
+							pmlImageExtent[mipMapLevelIndex] = extent;
+						}
+						return pmlImageExtent;
+					}
+					inline std::vector<VkExtent3D> PerMipmapLevelExtent3D()const
+					{
+						return GetPerMipmapLevelExtent3D(_extent3D, _mipmapLevelCount);
+					}
+					
 
 					NO_COPY_MOVE(Image)
 				};
