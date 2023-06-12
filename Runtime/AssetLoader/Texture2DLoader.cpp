@@ -88,19 +88,27 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 		//Trim cv image channel count
 		{
 			int cvImageChannelCount = cvImage.channels();
+			std::vector<cv::Mat> channels{};
+			bool isSplited = false;
+			if (cvImageChannelCount >= 3 && std::strcmp(vk::componentName(vk::Format(originalFormat), 0), "R") == 0)
+			{
+				if (!isSplited)
+				{
+					channels.resize(cvImageChannelCount);
+					cv::split(cvImage, channels);
+					isSplited = true;
+				}
+				std::swap(channels[0], channels[2]);
+			}
 			if (originalCvImageChannelCount != cvImageChannelCount)
 			{
-				std::vector<cv::Mat> channels(cvImageChannelCount);
-				cv::split(cvImage, channels);
-				if (cvImageChannelCount >= 3)
+				if (!isSplited)
 				{
-					std::swap(channels[0], channels[2]);
+					channels.resize(cvImageChannelCount);
+					cv::split(cvImage, channels);
+					isSplited = true;
 				}
-				channels.resize(originalCvImageChannelCount);
-				for (int i = cvImageChannelCount; i < originalCvImageChannelCount; i++)
-				{
-					channels[i] = cv::Mat(channels[0].rows, channels[0].cols, channels[0].type()).setTo(1);
-				}
+				channels.resize(originalCvImageChannelCount, cv::Mat(channels[0].rows, channels[0].cols, channels[0].type()).setTo(1));
 				cv::merge(channels, cvImage);
 			}
 		}
@@ -109,7 +117,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 		{
 			int cvImageValueType = cvImage.type();
 			if (cvImageValueType != originalCvImageValueType)
-			{
+			{ 
 				cvImage.convertTo(originalCvImage, originalCvImageValueType);
 			}
 			else
@@ -136,89 +144,125 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	memcpy(data, originalCvImage.data, originalCvImageByteSize);
 	stagingBuffer.Memory()->Unmap();
 
+	auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+	auto&& commandBuffer = commandPool.CreateCommandBuffer(Utility::InternedString("TransferCommandBuffer"));
+	Graphic::Command::Barrier barrier{};
+	auto&& transferFence = Graphic::Command::Fence(false);
+
 	auto&& imageExtent = VkExtent3D{ uint32_t(originalCvImage.cols), uint32_t(originalCvImage.rows), 1 };
-	auto&& originalImage = Graphic::Instance::Image(
+	auto&& mipmapLevelCount = autoGenerateMipmap ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 : 1;
+	const auto isDirectCopy = originalFormat == targetFormat;
+
+	auto&& targetImage = new Graphic::Instance::Image(
+		targetFormat,
+		imageExtent,
+		VkImageType::VK_IMAGE_TYPE_2D,
+		1, 1,
+		VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | imageUsageFlags,
+		memoryPropertyFlags
+	);
+	auto&& originalImage = std::unique_ptr<Graphic::Instance::Image>(isDirectCopy ? nullptr : new Graphic::Instance::Image(
 		originalFormat,
 		imageExtent,
 		VkImageType::VK_IMAGE_TYPE_2D,
 		1, 1,
 		VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 		VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	);
-
-	auto&& mipmapLevelCount = autoGenerateMipmap ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 : 1;
-	auto&& targetImage = new Graphic::Instance::Image(
-		targetFormat,
-		imageExtent,
-		VkImageType::VK_IMAGE_TYPE_2D,
-		1, mipmapLevelCount,
-		VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | imageUsageFlags,
-		memoryPropertyFlags
-	);
-
-	auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
-	auto&& commandBuffer = commandPool.CreateCommandBuffer(Utility::InternedString("TransferCommandBuffer"));
-	Graphic::Command::Barrier barrier{};
-	auto&& transferFence = Graphic::Command::Fence(false);
+	));
 
 	commandBuffer.BeginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	if (isDirectCopy)
 	{
-		barrier.AddImageMemoryBarrier(
-			originalImage,
-			VK_PIPELINE_STAGE_2_NONE,
-			VK_ACCESS_2_NONE,
-			VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-			VK_ACCESS_2_TRANSFER_WRITE_BIT,
-			VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
-			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			imageAspectFlags
-		);
+		{
+			barrier.AddImageMemoryBarrier(
+				*targetImage,
+				VK_PIPELINE_STAGE_2_NONE,
+				VK_ACCESS_2_NONE,
+				VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+				VK_ACCESS_2_TRANSFER_WRITE_BIT,
+				VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
+				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				imageAspectFlags
+			);
+		}
+		commandBuffer.AddPipelineBarrier(barrier);
+		commandBuffer.CopyBufferToImage(stagingBuffer, *targetImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageAspectFlags);
+		{
+			barrier.ClearImageMemoryBarriers();
+			barrier.AddImageMemoryBarrier(
+				*targetImage,
+				VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+				VK_ACCESS_2_TRANSFER_WRITE_BIT,
+				VK_PIPELINE_STAGE_2_NONE,
+				VK_ACCESS_2_NONE,
+				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				imageLayout,
+				imageAspectFlags
+			);
+		}
+		commandBuffer.AddPipelineBarrier(barrier);
 	}
-	commandBuffer.AddPipelineBarrier(barrier);
-	commandBuffer.CopyBufferToImage(stagingBuffer, originalImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageAspectFlags);
+	else
 	{
-		barrier.ClearImageMemoryBarriers();
-		barrier.AddImageMemoryBarrier(
-			originalImage,
-			VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-			VK_ACCESS_2_TRANSFER_WRITE_BIT,
-			VK_PIPELINE_STAGE_2_BLIT_BIT,
-			VK_ACCESS_2_TRANSFER_READ_BIT,
-			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			imageAspectFlags
+		{
+			barrier.AddImageMemoryBarrier(
+				*originalImage,
+				VK_PIPELINE_STAGE_2_NONE,
+				VK_ACCESS_2_NONE,
+				VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+				VK_ACCESS_2_TRANSFER_WRITE_BIT,
+				VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
+				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				imageAspectFlags
+			);
+		}
+		commandBuffer.AddPipelineBarrier(barrier);
+		commandBuffer.CopyBufferToImage(stagingBuffer, *originalImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageAspectFlags);
+		{
+			barrier.ClearImageMemoryBarriers();
+			barrier.AddImageMemoryBarrier(
+				*originalImage,
+				VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+				VK_ACCESS_2_TRANSFER_WRITE_BIT,
+				VK_PIPELINE_STAGE_2_BLIT_BIT,
+				VK_ACCESS_2_TRANSFER_READ_BIT,
+				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				imageAspectFlags
+			);
+			barrier.AddImageMemoryBarrier(
+				*targetImage,
+				VK_PIPELINE_STAGE_2_NONE,
+				VK_ACCESS_2_NONE,
+				VK_PIPELINE_STAGE_2_BLIT_BIT,
+				VK_ACCESS_2_TRANSFER_WRITE_BIT,
+				VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
+				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				imageAspectFlags
+			);
+		}
+		commandBuffer.AddPipelineBarrier(barrier);
+		commandBuffer.Blit(
+			*originalImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			*targetImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			imageAspectFlags, VkFilter::VK_FILTER_LINEAR
 		);
-		barrier.AddImageMemoryBarrier(
-			*targetImage,
-			VK_PIPELINE_STAGE_2_NONE,
-			VK_ACCESS_2_NONE,
-			VK_PIPELINE_STAGE_2_BLIT_BIT,
-			VK_ACCESS_2_TRANSFER_WRITE_BIT,
-			VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
-			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			imageAspectFlags
-		);
+		{
+			barrier.ClearImageMemoryBarriers();
+			barrier.AddImageMemoryBarrier(
+				*targetImage,
+				VK_PIPELINE_STAGE_2_BLIT_BIT,
+				VK_ACCESS_2_TRANSFER_WRITE_BIT,
+				VK_PIPELINE_STAGE_2_NONE,
+				VK_ACCESS_2_NONE,
+				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				imageLayout,
+				imageAspectFlags
+			);
+		}
+		commandBuffer.AddPipelineBarrier(barrier);
 	}
-	commandBuffer.AddPipelineBarrier(barrier);
-	commandBuffer.Blit(
-		originalImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		*targetImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		imageAspectFlags, VkFilter::VK_FILTER_LINEAR
-	);
-	{
-		barrier.ClearImageMemoryBarriers();
-		barrier.AddImageMemoryBarrier(
-			*targetImage,
-			VK_PIPELINE_STAGE_2_BLIT_BIT,
-			VK_ACCESS_2_TRANSFER_WRITE_BIT,
-			VK_PIPELINE_STAGE_2_NONE,
-			VK_ACCESS_2_NONE,
-			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			imageLayout,
-			imageAspectFlags
-		);
-	}
-	commandBuffer.AddPipelineBarrier(barrier);
+
 	commandBuffer.EndRecord();
 
 	commandPool.Queue().ImmediateIndividualSubmit(
