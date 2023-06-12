@@ -10,6 +10,7 @@
 #include "../../Graphic/Instance/Queue.hpp"
 #include "../../AssetLoader/Texture2DLoader.hpp"
 #include "../../Asset/Texture2D.hpp"
+#include "../../Core/Manager/AssetManager.hpp"
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 {
@@ -35,16 +36,18 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
 		currentFrame.acquireFence->VkHandle(),
 		&_curImageIndex
 	);
+
+	static bool isLoaded = false;
 }
-static AirEngine::Runtime::AssetLoader::Texture2DLoader* texture2DLoader = nullptr;
+static bool isLoaded = false;
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle assetLoadHandle{};
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 {
-	if (texture2DLoader == nullptr)
+	if (!isLoaded)
 	{
-		texture2DLoader = new AssetLoader::Texture2DLoader();
-		assetLoadHandle = texture2DLoader->LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
+		isLoaded = true;
+		assetLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];

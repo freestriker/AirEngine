@@ -29,11 +29,11 @@ namespace AirEngine
 				const std::string _name;
 			protected:
 				AssetLoaderBase(const std::string& name, const std::string& supportedSuffixName);
-				virtual ~AssetLoaderBase();
 				NO_COPY_MOVE(AssetLoaderBase);
 				virtual Asset::AssetBase* OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading) = 0;
 				virtual void OnUnloadAsset(Asset::AssetBase* asset) = 0;
 			public:
+				virtual ~AssetLoaderBase();
 				inline const std::string& SupportedSuffixName()const
 				{
 					return _supportedSuffixName;
