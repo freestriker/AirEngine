@@ -83,11 +83,12 @@ void AirEngine::Runtime::AssetLoader::AssetLoaderBase::CollectUnloadableAssets()
 	}
 }
 
-AirEngine::Runtime::AssetLoader::AssetLoaderBase::AssetLoaderBase(const std::string& supportedSuffixName)
-	: _gcHoldAssetSet()
+AirEngine::Runtime::AssetLoader::AssetLoaderBase::AssetLoaderBase(const std::string& name, const std::string& supportedSuffixName)
+	: _name(name)
+	, _gcHoldAssetSet()
 	, _assetLoadContextMap()
 	, _loaderMutex()
-	, supportedSuffixName(supportedSuffixName)
+	, _supportedSuffixName(supportedSuffixName)
 {
 }
 

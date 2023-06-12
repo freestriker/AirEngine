@@ -46,7 +46,7 @@ namespace AirEngine
 				static void PopulateTexture2D(AirEngine::Runtime::Asset::Texture2D* texture2d, const std::string path, bool* isInLoading);
 			public:
 				Texture2DLoader()
-					: AssetLoaderBase("texture2d")
+					: AssetLoaderBase("Texture2DLoader", "texture2d")
 				{
 
 				}
