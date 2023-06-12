@@ -4,6 +4,8 @@
 #include "../../Utility/InternedString.hpp"
 #include "../../Utility/GarbageCollectInclude.hpp"
 #include "../Scene/SceneObject.hpp"
+#include <opencv2/core/utils/logger.hpp>
+#include <opencv2/core/utility.hpp>
 
 std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnGetInternalInitializers()
 {
@@ -22,6 +24,14 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 			{
 				GC_INIT();
 			}
+		},
+		{
+			0, 0,
+			[this]()->void
+			{
+				cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_ERROR);
+				cv::setNumThreads(1);
+	}
 		}
 	};
 }

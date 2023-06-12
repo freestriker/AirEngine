@@ -1,5 +1,8 @@
 {
-    "texturePath": "../..\\Resources\\Texture\\workshop_2k.exr",
+    "perMipmapLevelTexturePath": [
+        "../..\\Resources\\Texture\\workshop_2k.exr"
+    ],
+    "mipmapGenerateType": "auto",
     "originalFormat": "VK_FORMAT_R16G16B16A16_SFLOAT",
     "format": "VK_FORMAT_B10G11R11_UFLOAT_PACK32",
     "imageLayout": "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL",

@@ -4,6 +4,7 @@
 #include "Barrier.hpp"
 #include "../Instance/Image.hpp"
 #include "../Instance/Buffer.hpp"
+#include <vulkan/vulkan_format_traits.hpp>
 
 AirEngine::Runtime::Graphic::Command::CommandBuffer::CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, VkCommandBufferLevel level)
 	: _name(commandBufferName)
@@ -83,34 +84,44 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::ClearColorImage(const 
 
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBufferToImage(const Instance::Buffer& buffer, const Instance::Image& image, VkImageLayout imageLayout, VkImageAspectFlags imageAspectFlags)
 {
-    VkBufferImageCopy copy{};
-    copy.bufferOffset = 0;
-    copy.bufferRowLength = 0;
-    copy.bufferImageHeight = 0;
-    copy.imageSubresource.aspectMask = imageAspectFlags;
-    copy.imageSubresource.baseArrayLayer = 0;
-    copy.imageSubresource.layerCount = 1;
-    copy.imageSubresource.mipLevel = 0;
-    copy.imageOffset = { 0, 0, 0 };
-    copy.imageExtent = image.Extent3D();
+    auto&& pmlExtent = image.PerMipmapLevelExtent3D();
+    auto blockByteSize = vk::blockSize(vk::Format(image.Format()));
+    VkDeviceSize offset = 0;
 
-    vkCmdCopyBufferToImage(_vkCommandBuffer, buffer.VkHandle(), image.VkHandle(), imageLayout, 1, &copy);
+    std::vector< VkBufferImageCopy> copys(pmlExtent.size(), VkBufferImageCopy{});
+    for (uint32_t mipmapLevelIndex = 0; mipmapLevelIndex < copys.size(); mipmapLevelIndex++)
+    {
+        VkBufferImageCopy& copy = copys[mipmapLevelIndex];
+
+        copy.bufferOffset = offset;
+        copy.bufferRowLength = 0;
+        copy.bufferImageHeight = 0;
+        copy.imageSubresource.aspectMask = imageAspectFlags;
+        copy.imageSubresource.baseArrayLayer = 0;
+        copy.imageSubresource.layerCount = image.LayerCount();
+        copy.imageSubresource.mipLevel = mipmapLevelIndex;
+        copy.imageOffset = { 0, 0, 0 };
+        copy.imageExtent = pmlExtent[mipmapLevelIndex];
+
+        offset += blockByteSize * pmlExtent[mipmapLevelIndex].width * pmlExtent[mipmapLevelIndex].height * pmlExtent[mipmapLevelIndex].depth;
+    }
+
+    vkCmdCopyBufferToImage(_vkCommandBuffer, buffer.VkHandle(), image.VkHandle(), imageLayout, uint32_t(copys.size()), copys.data());
 }
 
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::Blit(const Instance::Image& srcImage, VkImageLayout srcImageLayout, const Instance::Image& dstImage, VkImageLayout dstImageLayout, VkImageAspectFlags imageAspectFlags, VkFilter filter)
 {
-    if (srcImage.LayerCount() != dstImage.LayerCount()) qFatal("Can not blit to a different layer count image.");
-    if (srcImage.MipmapLevelCount() != dstImage.MipmapLevelCount()) qFatal("Can not blit to a different mipmap level count image.");
-    
-    auto&& layerCount = srcImage.LayerCount();
-    auto&& mipmapLevelCount = srcImage.MipmapLevelCount();
+    auto&& layerCount = std::min(srcImage.LayerCount(), dstImage.LayerCount());
+    auto&& mipmapLevelCount = std::min(srcImage.MipmapLevelCount(), dstImage.MipmapLevelCount());
+    auto&& srcPmlExtent = srcImage.PerMipmapLevelExtent3D();
+    auto&& dstPmlExtent = dstImage.PerMipmapLevelExtent3D();
 
     std::vector<VkImageBlit> blits(mipmapLevelCount);
     for (uint32_t i = 0; i < mipmapLevelCount; i++)
     {
         auto& blit = blits[i];
-        auto srcExtent = srcImage.Extent3D();
-        auto dstExtent = dstImage.Extent3D();
+        auto&& srcExtent = srcPmlExtent[i];
+        auto&& dstExtent = dstPmlExtent[i];
         blit.srcSubresource.aspectMask = imageAspectFlags;
         blit.srcSubresource.baseArrayLayer = 0;
         blit.srcSubresource.layerCount = layerCount;

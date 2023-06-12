@@ -14,6 +14,7 @@
 #include "../Asset/Texture2D.hpp"
 #include "../Utility/Fiber.hpp"
 #include <boost/ref.hpp>
+#include <opencv2/imgproc.hpp>
 
 AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::Texture2DLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
@@ -44,12 +45,12 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	//Parse descriptor data
 	const VkFormat originalFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.originalFormat);
 	const VkFormat targetFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.format);
-	const bool autoGenerateMipmap = descriptor.autoGenerateMipmap;
 	const bool topDown = descriptor.topDown;
 	VkImageUsageFlags imageUsageFlags = 0;
 	VkMemoryPropertyFlags memoryPropertyFlags = 0;
 	VkImageLayout imageLayout = Utility::VulkanOpenCVTypeTransfer::ParseToVkImageLayout(descriptor.imageLayout);
 	VkImageAspectFlags imageAspectFlags = 0;
+	uint32_t desiredMipmapLevelCount = 0;
 	{
 		for (const auto& imageUsageFlag : descriptor.imageUsageFlags)
 		{
@@ -63,85 +64,185 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 		{
 			imageAspectFlags = imageAspectFlags | Utility::VulkanOpenCVTypeTransfer::ParseToVkImageAspectFlagBits(imageAspectFlag);
 		}
+		{
+			if (descriptor.mipmapGenerateType == "min")
+			{
+				desiredMipmapLevelCount = 1;
+			}
+			else if (descriptor.mipmapGenerateType == "auto")
+			{
+				desiredMipmapLevelCount = descriptor.perMipmapLevelTexturePath.size();
+			}
+			else if (descriptor.mipmapGenerateType == "max")
+			{
+				desiredMipmapLevelCount = std::numeric_limits<uint32_t>::max();
+			}
+			else
+			{
+				desiredMipmapLevelCount = std::atoi(descriptor.mipmapGenerateType.c_str());
+			}
+		}
 	}
 
-	cv::Mat originalCvImage{};
+	if (descriptor.perMipmapLevelTexturePath.size() == 0) qFatal("No texture path provided.");
+
+	//Load first texture for calculating meta data
+	VkExtent3D imageMaxExtent{};
+	uint32_t maxMipmapLevelCount{};
+	cv::Mat firstCvImage{};
+	int cvImageChannelCount{};
 	{
-		//Parse original cv image type
+		{
+			std::filesystem::path imagePath(descriptor.perMipmapLevelTexturePath[0]);
+			if (!std::filesystem::exists(imagePath)) qFatal("Image do not exist.");
+			firstCvImage = cv::imread(descriptor.perMipmapLevelTexturePath[0], cv::ImreadModes::IMREAD_ANYCOLOR | cv::ImreadModes::IMREAD_ANYDEPTH);
+		}
+		imageMaxExtent = VkExtent3D{ uint32_t(firstCvImage.cols), uint32_t(firstCvImage.rows), 1 };
+		maxMipmapLevelCount = static_cast<uint32_t>(std::floor(std::log2(std::max(imageMaxExtent.width, imageMaxExtent.height)))) + 1;
+		cvImageChannelCount = firstCvImage.channels();
+	}
+
+	//Calculate meta data
+	uint8_t originalCvImageChannelCount{};
+	int originalCvImageValueType{};
+	uint32_t needLoadMipmapCount{};
+	uint32_t needGenerateMipmapCount{};
+	uint32_t mipmapLevelCount{};
+	bool needSwapRBChannel{};
+	bool needConvertType{};
+	std::vector<VkExtent3D> pmlImageExtent{};
+	const auto isDirectCopy = originalFormat == targetFormat;
+	{
 		int originalCvImagePerChannelValueType = -1;
 		{
 			std::string errorCode{};
 			originalCvImagePerChannelValueType = Utility::VulkanOpenCVTypeTransfer::VkFormatToPerChannelValueType(originalFormat, errorCode);
 			if (originalCvImagePerChannelValueType == -1) qFatal(errorCode.c_str());
 		}
-		uint8_t originalCvImageChannelCount = vk::componentCount(vk::Format(originalFormat));
-		int originalCvImageValueType = CV_MAKETYPE(originalCvImagePerChannelValueType, originalCvImageChannelCount);
+		originalCvImageChannelCount = vk::componentCount(vk::Format(originalFormat));
+		originalCvImageValueType = CV_MAKETYPE(originalCvImagePerChannelValueType, originalCvImageChannelCount);
 
-		//Load cv image
-		cv::Mat cvImage{};
-		{
-			std::filesystem::path imagePath(descriptor.texturePath);
-			if (!std::filesystem::exists(imagePath)) qFatal("Image do not exist.");
-			cvImage = cv::imread(descriptor.texturePath, cv::ImreadModes::IMREAD_ANYCOLOR | cv::ImreadModes::IMREAD_ANYDEPTH);
-		}
+		mipmapLevelCount = desiredMipmapLevelCount == std::numeric_limits<uint32_t>::max() ? maxMipmapLevelCount : desiredMipmapLevelCount;
+		mipmapLevelCount = std::min(mipmapLevelCount, maxMipmapLevelCount);
 
-		//Trim cv image channel count
+		needLoadMipmapCount = std::min(mipmapLevelCount, uint32_t(descriptor.perMipmapLevelTexturePath.size()));
+		needGenerateMipmapCount = mipmapLevelCount - needLoadMipmapCount;
+
+		needSwapRBChannel = cvImageChannelCount >= 3 && std::strcmp(vk::componentName(vk::Format(originalFormat), 0), "R") == 0;
+		needConvertType = firstCvImage.type() != originalCvImageValueType;
+
+		pmlImageExtent = std::move(Graphic::Instance::Image::GetPerMipmapLevelExtent3D(imageMaxExtent, mipmapLevelCount));
+	}
+
+	std::vector<cv::Mat> pmlOriginalCvImage(mipmapLevelCount);
+	std::vector<size_t> pmlByteOffset(mipmapLevelCount, 0);
+	std::vector<size_t> pmlByteSize(mipmapLevelCount, 0);
+	size_t totalByteSize = 0;
+	{
+		int mipMapLevelIndex = 0;
+
+		auto cvImage = std::move(firstCvImage);
+		std::vector<cv::Mat> channels{};
+
+		for (; mipMapLevelIndex < needLoadMipmapCount; mipMapLevelIndex++)
 		{
-			int cvImageChannelCount = cvImage.channels();
-			std::vector<cv::Mat> channels{};
-			bool isSplited = false;
-			if (cvImageChannelCount >= 3 && std::strcmp(vk::componentName(vk::Format(originalFormat), 0), "R") == 0)
+			auto& originalCvImage = pmlOriginalCvImage[mipMapLevelIndex];
+
+			if (mipMapLevelIndex > 0)
 			{
-				if (!isSplited)
+				std::filesystem::path imagePath(descriptor.perMipmapLevelTexturePath[0]);
+				if (!std::filesystem::exists(imagePath)) qFatal("Image do not exist.");
+				cvImage = cv::imread(descriptor.perMipmapLevelTexturePath[0], cv::ImreadModes::IMREAD_ANYCOLOR | cv::ImreadModes::IMREAD_ANYDEPTH);
+			}
+
+			//Trim cv image channel count
+			{
+				bool isSplited = false;
+				if (needSwapRBChannel)
 				{
-					channels.resize(cvImageChannelCount);
-					cv::split(cvImage, channels);
-					isSplited = true;
+					if (!isSplited)
+					{
+						channels.resize(cvImageChannelCount);
+						cv::split(cvImage, channels);
+						isSplited = true;
+					}
+					std::swap(channels[0], channels[2]);
 				}
-				std::swap(channels[0], channels[2]);
-			}
-			if (originalCvImageChannelCount != cvImageChannelCount)
-			{
-				if (!isSplited)
+				if (originalCvImageChannelCount != cvImageChannelCount)
 				{
-					channels.resize(cvImageChannelCount);
-					cv::split(cvImage, channels);
-					isSplited = true;
+					if (!isSplited)
+					{
+						channels.resize(cvImageChannelCount);
+						cv::split(cvImage, channels);
+						isSplited = true;
+					}
+					channels.resize(originalCvImageChannelCount, cv::Mat(channels[0].rows, channels[0].cols, channels[0].type()).setTo(1));
+					cv::merge(channels, cvImage);
 				}
-				channels.resize(originalCvImageChannelCount, cv::Mat(channels[0].rows, channels[0].cols, channels[0].type()).setTo(1));
-				cv::merge(channels, cvImage);
 			}
-		}
 
-		//Trim cv image type
-		{
-			int cvImageValueType = cvImage.type();
-			if (cvImageValueType != originalCvImageValueType)
-			{ 
-				cvImage.convertTo(originalCvImage, originalCvImageValueType);
-			}
-			else
+			//Trim cv image type
 			{
-				originalCvImage = cvImage;
+				if (needConvertType)
+				{
+					cvImage.convertTo(originalCvImage, originalCvImageValueType);
+				}
+				else
+				{
+					originalCvImage = std::move(cvImage);
+				}
 			}
+
+			//Trim cv image continuous
+			if (!originalCvImage.isContinuous())
+			{
+				originalCvImage = originalCvImage.clone();
+			}
+
+			pmlByteOffset[mipMapLevelIndex] = totalByteSize;
+			pmlByteSize[mipMapLevelIndex] = originalCvImage.total() * originalCvImage.elemSize();
+			totalByteSize += pmlByteSize[mipMapLevelIndex];
 		}
 
-		//Trim cv image continuous
-		if (!originalCvImage.isContinuous())
+		for (; mipMapLevelIndex < mipmapLevelCount; mipMapLevelIndex++)
 		{
-			originalCvImage = originalCvImage.clone();
+			auto& preMlCvImage = pmlOriginalCvImage[mipMapLevelIndex - 1];
+			auto& originalCvImage = pmlOriginalCvImage[mipMapLevelIndex];
+			cv::resize(
+				preMlCvImage, 
+				originalCvImage,
+				cv::Size(pmlImageExtent[mipMapLevelIndex].width, pmlImageExtent[mipMapLevelIndex].height), 
+				0.0, 0.0, 
+				cv::InterpolationFlags::INTER_LINEAR
+			);
+
+			//Trim cv image continuous
+			if (!originalCvImage.isContinuous())
+			{
+				originalCvImage = originalCvImage.clone();
+			}
+
+			pmlByteOffset[mipMapLevelIndex] = totalByteSize;
+			pmlByteSize[mipMapLevelIndex] = originalCvImage.total() * originalCvImage.elemSize();
+			totalByteSize += pmlByteSize[mipMapLevelIndex];
 		}
 	}
 
-	auto originalCvImageByteSize = originalCvImage.total() * originalCvImage.elemSize();
 	auto&& stagingBuffer = Graphic::Instance::Buffer(
-		originalCvImageByteSize,
+		totalByteSize,
 		VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
 	);
 	auto data = stagingBuffer.Memory()->Map();
-	memcpy(data, originalCvImage.data, originalCvImageByteSize);
+	for (uint32_t mipMapLevelIndex = 0; mipMapLevelIndex < mipmapLevelCount; mipMapLevelIndex++)
+	{
+		std::memcpy(
+			static_cast<uint8_t*>(data) + pmlByteOffset[mipMapLevelIndex], 
+			pmlOriginalCvImage[mipMapLevelIndex].data,
+			pmlByteSize[mipMapLevelIndex]
+		);
+	}
 	stagingBuffer.Memory()->Unmap();
 
 	auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
@@ -149,23 +250,19 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	Graphic::Command::Barrier barrier{};
 	auto&& transferFence = Graphic::Command::Fence(false);
 
-	auto&& imageExtent = VkExtent3D{ uint32_t(originalCvImage.cols), uint32_t(originalCvImage.rows), 1 };
-	auto&& mipmapLevelCount = autoGenerateMipmap ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageExtent.width, imageExtent.height)))) + 1 : 1;
-	const auto isDirectCopy = originalFormat == targetFormat;
-
 	auto&& targetImage = new Graphic::Instance::Image(
 		targetFormat,
-		imageExtent,
+		imageMaxExtent,
 		VkImageType::VK_IMAGE_TYPE_2D,
-		1, 1,
+		1, mipmapLevelCount,
 		VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | imageUsageFlags,
 		memoryPropertyFlags
 	);
 	auto&& originalImage = std::unique_ptr<Graphic::Instance::Image>(isDirectCopy ? nullptr : new Graphic::Instance::Image(
 		originalFormat,
-		imageExtent,
+		imageMaxExtent,
 		VkImageType::VK_IMAGE_TYPE_2D,
-		1, 1,
+		1, mipmapLevelCount,
 		VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 		VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	));
