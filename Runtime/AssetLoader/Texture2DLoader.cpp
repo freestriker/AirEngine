@@ -372,3 +372,12 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	texture2d->_image = targetImage;
 	*isInLoading = false;
 }
+
+AirEngine::Runtime::AssetLoader::Texture2DLoader::Texture2DLoader()
+	: AssetLoaderBase("Texture2DLoader", "texture2d")
+{
+
+}
+AirEngine::Runtime::AssetLoader::Texture2DLoader::~Texture2DLoader()
+{
+}

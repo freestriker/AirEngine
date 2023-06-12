@@ -45,12 +45,8 @@ namespace AirEngine
 				void OnUnloadAsset(Asset::AssetBase* asset) override;
 				static void PopulateTexture2D(AirEngine::Runtime::Asset::Texture2D* texture2d, const std::string path, bool* isInLoading);
 			public:
-				Texture2DLoader()
-					: AssetLoaderBase("Texture2DLoader", "texture2d")
-				{
-
-				}
-				virtual ~Texture2DLoader() = default;
+				Texture2DLoader();
+				virtual ~Texture2DLoader();
 				NO_COPY_MOVE(Texture2DLoader);
 			};
 		}

@@ -6,6 +6,7 @@
 #include "FiberManager.hpp"
 #include "RenderManager.hpp"
 #include "LogicManager.hpp"
+#include "AssetManager.hpp"
 
 using namespace AirEngine::Runtime;
 
@@ -19,6 +20,7 @@ AirEngine::Runtime::Core::Manager::MainManager::MainManager()
 	ResetManager(std::make_shared<Manager::GraphicDeviceManager>());
 	ResetManager(std::make_shared<Manager::RenderManager>());
 	ResetManager(std::make_shared<Manager::LogicManager>());
+	ResetManager(std::make_shared<Manager::AssetManager>());
 }
 
 void Core::Manager::MainManager::Initialize()
