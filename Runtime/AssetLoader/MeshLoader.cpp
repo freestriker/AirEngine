@@ -59,10 +59,11 @@ constexpr uint32_t DEFAULT_POST_PROCESS_STEPS =
 	aiProcess_CalcTangentSpace |
 	aiProcess_Triangulate |
 	aiProcess_GenNormals |
-	//aiProcess_PreTransformVertices |
 	aiProcess_ImproveCacheLocality |
 	aiProcess_GenBoundingBoxes |
 	aiProcess_GenUVCoords | 0;
+constexpr uint32_t INVALID_POST_PROCESS_STEPS =
+	~(aiProcess_PreTransformVertices);
 
 AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::MeshLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
@@ -97,6 +98,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 		{
 			postProcessSteps |= AI_POST_PROCESS_STEPS_MAP.at(postProcessStep);
 		}
+		postProcessSteps &= INVALID_POST_PROCESS_STEPS;
 	}
 
 	Assimp::Importer importer{};
