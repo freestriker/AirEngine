@@ -47,6 +47,7 @@ namespace AirEngine
 					template<typename TColorChannel>
 					void ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color);
 					void CopyBufferToImage(const Instance::Buffer& buffer, const Instance::Image& image, VkImageLayout imageLayout, VkImageAspectFlags imageAspectFlags);
+					void CopyBuffer(const Instance::Buffer& srcBuffer, const Instance::Buffer& dstBuffer, const std::vector<std::tuple<VkDeviceSize, VkDeviceSize, VkDeviceSize>> srcOffsetDstOffsetSizes);
 					void Blit(const Instance::Image& srcImage, VkImageLayout srcImageLayout, const Instance::Image& dstImage, VkImageLayout dstImageLayout, VkImageAspectFlags imageAspectFlags, VkFilter filter);
 				};
 				template<typename TColorChannel>
