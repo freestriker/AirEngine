@@ -10,6 +10,7 @@
 #include "../../Graphic/Instance/Queue.hpp"
 #include "../../AssetLoader/Texture2DLoader.hpp"
 #include "../../Asset/Texture2D.hpp"
+#include "../../Asset/Mesh.hpp"
 #include "../../Core/Manager/AssetManager.hpp"
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
@@ -41,6 +42,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
 }
 static bool isLoaded = false;
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle assetLoadHandle{};
+static AirEngine::Runtime::AssetLoader::AssetLoadHandle meshLoadHandle{};
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 {
@@ -48,6 +50,8 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 	{
 		isLoaded = true;
 		assetLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
+		//meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/Box.mesh");
+		//meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NineSphere.mesh");
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
