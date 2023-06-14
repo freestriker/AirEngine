@@ -25,20 +25,11 @@ namespace AirEngine
 			private:
 				Graphic::Instance::Image* _image;
 			public:
-				Texture2D()
-					: AssetBase()
-					, _image(nullptr)
-				{
-
-				}
-				~Texture2D()
-				{
-					delete _image;
-					_image = nullptr;
-				}
+				Texture2D();
+				~Texture2D();
 				NO_COPY_MOVE(Texture2D);
 
-				Graphic::Instance::Image& Image()
+				inline Graphic::Instance::Image& Image() const
 				{
 					return *_image;
 				}
