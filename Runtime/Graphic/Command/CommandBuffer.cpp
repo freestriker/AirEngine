@@ -109,6 +109,19 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBufferToImage(cons
     vkCmdCopyBufferToImage(_vkCommandBuffer, buffer.VkHandle(), image.VkHandle(), imageLayout, uint32_t(copys.size()), copys.data());
 }
 
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBuffer(const Instance::Buffer& srcBuffer, const Instance::Buffer& dstBuffer, const std::vector<std::tuple<VkDeviceSize, VkDeviceSize, VkDeviceSize>> srcOffsetDstOffsetSizes)
+{
+    std::vector<VkBufferCopy> copys(srcOffsetDstOffsetSizes.size(), VkBufferCopy{});
+    for (uint32_t regionIndex = 0; regionIndex < copys.size(); regionIndex++)
+    {
+        VkBufferCopy& copy = copys[regionIndex];
+        copy.srcOffset = std::get<0>(srcOffsetDstOffsetSizes[regionIndex]);
+        copy.dstOffset = std::get<1>(srcOffsetDstOffsetSizes[regionIndex]);
+        copy.size = std::get<2>(srcOffsetDstOffsetSizes[regionIndex]);
+    }
+    vkCmdCopyBuffer(_vkCommandBuffer, srcBuffer.VkHandle(), dstBuffer.VkHandle(), uint32_t(copys.size()), copys.data());
+}
+
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::Blit(const Instance::Image& srcImage, VkImageLayout srcImageLayout, const Instance::Image& dstImage, VkImageLayout dstImageLayout, VkImageAspectFlags imageAspectFlags, VkFilter filter)
 {
     auto&& layerCount = std::min(srcImage.LayerCount(), dstImage.LayerCount());

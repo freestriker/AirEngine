@@ -1,6 +1,7 @@
 ﻿#include "AssetManager.hpp"
 #include "FiberManager.hpp"
 #include "../../AssetLoader/Texture2DLoader.hpp"
+#include "../../AssetLoader/MeshLoader.hpp"
 #include "../../AssetLoader/AssetLoaderBase.hpp"
 
 std::unordered_map<std::string, AirEngine::Runtime::AssetLoader::AssetLoaderBase*> AirEngine::Runtime::Core::Manager::AssetManager::_nameToAssetLoaderMap{ };
@@ -39,6 +40,7 @@ AirEngine::Runtime::Core::Manager::AssetManager::AssetManager()
 	: ManagerBase("AssetManager")
 {
 	AddAssetLoader<AirEngine::Runtime::AssetLoader::Texture2DLoader>();
+	AddAssetLoader<AirEngine::Runtime::AssetLoader::MeshLoader>();
 }
 
 AirEngine::Runtime::Core::Manager::AssetManager::~AssetManager()
