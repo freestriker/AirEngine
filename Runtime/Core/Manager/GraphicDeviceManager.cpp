@@ -88,12 +88,19 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	vkPhysicalDeviceSynchronization2Features.pNext = nullptr;
 	vkPhysicalDeviceSynchronization2Features.synchronization2 = VK_TRUE;
 
+	VkPhysicalDeviceIndexTypeUint8FeaturesEXT vkPhysicalDeviceIndexTypeUint8FeaturesEXT{};
+	vkPhysicalDeviceIndexTypeUint8FeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT;
+	vkPhysicalDeviceIndexTypeUint8FeaturesEXT.pNext = nullptr;
+	vkPhysicalDeviceIndexTypeUint8FeaturesEXT.indexTypeUint8 = VK_TRUE;
+
 	vkb::PhysicalDeviceSelector physicalDeviceSelector(_vkbInstance);
 	physicalDeviceSelector = physicalDeviceSelector
 		.add_required_extension(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME)
 		.add_required_extension_features(vkPhysicalDeviceShaderAtomicFloatFeaturesEXT)
 		.add_required_extension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
-		.add_required_extension_features(vkPhysicalDeviceSynchronization2Features);
+		.add_required_extension_features(vkPhysicalDeviceSynchronization2Features)
+		.add_required_extension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)
+		.add_required_extension_features(vkPhysicalDeviceIndexTypeUint8FeaturesEXT);
 	if (isWindow)
 	{
 		physicalDeviceSelector.set_surface(dynamic_cast<FrontEnd::WindowFrontEndBase&>(RenderManager::FrontEnd()).VkSurface());
