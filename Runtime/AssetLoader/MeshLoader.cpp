@@ -112,7 +112,6 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 
 	const auto rootNode = scene->mRootNode;
 	const uint32_t meshCount = scene->mNumMeshes;
-	if (rootNode->mNumChildren != meshCount) qFatal("Wrong mesh count.");
 
 	std::vector<SubMeshInfo> subMeshInfos(meshCount, SubMeshInfo{});
 	uint32_t totalVertexCount = 0;
