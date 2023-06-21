@@ -12,6 +12,7 @@
 #include "../../Asset/Texture2D.hpp"
 #include "../../Asset/Mesh.hpp"
 #include "../../Core/Manager/AssetManager.hpp"
+#include "../../Graphic/Instance/RenderPassBase.hpp"
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 {
@@ -52,6 +53,37 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 		assetLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
 		//meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/Box.mesh");
 		//meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NineSphere.mesh");
+
+		{
+			using namespace Graphic::Instance;
+			auto&& renderPass = RenderPassBase(
+				RenderPassBase::RenderPassBuilder()
+					.SetName("SampleRenderPass")
+					.AddColorAttachment(
+						"ColorAttachment",
+						vk::Format::eR8G8B8A8Srgb,
+						vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+						vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eColorAttachmentOptimal
+					)
+					.AddDependency(
+						"ExternalSubpass", "DrawSubpass",
+						vk::PipelineStageFlagBits2::eNone, vk::PipelineStageFlagBits2::eNone,
+						vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eNone
+					)
+					.AddSubpass(
+						RenderPassBase::RenderSubpassBuilder()
+						.SetName("DrawSubpass")
+						.SetPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+						.AddColorAttachment("ColorAttachment", vk::ImageLayout::eColorAttachmentOptimal)
+					)
+					.AddDependency(
+						"DrawSubpass", "ExternalSubpass",
+						vk::PipelineStageFlagBits2::eNone, vk::PipelineStageFlagBits2::eNone,
+						vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eNone
+					)
+			);
+		}
+
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
