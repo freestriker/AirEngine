@@ -5,6 +5,8 @@
 #include <string>
 #include <vulkan/vulkan.hpp>
 #include <optional>
+#include "../../Utility/ExportMacro.hpp"
+#include "../../Utility/ContructorMacro.hpp"
 
 namespace AirEngine
 {
@@ -14,7 +16,7 @@ namespace AirEngine
 		{
 			namespace Instance
 			{
-				class RenderPassBase    
+				class AIR_ENGINE_API RenderPassBase
 				{
 				public:
 					class RenderPassBuilder;
@@ -88,8 +90,19 @@ namespace AirEngine
 					vk::RenderPass _vkRenderPass;
 				public:
 					RenderPassBase(const RenderPassBuilder& renderPassBuilder);
-					~RenderPassBase();
+					virtual ~RenderPassBase();
 					RTTR_ENABLE()
+				};
+
+				class AIR_ENGINE_API DummyRenderPass final
+					: public RenderPassBase
+				{
+				public:
+					DummyRenderPass();
+					~DummyRenderPass() = default;
+					NO_COPY_MOVE(DummyRenderPass);
+
+					RTTR_ENABLE(RenderPassBase);
 				};
 			}
 		}

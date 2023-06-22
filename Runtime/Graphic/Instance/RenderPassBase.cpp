@@ -1,5 +1,16 @@
 ﻿#include "RenderPassBase.hpp"
 #include "../../Core/Manager/GraphicDeviceManager.hpp"
+#include <rttr/registration>
+
+RTTR_REGISTRATION
+{
+	rttr::registration::class_<AirEngine::Runtime::Graphic::Instance::RenderPassBase>("AirEngine::Runtime::Graphic::Instance::RenderPassBase");
+	rttr::registration::class_<AirEngine::Runtime::Graphic::Instance::DummyRenderPass>("AirEngine::Runtime::Graphic::Instance::DummyRenderPass")
+		.constructor<>()
+		(
+			rttr::policy::ctor::as_raw_ptr
+		);
+}
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder& AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder::SetName(const std::string& name)
 {
@@ -255,4 +266,34 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::~RenderPassBase()
 		vk::Device device(Core::Manager::GraphicDeviceManager::VkDevice());
 		device.destroyRenderPass(_vkRenderPass);
 	}
+}
+
+AirEngine::Runtime::Graphic::Instance::DummyRenderPass::DummyRenderPass()
+	: RenderPassBase(
+		RenderPassBase::RenderPassBuilder()
+		.SetName("SampleRenderPass")
+		.AddColorAttachment(
+			"ColorAttachment",
+			vk::Format::eR8G8B8A8Srgb,
+			vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+			vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eColorAttachmentOptimal
+		)
+		.AddDependency(
+			"ExternalSubpass", "DrawSubpass",
+			vk::PipelineStageFlagBits2::eNone, vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eNone
+		)
+		.AddSubpass(
+			RenderPassBase::RenderSubpassBuilder()
+			.SetName("DrawSubpass")
+			.SetPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+			.AddColorAttachment("ColorAttachment", vk::ImageLayout::eColorAttachmentOptimal)
+		)
+		.AddDependency(
+			"DrawSubpass", "ExternalSubpass",
+			vk::PipelineStageFlagBits2::eNone, vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eNone
+		)
+	)
+{
 }
