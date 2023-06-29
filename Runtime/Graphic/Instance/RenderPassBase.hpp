@@ -4,9 +4,9 @@
 #include <map>
 #include <string>
 #include <vulkan/vulkan.hpp>
-#include <optional>
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/ContructorMacro.hpp"
+#include "../../Utility/ReflectableObject.hpp"
 
 namespace AirEngine
 {
@@ -17,7 +17,9 @@ namespace AirEngine
 			namespace Instance
 			{
 				class AIR_ENGINE_API RenderPassBase
+					: public Utility::ReflectableObject
 				{
+					REFLECTABLE_OBJECT
 				public:
 					class RenderPassBuilder;
 					class RenderSubpassBuilder
@@ -89,20 +91,19 @@ namespace AirEngine
 				private:
 					vk::RenderPass _vkRenderPass;
 				public:
-					RenderPassBase(const RenderPassBuilder& renderPassBuilder);
-					virtual ~RenderPassBase();
-					RTTR_ENABLE()
+					INVOKABLE RenderPassBase(const RenderPassBuilder& renderPassBuilder);
+					INVOKABLE virtual ~RenderPassBase();
+					NO_COPY_MOVE(RenderPassBase);
 				};
 
 				class AIR_ENGINE_API DummyRenderPass final
 					: public RenderPassBase
 				{
+					REFLECTABLE_OBJECT
 				public:
-					DummyRenderPass();
-					~DummyRenderPass() = default;
+					INVOKABLE DummyRenderPass();
+					INVOKABLE ~DummyRenderPass() = default;
 					NO_COPY_MOVE(DummyRenderPass);
-
-					RTTR_ENABLE(RenderPassBase);
 				};
 			}
 		}

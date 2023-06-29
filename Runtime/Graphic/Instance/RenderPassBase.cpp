@@ -1,15 +1,10 @@
 ﻿#include "RenderPassBase.hpp"
 #include "../../Core/Manager/GraphicDeviceManager.hpp"
-#include <rttr/registration>
 
-RTTR_REGISTRATION
+REGISTRATION
 {
-	rttr::registration::class_<AirEngine::Runtime::Graphic::Instance::RenderPassBase>("AirEngine::Runtime::Graphic::Instance::RenderPassBase");
-	rttr::registration::class_<AirEngine::Runtime::Graphic::Instance::DummyRenderPass>("AirEngine::Runtime::Graphic::Instance::DummyRenderPass")
-		.constructor<>()
-		(
-			rttr::policy::ctor::as_raw_ptr
-		);
+	DECLARE_TYPE(AirEngine::Runtime::Graphic::Instance::RenderPassBase*)
+	DECLARE_TYPE(AirEngine::Runtime::Graphic::Instance::DummyRenderPass*)
 }
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder& AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder::SetName(const std::string& name)
@@ -297,3 +292,6 @@ AirEngine::Runtime::Graphic::Instance::DummyRenderPass::DummyRenderPass()
 	)
 {
 }
+
+#include "moc_RenderPassBase.cpp"
+#include "RenderPassBase.moc"
