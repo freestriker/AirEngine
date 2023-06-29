@@ -58,11 +58,11 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 		{
 			auto&& renderPass0 = Graphic::Manager::RenderPassManager::LoadRenderPass<Graphic::Instance::DummyRenderPass>();
 			auto&& renderPass1 = Graphic::Manager::RenderPassManager::LoadRenderPass("AirEngine::Runtime::Graphic::Instance::DummyRenderPass");
+			Graphic::Manager::RenderPassManager::Collect();
 			Graphic::Manager::RenderPassManager::UnloadRenderPass<Graphic::Instance::DummyRenderPass>();
 			Graphic::Manager::RenderPassManager::UnloadRenderPass("AirEngine::Runtime::Graphic::Instance::DummyRenderPass");
 			Graphic::Manager::RenderPassManager::Collect();
 		}
-
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
