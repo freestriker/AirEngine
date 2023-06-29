@@ -10,7 +10,9 @@ GROUP_ALL_FILES("${ALL_FILES}")
 
 # add_definitions(-DDLL_EXPORTS)
 
-add_library(Runtime STATIC ${ALL_FILES})
+add_library(Runtime STATIC)
+
+target_sources(Runtime PUBLIC ${ALL_FILES})
 
 find_package(assimp CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC assimp::assimp)
@@ -33,6 +35,10 @@ target_link_libraries(Runtime PUBLIC nlohmann_json::nlohmann_json)
 
 find_package(OpenCV REQUIRED)
 target_link_libraries(Runtime PUBLIC ${OpenCV_LIBS})
+
+set_target_properties(Runtime PROPERTIES AUTOMOC ON)
+find_package(Qt6Core CONFIG REQUIRED)
+target_link_libraries(Runtime PUBLIC Qt::Core Qt6::Core Qt::CorePrivate Qt6::CorePrivate)
 
 find_package(Qt6Gui CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC Qt::Gui Qt6::Gui Qt::GuiPrivate Qt6::GuiPrivate)
