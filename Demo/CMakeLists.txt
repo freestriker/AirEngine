@@ -10,8 +10,11 @@ GROUP_ALL_FILES("${ALL_FILES}")
 
 include_directories(${PROJECT_SOURCE_DIR}/../Runtime)
 
-add_executable(Demo ${ALL_FILES})
+add_executable(Demo)
 
+target_sources(Demo PRIVATE ${ALL_FILES})
+
+set_target_properties(Demo PROPERTIES AUTOMOC ON)
 target_link_libraries(Demo PRIVATE Runtime)
 
 set_property(TARGET Demo PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
