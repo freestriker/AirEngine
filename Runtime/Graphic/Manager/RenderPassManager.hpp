@@ -4,8 +4,7 @@
 #include "../../Utility/Fiber.hpp"
 #include "../../Utility/InternedString.hpp"
 #include <unordered_map>
-#include <rttr/type>
-#include <rttr/registration>
+#include "../../Utility/ReflectableObject.hpp"
 
 namespace AirEngine
 {
@@ -38,13 +37,36 @@ namespace AirEngine
 					};
 					static Utility::Fiber::mutex _managerMutex;
 					static std::unordered_map<Utility::InternedString, ReferenceInfo> _referenceMap;
+					static Instance::RenderPassBase* LoadRenderPassImpl(const Utility::InternedString renderPassTypeName, int typeId);
+					static void UnloadRenderPassImpl(const Utility::InternedString renderPassTypeName);
 				public:
-					static Instance::RenderPassBase* LoadRenderPass(const std::string& renderPassTypeName);
+					static inline Instance::RenderPassBase* LoadRenderPass(const std::string& renderPassTypeName)
+					{
+						std::string ptrTypeName(renderPassTypeName + "*");
+						int typeId = Utility::MetaType::type(ptrTypeName.c_str());
+
+						return LoadRenderPassImpl(Utility::InternedString::InternedString(ptrTypeName), typeId);
+					}
 					template<typename TRenderPass>
-					static TRenderPass* LoadRenderPass();
-					static void UnloadRenderPass(const std::string& renderPassTypeName);
+					static inline TRenderPass* LoadRenderPass()
+					{
+						int typeId = Utility::MetaType::fromType<TRenderPass*>().id();
+						std::string_view ptrTypeName(Utility::MetaType::typeName(typeId));
+
+						return dynamic_cast<TRenderPass * >(LoadRenderPassImpl(Utility::InternedString::InternedString(ptrTypeName), typeId));
+					}
+					static void UnloadRenderPass(const std::string& renderPassTypeName)
+					{
+						UnloadRenderPassImpl(Utility::InternedString::InternedString(std::string(renderPassTypeName + "*")));
+					}
 					template<typename TRenderPass>
-					static void UnloadRenderPass();
+					static void UnloadRenderPass()
+					{
+						int typeId = Utility::MetaType::fromType<TRenderPass*>().id();
+						std::string_view ptrTypeName(Utility::MetaType::typeName(typeId));
+
+						UnloadRenderPassImpl(Utility::InternedString::InternedString(ptrTypeName));
+					}
 					static void Collect();
 				private:
 					RenderPassManager() = delete;
@@ -52,18 +74,6 @@ namespace AirEngine
 					NO_COPY_MOVE(RenderPassManager)
 				public:
 				};
-
-				template<typename TRenderPass>
-				TRenderPass* AirEngine::Runtime::Graphic::Manager::RenderPassManager::LoadRenderPass()
-				{
-					return dynamic_cast<TRenderPass * >(LoadRenderPass(rttr::type::get<TRenderPass>().get_name().to_string()));
-				}
-
-				template<typename TRenderPass>
-				void AirEngine::Runtime::Graphic::Manager::RenderPassManager::UnloadRenderPass()
-				{
-					UnloadRenderPass(rttr::type::get<TRenderPass>().get_name().to_string());
-				}
 			}
 		}
 	}
