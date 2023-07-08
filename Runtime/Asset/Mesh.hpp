@@ -69,7 +69,6 @@ namespace AirEngine
 				{
 					return _perIndexByteCount;
 				}
-				RTTR_ENABLE(AssetBase)
 			};
 		}
 	}

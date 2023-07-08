@@ -5,10 +5,6 @@ namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace Asset
-		{
-			class AssetBase;
-		}
 		namespace AssetLoader
 		{
 			struct AIR_ENGINE_API AssetLoadHandle

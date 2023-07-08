@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "../Utility/ExportMacro.hpp"
 #include "../Utility/ContructorMacro.hpp"
-#include "../Core/Object.hpp"
+#include "../Utility/CollectableObject.hpp"
 
 namespace AirEngine
 {
@@ -13,17 +13,16 @@ namespace AirEngine
 		}
 		namespace Asset
 		{
-			struct AIR_ENGINE_API AssetBase
-				: public Core::Object
+			class AIR_ENGINE_API AssetBase
+				: public Utility::CollectableObject
 			{
 			private:
 				AssetLoader::AssetLoadContext* assetLoadContext;
-			protected:
-				AssetBase();
-				virtual ~AssetBase();
-				NO_COPY_MOVE(AssetBase);
+			public:
+				AssetBase() = default;
 
-				RTTR_ENABLE(Core::Object)
+				virtual ~AssetBase() = default;
+				NO_COPY_MOVE(AssetBase);
 			};
 		}
 	}
