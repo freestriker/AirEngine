@@ -1,10 +1,4 @@
 ﻿#include "Mesh.hpp"
-#include <rttr/registration>
-
-RTTR_REGISTRATION
-{
-	rttr::registration::class_<AirEngine::Runtime::Asset::Mesh>("AirEngine::Runtime::Asset::Mesh");
-}
 
 AirEngine::Runtime::Asset::Mesh::Mesh()
 	: AssetBase()

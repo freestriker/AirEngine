@@ -33,8 +33,6 @@ namespace AirEngine
 				{
 					return *_image;
 				}
-
-				RTTR_ENABLE(AssetBase)
 			};
 		}
 	}
