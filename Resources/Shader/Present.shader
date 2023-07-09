@@ -3,11 +3,12 @@
     "subShaders": 
     [
         {
-            "subPass": "",
+            "subPass": "Present",
 
             "spvShaderPaths": 
             [
-                
+                "../../Resources/Shader/Spv/Present.vert.spv",
+                "../../Resources/Shader/Spv/Present.frag.spv"
             ],
 
             "cullMode": "",

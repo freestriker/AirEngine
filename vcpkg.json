@@ -32,6 +32,9 @@
             "name": "rttr"
         },
         {
+            "name": "spirv-reflect"
+        },
+        {
             "name": "vk-bootstrap"
         },
         {
