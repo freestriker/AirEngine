@@ -45,6 +45,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
 static bool isLoaded = false;
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle assetLoadHandle{};
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle meshLoadHandle{};
+static AirEngine::Runtime::AssetLoader::AssetLoadHandle shaderLoadHandle{};
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 {
@@ -52,8 +53,8 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 	{
 		isLoaded = true;
 		assetLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
-		//meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/Box.mesh");
 		meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NineSphere.mesh");
+		meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Test.shader");
 
 		{
 			auto&& renderPass0 = Graphic::Manager::RenderPassManager::LoadRenderPass<Graphic::Instance::DummyRenderPass>();
