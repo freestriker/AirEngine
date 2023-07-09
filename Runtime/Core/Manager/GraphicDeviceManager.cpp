@@ -93,6 +93,11 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	vkPhysicalDeviceIndexTypeUint8FeaturesEXT.pNext = nullptr;
 	vkPhysicalDeviceIndexTypeUint8FeaturesEXT.indexTypeUint8 = VK_TRUE;
 
+	VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vkPhysicalDeviceVertexInputDynamicStateFeaturesEXT{};
+	vkPhysicalDeviceVertexInputDynamicStateFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT;
+	vkPhysicalDeviceVertexInputDynamicStateFeaturesEXT.pNext = nullptr;
+	vkPhysicalDeviceVertexInputDynamicStateFeaturesEXT.vertexInputDynamicState = true;
+
 	vkb::PhysicalDeviceSelector physicalDeviceSelector(_vkbInstance);
 	physicalDeviceSelector = physicalDeviceSelector
 		.add_required_extension(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME)
@@ -100,7 +105,9 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 		.add_required_extension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
 		.add_required_extension_features(vkPhysicalDeviceSynchronization2Features)
 		.add_required_extension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)
-		.add_required_extension_features(vkPhysicalDeviceIndexTypeUint8FeaturesEXT);
+		.add_required_extension_features(vkPhysicalDeviceIndexTypeUint8FeaturesEXT)
+		.add_required_extension(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)
+		.add_required_extension_features(vkPhysicalDeviceVertexInputDynamicStateFeaturesEXT);
 	if (isWindow)
 	{
 		physicalDeviceSelector.set_surface(dynamic_cast<FrontEnd::WindowFrontEndBase&>(RenderManager::FrontEnd()).VkSurface());

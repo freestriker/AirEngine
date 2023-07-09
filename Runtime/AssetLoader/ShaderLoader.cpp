@@ -4,6 +4,7 @@
 #include "../Graphic/Rendering/Shader.hpp"
 #include "../Utility/InternedString.hpp"
 #include <spirv_reflect.h>
+#include <unordered_map>
 
 AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::ShaderLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
@@ -81,10 +82,17 @@ struct ShaderDescriptor
 		subShaders
 	);
 };
+struct VertexInputInfo
+{
+	AirEngine::Runtime::Utility::InternedString name;
+	vk::Format format;
+	uint32_t location;
+};
 struct SubShaderCreateInfo
 {
 	std::unordered_map<vk::ShaderStageFlagBits, std::pair<SpvReflectShaderModule, VkShaderModule>> shaderDatas;
 	std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
+	std::unordered_map< AirEngine::Runtime::Utility::InternedString, VertexInputInfo> vertexInputInfos;
 };
 struct ShaderCreateInfo
 {
@@ -140,6 +148,37 @@ void LoadSpirvData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& s
 	}
 }
 
+void LoadVertexInputData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
+	{
+		auto& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subShaderDescriptor.subPass);
+		const auto& vertexShaderReflectData = subShaderCreateInfo.shaderDatas.at(vk::ShaderStageFlagBits::eVertex).first;
+
+		uint32_t inputCount = 0;
+		SpvReflectResult result = spvReflectEnumerateInputVariables(&vertexShaderReflectData, &inputCount, NULL);
+		if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader input variables.");
+		std::vector<SpvReflectInterfaceVariable*> input_vars(inputCount);
+		result = spvReflectEnumerateInputVariables(&vertexShaderReflectData, &inputCount, input_vars.data());
+		if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader input variables.");
+
+		
+		for (uint32_t inputIndex = 0; inputIndex < inputCount; ++inputIndex)
+		{
+			const auto& inputVar = *input_vars[inputIndex];
+
+			auto name = AirEngine::Runtime::Utility::InternedString::InternedString(inputVar.name);
+
+			VertexInputInfo vertexInputInfo{};
+			vertexInputInfo.name = name;
+			vertexInputInfo.location = inputVar.location;
+			vertexInputInfo.format = vk::Format(inputVar.format);
+
+			subShaderCreateInfo.vertexInputInfos.emplace(name, std::move(vertexInputInfo));
+		}
+	}
+}
+
 void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Runtime::Graphic::Rendering::Shader* shader, const std::string path, bool* isInLoading)
 {
 	//Load descriptor
@@ -156,6 +195,7 @@ void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Ru
 
 	AllocateDataSpace(shaderDescriptor, shaderCreateInfo);
 	LoadSpirvData(shaderDescriptor, shaderCreateInfo);
+	LoadVertexInputData(shaderDescriptor, shaderCreateInfo);
 
 	*isInLoading = false;
 }
