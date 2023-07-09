@@ -84,6 +84,7 @@ struct ShaderDescriptor
 struct SubShaderCreateInfo
 {
 	std::unordered_map<vk::ShaderStageFlagBits, std::pair<SpvReflectShaderModule, VkShaderModule>> shaderDatas;
+	std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
 };
 struct ShaderCreateInfo
 {
@@ -117,7 +118,7 @@ void LoadSpirvData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& s
 			file.close();
 
 			std::pair<SpvReflectShaderModule, vk::ShaderModule> shaderData{};
-
+			
 			SpvReflectResult result = spvReflectCreateShaderModule(buffer.size(), buffer.data(), &shaderData.first);
 			if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Load shader spv reflect failed.");
 
@@ -129,6 +130,12 @@ void LoadSpirvData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& s
 			if(subShaderCreateInfo.shaderDatas.contains(stage)) qFatal("Failed to load the same shader stage.");
 			
 			subShaderCreateInfo.shaderDatas[stage] = std::move(shaderData);
+		}
+
+		subShaderCreateInfo.pipelineShaderStageCreateInfos.reserve(subShaderCreateInfo.shaderDatas.size());
+		for (const auto& shaderDataPair : subShaderCreateInfo.shaderDatas)
+		{
+			subShaderCreateInfo.pipelineShaderStageCreateInfos.emplace_back(vk::PipelineShaderStageCreateFlags(), shaderDataPair.first, shaderDataPair.second.second, shaderDataPair.second.first.entry_point_name);
 		}
 	}
 }
