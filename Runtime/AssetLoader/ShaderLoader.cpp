@@ -2,6 +2,8 @@
 #include <fstream>
 #include "../Core/Manager/GraphicDeviceManager.hpp"
 #include "../Graphic/Rendering/Shader.hpp"
+#include "../Utility/InternedString.hpp"
+#include <spirv_reflect.h>
 
 AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::ShaderLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
@@ -68,7 +70,7 @@ struct ShaderDescriptor
 {
 	std::string renderPass{};
 
-	std::vector<SubShaderDescriptor> subShaders; 
+	std::vector<SubShaderDescriptor> subShaders;
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE
 	(
@@ -79,6 +81,57 @@ struct ShaderDescriptor
 		subShaders
 	);
 };
+struct SubShaderCreateInfo
+{
+	std::unordered_map<vk::ShaderStageFlagBits, std::pair<SpvReflectShaderModule, VkShaderModule>> shaderDatas;
+};
+struct ShaderCreateInfo
+{
+	std::unordered_map<std::string, SubShaderCreateInfo> subShaderCreateInfos;
+};
+
+void AllocateDataSpace(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
+	{
+		shaderCreateInfo.subShaderCreateInfos[subShaderDescriptor.subPass] = {};
+	}
+}
+
+void LoadSpirvData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
+	{
+		auto&& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos[subShaderDescriptor.subPass];
+
+		for (const auto& spirvPath : subShaderDescriptor.spvShaderPaths)
+		{
+			std::ifstream file(spirvPath, std::ios::ate | std::ios::binary);
+
+			if (!file.is_open()) qFatal(std::string("Failed to open spv file: " + spirvPath + " .").c_str());
+
+			size_t fileSize = (size_t)file.tellg();
+			std::vector<char> buffer(fileSize);
+			file.seekg(0);
+			file.read(buffer.data(), fileSize);
+			file.close();
+
+			std::pair<SpvReflectShaderModule, vk::ShaderModule> shaderData{};
+
+			SpvReflectResult result = spvReflectCreateShaderModule(buffer.size(), buffer.data(), &shaderData.first);
+			if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Load shader spv reflect failed.");
+
+			vk::ShaderModuleCreateInfo shaderModuleCreateInfo{vk::ShaderModuleCreateFlags(), buffer.size(), reinterpret_cast<const uint32_t*>(buffer.data())};
+			vk::Device device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice());
+			shaderData.second = device.createShaderModule(shaderModuleCreateInfo);
+
+			auto stage = vk::ShaderStageFlagBits(shaderData.first.shader_stage);
+			if(subShaderCreateInfo.shaderDatas.contains(stage)) qFatal("Failed to load the same shader stage.");
+			
+			subShaderCreateInfo.shaderDatas[stage] = std::move(shaderData);
+		}
+	}
+}
 
 void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Runtime::Graphic::Rendering::Shader* shader, const std::string path, bool* isInLoading)
 {
@@ -91,6 +144,11 @@ void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Ru
 		shaderDescriptor = jsonFile.get<ShaderDescriptor>();
 		descriptorFile.close();
 	}
+
+	ShaderCreateInfo shaderCreateInfo{};
+
+	AllocateDataSpace(shaderDescriptor, shaderCreateInfo);
+	LoadSpirvData(shaderDescriptor, shaderCreateInfo);
 
 	*isInLoading = false;
 }

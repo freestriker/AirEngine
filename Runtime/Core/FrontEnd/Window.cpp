@@ -54,7 +54,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 		isLoaded = true;
 		assetLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
 		meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NineSphere.mesh");
-		meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Test.shader");
+		meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
 
 		{
 			auto&& renderPass0 = Graphic::Manager::RenderPassManager::LoadRenderPass<Graphic::Instance::DummyRenderPass>();

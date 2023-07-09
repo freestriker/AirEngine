@@ -49,6 +49,9 @@ target_link_libraries(Runtime PUBLIC Qt::Widgets Qt6::Widgets Qt::WidgetsPrivate
 find_package(rttr CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC RTTR::Core_Lib)
 
+find_package(unofficial-spirv-reflect CONFIG REQUIRED)
+target_link_libraries(Runtime PUBLIC unofficial::spirv-reflect::spirv-reflect)
+
 find_package(vk-bootstrap CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC vk-bootstrap::vk-bootstrap)
 
