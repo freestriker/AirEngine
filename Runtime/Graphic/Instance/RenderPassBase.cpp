@@ -195,6 +195,84 @@ vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPass
 	return vk::Device(Core::Manager::GraphicDeviceManager::VkDevice()).createRenderPass2(vkRenderPassCreateInfo);
 }
 
+AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassInfo AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder::BuildInfo() const
+{
+	std::map<std::string, uint32_t> attachmentNameToIndexMap{};
+	std::vector<vk::AttachmentDescription2> vkAttachmentDescriptions{};
+	{
+		vkAttachmentDescriptions.reserve(_vkAttachmentDescriptionMap.size());
+
+		uint32_t vkAttachmentDescriptionIndex = 0;
+		for (const auto& vkAttachmentDescription : _vkAttachmentDescriptionMap)
+		{
+			vkAttachmentDescriptions.emplace_back(vkAttachmentDescription.second);
+			attachmentNameToIndexMap[vkAttachmentDescription.first] = vkAttachmentDescriptionIndex++;
+		}
+	}
+
+	RenderPassInfo renderPassInfo{};
+	renderPassInfo._name = Utility::InternedString(_name);
+
+	std::unordered_map<Utility::InternedString, SubPassInfo>& subPassInfos = renderPassInfo._subPassInfos;
+	for (uint32_t subpassIndex = 0; subpassIndex < _renderSubpassBuilders.size(); subpassIndex++)
+	{
+		const auto& subpassBuilder = _renderSubpassBuilders[subpassIndex];
+
+		SubPassInfo subPassInfo{};
+		subPassInfo._name = Utility::InternedString(subpassBuilder._name);
+
+		for (const auto& pair : subpassBuilder._coloreReferences)
+		{
+			AttachmentInfo attachmentInfo{};
+			attachmentInfo.name = Utility::InternedString(pair.first);
+			attachmentInfo.location = attachmentNameToIndexMap.at(pair.first);
+			attachmentInfo.format = vkAttachmentDescriptions.at(attachmentNameToIndexMap.at(pair.first)).format;
+			attachmentInfo.layout = pair.second.layout;
+			attachmentInfo.type = AttachmentType::COLOR;
+
+			subPassInfo._locationToIndexMap.emplace(attachmentInfo.location, uint32_t(subPassInfo._attachments.size()));
+			subPassInfo._nameToIndexMap.emplace(attachmentInfo.name, uint32_t(subPassInfo._attachments.size()));
+
+			subPassInfo._attachments.emplace_back(attachmentInfo);
+		}
+		if (subpassBuilder._depthReference)
+		{
+			const auto& pair = subpassBuilder._depthReference.value();
+
+			AttachmentInfo attachmentInfo{};
+			attachmentInfo.name = Utility::InternedString(pair.first);
+			attachmentInfo.location = attachmentNameToIndexMap.at(pair.first);
+			attachmentInfo.format = vkAttachmentDescriptions.at(attachmentNameToIndexMap.at(pair.first)).format;
+			attachmentInfo.layout = pair.second.layout;
+			attachmentInfo.type = AttachmentType::DEPTH;
+
+			subPassInfo._locationToIndexMap.emplace(attachmentInfo.location, uint32_t(subPassInfo._attachments.size()));
+			subPassInfo._nameToIndexMap.emplace(attachmentInfo.name, uint32_t(subPassInfo._attachments.size()));
+
+			subPassInfo._attachments.emplace_back(attachmentInfo);
+
+		}
+		for (const auto& pair : subpassBuilder._inputReferences)
+		{
+			AttachmentInfo attachmentInfo{};
+			attachmentInfo.name = Utility::InternedString(pair.first);
+			attachmentInfo.location = attachmentNameToIndexMap.at(pair.first);
+			attachmentInfo.format = vkAttachmentDescriptions.at(attachmentNameToIndexMap.at(pair.first)).format;
+			attachmentInfo.layout = pair.second.layout;
+			attachmentInfo.type = AttachmentType::INPUT;
+
+			subPassInfo._locationToIndexMap.emplace(attachmentInfo.location, uint32_t(subPassInfo._attachments.size()));
+			subPassInfo._nameToIndexMap.emplace(attachmentInfo.name, uint32_t(subPassInfo._attachments.size()));
+
+			subPassInfo._attachments.emplace_back(attachmentInfo);
+		}
+
+		subPassInfos.emplace(subPassInfo._name, subPassInfo);
+	}
+
+	return renderPassInfo;
+}
+
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder& AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder::SetName(const std::string& name)
 {
 	_name = name;
@@ -251,6 +329,7 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder& Air
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBase(const RenderPassBuilder& renderPassBuilder)
 	: _vkRenderPass(renderPassBuilder.Build())
+	, _renderPassInfo(std::move(renderPassBuilder.BuildInfo()))
 {
 }
 

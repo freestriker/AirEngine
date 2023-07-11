@@ -7,6 +7,7 @@
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ReflectableObject.hpp"
+#include "../../Utility/InternedString.hpp"
 
 namespace AirEngine
 {
@@ -22,6 +23,56 @@ namespace AirEngine
 					REFLECTABLE_OBJECT
 				public:
 					class RenderPassBuilder;
+					enum class AttachmentType
+					{
+						COLOR,
+						DEPTH,
+						INPUT
+					};
+					struct AttachmentInfo
+					{
+						Utility::InternedString name;
+						uint32_t location;
+						vk::Format format;
+						vk::ImageLayout layout;
+						AttachmentType type;
+					};
+					struct SubPassInfo
+					{
+						friend class RenderPassBuilder;
+					private:
+						Utility::InternedString _name;
+						std::vector<AttachmentInfo> _attachments;
+						std::unordered_map< Utility::InternedString, uint32_t> _nameToIndexMap;
+						std::unordered_map< uint32_t, uint32_t> _locationToIndexMap;
+					public:
+						inline Utility::InternedString Name() const
+						{
+							return _name;
+						}
+						inline const RenderPassBase::AttachmentInfo& AttachmentInfo(Utility::InternedString name) const
+						{
+							return _attachments.at(_nameToIndexMap.at(name));
+						}
+						inline const RenderPassBase::AttachmentInfo& AttachmentInfo(uint32_t location) const
+						{
+							return _attachments.at(_locationToIndexMap.at(location));
+						}
+					};
+					struct RenderPassInfo
+					{
+						Utility::InternedString _name;
+						std::unordered_map<Utility::InternedString, SubPassInfo> _subPassInfos;
+						inline Utility::InternedString Name() const
+						{
+							return _name;
+						}
+						inline const SubPassInfo& AttachmentInfo(Utility::InternedString name) const
+						{
+							return _subPassInfos.at(name);
+						}
+					};
+
 					class RenderSubpassBuilder
 					{
 						friend class RenderPassBuilder;
@@ -83,6 +134,7 @@ namespace AirEngine
 						);
 					private:
 						vk::RenderPass Build() const;
+						RenderPassInfo BuildInfo() const;
 						std::string _name;
 						std::map<std::string, vk::AttachmentDescription2> _vkAttachmentDescriptionMap;
 						std::vector<RenderSubpassBuilder> _renderSubpassBuilders;
@@ -90,10 +142,15 @@ namespace AirEngine
 					};
 				private:
 					vk::RenderPass _vkRenderPass;
+					RenderPassInfo _renderPassInfo;
 				public:
 					INVOKABLE RenderPassBase(const RenderPassBuilder& renderPassBuilder);
 					INVOKABLE virtual ~RenderPassBase();
 					NO_COPY_MOVE(RenderPassBase);
+					inline const RenderPassInfo& Info()const
+					{
+						return _renderPassInfo;
+					}
 				};
 
 				class AIR_ENGINE_API DummyRenderPass final
