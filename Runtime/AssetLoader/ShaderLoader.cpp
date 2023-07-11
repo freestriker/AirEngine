@@ -5,6 +5,8 @@
 #include "../Utility/InternedString.hpp"
 #include <spirv_reflect.h>
 #include <unordered_map>
+#include "../Graphic/Instance/RenderPassBase.hpp"
+#include "../Graphic/Manager/RenderPassManager.hpp"
 
 AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::ShaderLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
@@ -97,6 +99,7 @@ struct SubShaderCreateInfo
 struct ShaderCreateInfo
 {
 	std::unordered_map<std::string, SubShaderCreateInfo> subShaderCreateInfos;
+	AirEngine::Runtime::Graphic::Instance::RenderPassBase* renderPass;
 };
 
 void AllocateDataSpace(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
@@ -179,6 +182,11 @@ void LoadVertexInputData(const ShaderDescriptor& shaderDescriptor, ShaderCreateI
 	}
 }
 
+void LoadRenderPassData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	shaderCreateInfo.renderPass = AirEngine::Runtime::Graphic::Manager::RenderPassManager::LoadRenderPass(shaderDescriptor.renderPass);
+}
+
 void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Runtime::Graphic::Rendering::Shader* shader, const std::string path, bool* isInLoading)
 {
 	//Load descriptor
@@ -196,7 +204,8 @@ void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Ru
 	AllocateDataSpace(shaderDescriptor, shaderCreateInfo);
 	LoadSpirvData(shaderDescriptor, shaderCreateInfo);
 	LoadVertexInputData(shaderDescriptor, shaderCreateInfo);
-
+	LoadRenderPassData(shaderDescriptor, shaderCreateInfo);
+	
 	*isInLoading = false;
 }
 
