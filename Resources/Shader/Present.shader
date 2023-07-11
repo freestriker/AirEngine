@@ -1,9 +1,9 @@
 {
-    "renderPass": "",
+    "renderPass": "AirEngine::Runtime::Graphic::Instance::DummyRenderPass",
     "subShaders": 
     [
         {
-            "subPass": "Present",
+            "subPass": "DrawSubpass",
 
             "spvShaderPaths": 
             [
