@@ -187,6 +187,176 @@ void LoadRenderPassData(const ShaderDescriptor& shaderDescriptor, ShaderCreateIn
 	shaderCreateInfo.renderPass = AirEngine::Runtime::Graphic::Manager::RenderPassManager::LoadRenderPass(shaderDescriptor.renderPass);
 }
 
+void CheckShaderStageInOutData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	constexpr auto GRAPHIC_SHADER_STAGES{ 
+		std::to_array<vk::ShaderStageFlagBits>(
+		{ 
+			vk::ShaderStageFlagBits::eVertex,
+			vk::ShaderStageFlagBits::eTessellationControl,
+			vk::ShaderStageFlagBits::eTessellationEvaluation,
+			vk::ShaderStageFlagBits::eGeometry,
+			vk::ShaderStageFlagBits::eFragment,
+		}) 
+	};
+	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
+	{
+		const auto& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subShaderDescriptor.subPass);
+
+		std::map<uint32_t, SpvReflectInterfaceVariable*> preOutputLocationToVariableMap{};
+		
+		//vertex
+		{
+			const auto& vertexShaderReflectData = subShaderCreateInfo.shaderDatas.at(vk::ShaderStageFlagBits::eVertex).first;
+
+			uint32_t variableCount = 0;
+			SpvReflectResult result = spvReflectEnumerateOutputVariables(&vertexShaderReflectData, &variableCount, NULL);
+			if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+			std::vector<SpvReflectInterfaceVariable*> temporaryVariables{variableCount};
+			result = spvReflectEnumerateOutputVariables(&vertexShaderReflectData, &variableCount, temporaryVariables.data());
+			if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+
+			for (const auto& variable : temporaryVariables)
+			{
+				auto&& name(std::string(variable->name));
+				if (name != "" && !name.starts_with("gl_"))
+				{
+					preOutputLocationToVariableMap.emplace(variable->location, variable);
+				}
+			}
+		}
+
+		//other
+		for (uint32_t stageIndex = 1; stageIndex < GRAPHIC_SHADER_STAGES.size() - 1; ++stageIndex)
+		{
+			auto&& stage = GRAPHIC_SHADER_STAGES.at(stageIndex);
+
+			if (!subShaderCreateInfo.shaderDatas.contains(stage)) continue;
+
+			const auto& shaderReflectData = subShaderCreateInfo.shaderDatas.at(stage).first;
+			{
+				uint32_t variableCount = 0;
+				SpvReflectResult result = spvReflectEnumerateInputVariables(&shaderReflectData, &variableCount, NULL);
+				if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+				std::vector<SpvReflectInterfaceVariable*> temporaryVariables{variableCount};
+				result = spvReflectEnumerateInputVariables(&shaderReflectData, &variableCount, temporaryVariables.data());
+				if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+
+				std::map<uint32_t, SpvReflectInterfaceVariable*> curInputLocationToVariableMap{};
+				for (const auto& variable : temporaryVariables)
+				{
+					auto&& name(std::string(variable->name));
+					if (name != "" && !name.starts_with("gl_"))
+					{
+						curInputLocationToVariableMap.emplace(variable->location, variable);
+					}
+				}
+
+				if (curInputLocationToVariableMap.size() == preOutputLocationToVariableMap.size())
+				{
+					for (const auto& outPair : preOutputLocationToVariableMap)
+					{
+						const auto& outVariable = *outPair.second;
+						auto&& inIter = curInputLocationToVariableMap.find(outPair.first);
+						if (inIter != curInputLocationToVariableMap.end())
+						{
+							auto&& inPair = *inIter;
+							const auto& inVariable = *inPair.second;
+							if (outVariable.format == inVariable.format && std::strcmp(outVariable.name, inVariable.name) == 0)
+							{
+								continue;
+							}
+							else
+							{
+								qFatal("Failed to match shader stage's input and ouput.");
+							}
+						}
+						else
+						{
+							qFatal("Failed to match shader stage's input and ouput.");
+						}
+					}
+				}
+				else
+				{
+					qFatal("Failed to match shader stage's input and ouput.");
+				}
+			}
+			{
+				uint32_t variableCount = 0;
+				SpvReflectResult result = spvReflectEnumerateOutputVariables(&shaderReflectData, &variableCount, NULL);
+				if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+				std::vector<SpvReflectInterfaceVariable*> temporaryVariables{variableCount};
+				result = spvReflectEnumerateOutputVariables(&shaderReflectData, &variableCount, temporaryVariables.data());
+				if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+
+				std::map<uint32_t, SpvReflectInterfaceVariable*>& curOutputLocationToVariableMap{preOutputLocationToVariableMap};
+				curOutputLocationToVariableMap.clear();
+				for (const auto& variable : temporaryVariables)
+				{
+					auto&& name(std::string(variable->name));
+					if (name != "" && !name.starts_with("gl_"))
+					{
+						curOutputLocationToVariableMap.emplace(variable->location, variable);
+					}
+				}
+			}
+		}
+
+		//frag
+		{
+			const auto& fragShaderReflectData = subShaderCreateInfo.shaderDatas.at(vk::ShaderStageFlagBits::eFragment).first;
+
+			uint32_t variableCount = 0;
+			SpvReflectResult result = spvReflectEnumerateInputVariables(&fragShaderReflectData, &variableCount, NULL);
+			if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+			std::vector<SpvReflectInterfaceVariable*> temporaryVariables{variableCount};
+			result = spvReflectEnumerateInputVariables(&fragShaderReflectData, &variableCount, temporaryVariables.data());
+			if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+
+			std::map<uint32_t, SpvReflectInterfaceVariable*> curInputLocationToVariableMap{};
+			for (const auto& variable : temporaryVariables)
+			{
+				auto&& name(std::string(variable->name));
+				if (name != "" && !name.starts_with("gl_"))
+				{
+					curInputLocationToVariableMap.emplace(variable->location, variable);
+				}
+			}
+
+			if (curInputLocationToVariableMap.size() == preOutputLocationToVariableMap.size())
+			{
+				for (const auto& outPair : preOutputLocationToVariableMap)
+				{
+					const auto& outVariable = *outPair.second;
+					auto&& inIter = curInputLocationToVariableMap.find(outPair.first);
+					if (inIter != curInputLocationToVariableMap.end())
+					{
+						auto&& inPair = *inIter;
+						const auto& inVariable = *inPair.second;
+						if (outVariable.format == inVariable.format && std::strcmp(outVariable.name, inVariable.name) == 0)
+						{
+							continue;
+						}
+						else
+						{
+							qFatal("Failed to match shader stage's input and ouput.");
+						}
+					}
+					else
+					{
+						qFatal("Failed to match shader stage's input and ouput.");
+					}
+				}
+			}
+			else
+			{
+				qFatal("Failed to match shader stage's input and ouput.");
+			}
+		}
+	}
+}
+
 void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Runtime::Graphic::Rendering::Shader* shader, const std::string path, bool* isInLoading)
 {
 	//Load descriptor
@@ -205,6 +375,7 @@ void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Ru
 	LoadSpirvData(shaderDescriptor, shaderCreateInfo);
 	LoadVertexInputData(shaderDescriptor, shaderCreateInfo);
 	LoadRenderPassData(shaderDescriptor, shaderCreateInfo);
+	CheckShaderStageInOutData(shaderDescriptor, shaderCreateInfo);
 	
 	*isInLoading = false;
 }
