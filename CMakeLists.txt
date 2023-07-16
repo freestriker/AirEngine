@@ -35,6 +35,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:CONSOLE")
 
 add_definitions(-DNOMINMAX)
+add_definitions(-DVULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
 
 add_subdirectory (Runtime)
 add_subdirectory (Demo)
