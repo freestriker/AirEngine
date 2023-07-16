@@ -4,7 +4,8 @@
 #include "RenderManager.hpp"
 #include "../FrontEnd/FrontEndBase.hpp"
 #include <vulkan/vk_enum_string_helper.h>
-
+//#include "../../Graphic/Manager/ShaderManager.hpp"
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 VkInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkInstance = VK_NULL_HANDLE;
 VkPhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkPhysicalDevice{ VK_NULL_HANDLE };
 VkDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkDevice{ VK_NULL_HANDLE };
@@ -32,7 +33,9 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 	return {
 		{ 0, 0, CreateVulkanInstance },
 		{ 0, 2, CreateDevice },
-		{ 0, 4, CreateMemoryAllocator }
+		{ 0, 3, SetDefaultDispatcher },
+		{ 0, 4, CreateMemoryAllocator },
+		{ 0, 4, InitializeGraphicManagers }
 	};
 }
 
@@ -98,6 +101,26 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	vkPhysicalDeviceVertexInputDynamicStateFeaturesEXT.pNext = nullptr;
 	vkPhysicalDeviceVertexInputDynamicStateFeaturesEXT.vertexInputDynamicState = true;
 
+	VkPhysicalDeviceBufferDeviceAddressFeatures vkPhysicalDeviceBufferDeviceAddressFeatures{};
+	vkPhysicalDeviceBufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+	vkPhysicalDeviceBufferDeviceAddressFeatures.pNext = nullptr;
+	vkPhysicalDeviceBufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
+	VkPhysicalDeviceDescriptorBufferFeaturesEXT vkPhysicalDeviceDescriptorBufferFeaturesEXT{};
+	vkPhysicalDeviceDescriptorBufferFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
+	vkPhysicalDeviceDescriptorBufferFeaturesEXT.pNext = nullptr;
+	vkPhysicalDeviceDescriptorBufferFeaturesEXT.descriptorBuffer = VK_TRUE;
+
+	VkPhysicalDeviceDescriptorIndexingFeaturesEXT vkPhysicalDeviceDescriptorIndexingFeaturesEXT{};
+	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.shaderStorageImageArrayNonUniformIndexing = VK_TRUE;
+	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.shaderInputAttachmentArrayNonUniformIndexing = VK_TRUE;
+	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.runtimeDescriptorArray = VK_TRUE;
+	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.descriptorBindingVariableDescriptorCount = VK_TRUE;
+
 	vkb::PhysicalDeviceSelector physicalDeviceSelector(_vkbInstance);
 	physicalDeviceSelector = physicalDeviceSelector
 		.add_required_extension(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME)
@@ -107,7 +130,13 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 		.add_required_extension(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME)
 		.add_required_extension_features(vkPhysicalDeviceIndexTypeUint8FeaturesEXT)
 		.add_required_extension(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)
-		.add_required_extension_features(vkPhysicalDeviceVertexInputDynamicStateFeaturesEXT);
+		.add_required_extension_features(vkPhysicalDeviceVertexInputDynamicStateFeaturesEXT)
+		.add_required_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
+		.add_required_extension_features(vkPhysicalDeviceBufferDeviceAddressFeatures)
+		.add_required_extension(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)
+		.add_required_extension_features(vkPhysicalDeviceDescriptorBufferFeaturesEXT)
+		.add_required_extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
+		.add_required_extension_features(vkPhysicalDeviceDescriptorIndexingFeaturesEXT);
 	if (isWindow)
 	{
 		physicalDeviceSelector.set_surface(dynamic_cast<FrontEnd::WindowFrontEndBase&>(RenderManager::FrontEnd()).VkSurface());
@@ -203,6 +232,15 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	}
 }
 
+void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::SetDefaultDispatcher()
+{
+	vk::DynamicLoader dynamicLoader{};
+	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Instance(_vkInstance));
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Device(_vkDevice));
+}
+
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAllocator()
 {
 	VmaVulkanFunctions vulkanFunctions = {};
@@ -217,6 +255,11 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAlloca
 	allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
 	vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator);
+}
+
+void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::InitializeGraphicManagers()
+{
+	//Graphic::Manager::ShaderManager::Initialize();
 }
 
 AirEngine::Runtime::Core::Manager::GraphicDeviceManager::GraphicDeviceManager()

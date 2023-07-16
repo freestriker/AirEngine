@@ -37,7 +37,9 @@ namespace AirEngine
 					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
 					static void CreateVulkanInstance();
 					static void CreateDevice();
+					static void SetDefaultDispatcher();
 					static void CreateMemoryAllocator();
+					static void InitializeGraphicManagers();
 				public:
 					static inline VkInstance VkInstance()
 					{
