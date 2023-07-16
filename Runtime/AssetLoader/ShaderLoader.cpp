@@ -7,6 +7,10 @@
 #include <unordered_map>
 #include "../Graphic/Instance/RenderPassBase.hpp"
 #include "../Graphic/Manager/RenderPassManager.hpp"
+#include "../Core/Manager/GraphicDeviceManager.hpp"
+#include "../Graphic/Manager/ShaderManager.hpp"
+#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
 AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::ShaderLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
@@ -357,6 +361,234 @@ void CheckShaderStageInOutData(const ShaderDescriptor& shaderDescriptor, ShaderC
 	}
 }
 
+void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	using namespace AirEngine::Runtime::Graphic::Rendering;
+
+	std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::tuple<uint16_t, uint8_t>> descriptorInfoNameToStartIndexAndCountMap{};
+	std::vector<uint16_t> sameNameCompactDescriptorIndexs{};
+
+	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
+	{
+		const auto& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subShaderDescriptor.subPass);
+
+		auto subPassName = AirEngine::Runtime::Utility::InternedString(subShaderDescriptor.subPass);
+
+		std::map<uint8_t, std::map<uint8_t, vk::DescriptorSetLayoutBinding>> setToBindingToDescriptorBindingMap{};
+		std::map<uint8_t, std::pair<Shader::DescriptorSetInfo, std::map<uint8_t, Shader::DescriptorInfo>>> setToDescriptorSetInfoAndBindingToDescriptorInfoMap{};
+
+		//parse direct data
+		for (const auto& shaderReflectDataPair : subShaderCreateInfo.shaderDatas)
+		{
+			const auto& shaderReflectData = shaderReflectDataPair.second.first;
+
+			uint32_t descriptorSetCount = 0;
+			SpvReflectResult result = spvReflectEnumerateDescriptorSets(&shaderReflectData, &descriptorSetCount, NULL);
+			if (result != SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate descriptor sets.");
+			std::vector<SpvReflectDescriptorSet*> reflectDescriptorSets(descriptorSetCount);
+			result = spvReflectEnumerateDescriptorSets(&shaderReflectData, &descriptorSetCount, reflectDescriptorSets.data());
+			if (result != SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate descriptor sets.");
+
+			for (uint32_t setIndex = 0; setIndex < descriptorSetCount; ++setIndex)
+			{
+				const SpvReflectDescriptorSet& reflectDescriptorSet = *(reflectDescriptorSets[setIndex]);
+
+				auto&& bindingToDescriptorBindingMap = setToBindingToDescriptorBindingMap[reflectDescriptorSet.set];
+
+				auto&& descriptorSetInfoAndBindingToDescriptorInfoMapPair = setToDescriptorSetInfoAndBindingToDescriptorInfoMap[reflectDescriptorSet.set];
+				auto&& descriptorSetInfo = descriptorSetInfoAndBindingToDescriptorInfoMapPair.first;
+				descriptorSetInfo.set = reflectDescriptorSet.set;
+				auto&& bindingToDescriptorInfoMap = descriptorSetInfoAndBindingToDescriptorInfoMapPair.second;
+
+				for (uint32_t bindingIndex = 0; bindingIndex < reflectDescriptorSet.binding_count; ++bindingIndex)
+				{
+					const SpvReflectDescriptorBinding& reflectDescriptorBinding = *(reflectDescriptorSet.bindings[bindingIndex]);
+
+					const auto neverParsed = !bindingToDescriptorBindingMap.contains(reflectDescriptorBinding.binding);
+
+					//descriptorBinding
+					auto&& descriptorBinding = bindingToDescriptorBindingMap[reflectDescriptorBinding.binding];
+					{
+						descriptorBinding.stageFlags |= vk::ShaderStageFlagBits(shaderReflectData.shader_stage);
+						if (neverParsed)
+						{
+							descriptorBinding.binding = reflectDescriptorBinding.binding;
+							descriptorBinding.descriptorType = vk::DescriptorType(reflectDescriptorBinding.descriptor_type);
+							descriptorBinding.descriptorCount = 1;
+							for (uint32_t dimeIndex = 0; dimeIndex < reflectDescriptorBinding.array.dims_count; ++dimeIndex)
+							{
+								descriptorBinding.descriptorCount *= reflectDescriptorBinding.array.dims[dimeIndex];
+							}
+						}
+						else
+						{
+							continue;
+						}
+					}
+
+					//descriptorInfo
+					auto&& descriptorInfo = bindingToDescriptorInfoMap[reflectDescriptorBinding.binding];
+					{
+						descriptorInfo.name = AirEngine::Runtime::Utility::InternedString(reflectDescriptorBinding.name);
+						descriptorInfo.set = reflectDescriptorSet.set;
+						descriptorInfo.binding = reflectDescriptorBinding.binding;
+						descriptorInfo.type = vk::DescriptorType(reflectDescriptorBinding.descriptor_type);
+						descriptorInfo.descriptorCount = descriptorBinding.descriptorCount;
+						if (
+							descriptorInfo.type == vk::DescriptorType::eInputAttachment ||
+							descriptorInfo.type == vk::DescriptorType::eCombinedImageSampler ||
+							descriptorInfo.type == vk::DescriptorType::eStorageImage
+							)
+						{
+							descriptorInfo.imageInfo = std::make_unique<Shader::DescriptorInfo::ImageInfo>
+							(
+								reflectDescriptorBinding.image.dim,
+								vk::Format(reflectDescriptorBinding.image.image_format),
+								reflectDescriptorBinding.image.arrayed != 0,
+								reflectDescriptorBinding.input_attachment_index
+							);
+						}
+					}
+				}
+			}
+		}
+
+		//Check binding
+		for (const auto& perBindingDescriptorMapPair : setToBindingToDescriptorBindingMap)
+		{
+			const auto& set = perBindingDescriptorMapPair.first;
+			const auto& perBindingDescriptorMap = perBindingDescriptorMapPair.second;
+
+			uint32_t bindingCount = 0;
+			std::unordered_set<AirEngine::Runtime::Utility::InternedString> descriptorNameSet{};
+			for (const auto& descriptorPair : perBindingDescriptorMap)
+			{
+				const auto& binding = descriptorPair.first;
+				const auto& descriptor = descriptorPair.second;
+				const auto& descriptorInfo = setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second.at(binding);
+
+				if (bindingCount != binding)
+				{
+					qFatal("Wrong binding in shader.");
+				}
+				else
+				{
+					bindingCount += descriptor.descriptorCount;
+				}
+
+				if (descriptorNameSet.contains(descriptorInfo.name))
+				{
+					qFatal("Same descriptor name in shader.");
+				}
+				else
+				{
+					descriptorNameSet.insert(descriptorInfo.name);
+				}
+
+			}
+		}
+
+		//create layout and size
+		for (const auto& bindingToDescriptorBindingMapPair : setToBindingToDescriptorBindingMap)
+		{
+			const auto& set = bindingToDescriptorBindingMapPair.first;
+			const auto& bindingToDescriptorBindingMap = bindingToDescriptorBindingMapPair.second;
+
+			std::vector<vk::DescriptorSetLayoutBinding> vkDescriptorSetLayoutBindings{};
+			for (const auto& descriptorPair : bindingToDescriptorBindingMap)
+			{
+				const auto& descriptor = descriptorPair.second;
+
+				vkDescriptorSetLayoutBindings.emplace_back(descriptor);
+			}
+
+			const bool isDynamic = setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second.rbegin()->second.descriptorCount == 0;
+
+			std::vector<vk::DescriptorBindingFlags> flags{bindingToDescriptorBindingMap.size(), vk::DescriptorBindingFlags()};
+			vk::DescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlags{flags};
+			{
+				if (isDynamic)
+				{
+					flags.back() = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
+					vkDescriptorSetLayoutBindings.back().descriptorCount = 4096;
+				}
+			}
+
+			vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
+				vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT,
+				vkDescriptorSetLayoutBindings,
+				&setLayoutBindingFlags
+			);
+
+			auto&& layout = vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+
+			for(auto& bindingToDescriptorInfoMapPair: setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second)
+			{
+				const auto binding = bindingToDescriptorInfoMapPair.first;
+				auto& descriptorInfo = bindingToDescriptorInfoMapPair.second;
+				descriptorInfo.singleDescriptorByteSize = AirEngine::Runtime::Graphic::Manager::ShaderManager::DescriptorSize(descriptorInfo.type);
+				descriptorInfo.solidByteSizeInDescriptorSet = descriptorInfo.singleDescriptorByteSize * descriptorInfo.descriptorCount;
+				descriptorInfo.startByteOffsetInDescriptorSet = uint16_t(vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).getDescriptorSetLayoutBindingOffsetEXT(layout, uint32_t(binding)));
+			}
+
+			auto&& descriptorSetInfo = setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).first;
+			descriptorSetInfo.layout = layout;
+			descriptorSetInfo.isDynamicByteSize = isDynamic;
+			descriptorSetInfo.solidByteSize = 
+				isDynamic ? 
+				setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second.rbegin()->second.startByteOffsetInDescriptorSet: 
+				uint16_t(vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).getDescriptorSetLayoutSizeEXT(layout));
+		}
+
+		//compact object
+		auto& subShaderInfo = shaderInfo.subShaderInfoMap[subPassName];
+		subShaderInfo.subPass = subPassName;
+		for (auto& setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair : setToDescriptorSetInfoAndBindingToDescriptorInfoMap)
+		{
+			const auto& set = setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair.first;
+			auto&& bindingToDescriptorInfoMap = setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair.second.second;
+			auto&& descriptorSetInfo = setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair.second.first;
+
+			descriptorSetInfo.index = subShaderInfo.descriptorSetInfos.size();
+
+			subShaderInfo.descriptorSetInfos.emplace_back(descriptorSetInfo);
+
+			for (auto& bindingToDescriptorInfoMapPair : bindingToDescriptorInfoMap)
+			{
+				const auto& binding = bindingToDescriptorInfoMapPair.first;
+				auto& descriptorInfo = bindingToDescriptorInfoMapPair.second;
+
+				descriptorInfo.index = subShaderInfo.descriptorInfos.size();
+				descriptorInfo.descriptorSetInfo = reinterpret_cast<Shader::DescriptorSetInfo*>(descriptorSetInfo.index);
+
+				subShaderInfo.descriptorInfos.emplace_back(std::move(descriptorInfo));
+				subShaderInfo.descriptorNameToDescriptorInfoIndexMap.emplace(std::pair{descriptorInfo.name, descriptorInfo.index});
+			}
+		}
+	}
+
+	//set parent ptr
+	for (auto& subShaderInfoMapPair : shaderInfo.subShaderInfoMap)
+	{
+		auto&& subPassName = subShaderInfoMapPair.first;
+		auto& subShaderInfo = subShaderInfoMapPair.second;
+
+		subShaderInfo.shaderInfo = &shaderInfo;
+
+		for (auto& descriptorSetInfo : subShaderInfo.descriptorSetInfos)
+		{
+			descriptorSetInfo.subShaderInfo = &subShaderInfo;
+		}
+
+		for (auto& descriptorInfo : subShaderInfo.descriptorInfos)
+		{
+			auto descriptorSetInfo = subShaderInfo.descriptorSetInfos.data() + reinterpret_cast<size_t>(descriptorInfo.descriptorSetInfo);
+			descriptorSetInfo->descriptorInfoIndexs.emplace_back(descriptorInfo.index);
+			descriptorInfo.descriptorSetInfo = reinterpret_cast<const Shader::DescriptorSetInfo*>(descriptorSetInfo);
+		}
+	}
+}
+
 void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Runtime::Graphic::Rendering::Shader* shader, const std::string path, bool* isInLoading)
 {
 	//Load descriptor
@@ -370,12 +602,14 @@ void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Ru
 	}
 
 	ShaderCreateInfo shaderCreateInfo{};
+	
 
 	AllocateDataSpace(shaderDescriptor, shaderCreateInfo);
 	LoadSpirvData(shaderDescriptor, shaderCreateInfo);
 	LoadVertexInputData(shaderDescriptor, shaderCreateInfo);
 	LoadRenderPassData(shaderDescriptor, shaderCreateInfo);
 	CheckShaderStageInOutData(shaderDescriptor, shaderCreateInfo);
+	ParseShaderInfo(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
 	
 	*isInLoading = false;
 }
