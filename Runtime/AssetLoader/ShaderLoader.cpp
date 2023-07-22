@@ -11,14 +11,15 @@
 #include "../Graphic/Manager/ShaderManager.hpp"
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
+#include "../Utility/StringToVulkanypeTransfer.hpp"
 
 AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::ShaderLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
-	auto&& Mesh = NEW_COLLECTABLE_PURE_OBJECT Graphic::Rendering::Shader();
+	auto&& shader = NEW_COLLECTABLE_PURE_OBJECT Graphic::Rendering::Shader();
 	Utility::Fiber::packaged_task<void(AirEngine::Runtime::Graphic::Rendering::Shader*, const std::string, bool*)> packagedTask(PopulateShader);
 	loadOperationFuture = std::move(Utility::Fiber::shared_future<void>(std::move(packagedTask.get_future())));
-	Utility::Fiber::fiber(std::move(packagedTask), Mesh, path, &isInLoading).detach();
-	return Mesh;
+	Utility::Fiber::fiber(std::move(packagedTask), shader, path, &isInLoading).detach();
+	return shader;
 }
 
 void AirEngine::Runtime::AssetLoader::ShaderLoader::OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset)
@@ -26,17 +27,9 @@ void AirEngine::Runtime::AssetLoader::ShaderLoader::OnUnloadAsset(AirEngine::Run
 	delete static_cast<AirEngine::Runtime::Graphic::Rendering::Shader*>(asset);
 }
 
-struct SubShaderDescriptor
+struct ColorAttachmentBlendStateDescriptor
 {
-	std::string subPass{};
-
-	std::vector<std::string> spvShaderPaths{};
-
-	std::string cullMode;
-
-	bool depthTestEnable{};
-	bool depthWriteEnable{};
-	std::string depthCompareOp{};
+	std::string colorAttachment;
 
 	bool blendEnable{};
 	std::string srcColorBlendFactor{};
@@ -50,17 +43,9 @@ struct SubShaderDescriptor
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE
 	(
-		SubShaderDescriptor,
+		ColorAttachmentBlendStateDescriptor,
 
-		subPass,
-
-		spvShaderPaths,
-
-		cullMode,
-
-		depthTestEnable,
-		depthWriteEnable,
-		depthCompareOp,
+		colorAttachment,
 
 		blendEnable,
 		srcColorBlendFactor,
@@ -71,6 +56,39 @@ struct SubShaderDescriptor
 		dstAlphaBlendFactor,
 
 		colorWriteMasks
+	);
+};
+struct SubShaderDescriptor
+{
+	std::string subPass{};
+
+	std::vector<std::string> spvShaderPaths{};
+
+	std::vector <std::string> cullModes;
+	std::string frountFace;
+
+	bool depthTestEnable{};
+	bool depthWriteEnable{};
+	std::string depthCompareOp{};
+
+	std::vector<ColorAttachmentBlendStateDescriptor> colorAttachmentBlendStates{};
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE
+	(
+		SubShaderDescriptor,
+
+		subPass,
+
+		spvShaderPaths,
+
+		cullModes,
+		frountFace,
+
+		depthTestEnable,
+		depthWriteEnable,
+		depthCompareOp,
+
+		colorAttachmentBlendStates
 	);
 };
 struct ShaderDescriptor
@@ -88,17 +106,9 @@ struct ShaderDescriptor
 		subShaders
 	);
 };
-struct VertexInputInfo
-{
-	AirEngine::Runtime::Utility::InternedString name;
-	vk::Format format;
-	uint32_t location;
-};
 struct SubShaderCreateInfo
 {
-	std::unordered_map<vk::ShaderStageFlagBits, std::pair<SpvReflectShaderModule, VkShaderModule>> shaderDatas;
-	std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
-	std::unordered_map< AirEngine::Runtime::Utility::InternedString, VertexInputInfo> vertexInputInfos;
+	std::unordered_map<vk::ShaderStageFlagBits, std::pair<SpvReflectShaderModule, vk::ShaderModule>> shaderDatas;
 };
 struct ShaderCreateInfo
 {
@@ -106,16 +116,9 @@ struct ShaderCreateInfo
 	AirEngine::Runtime::Graphic::Instance::RenderPassBase* renderPass;
 };
 
-void AllocateDataSpace(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void LoadSpirvData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
-	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
-	{
-		shaderCreateInfo.subShaderCreateInfos[subShaderDescriptor.subPass] = {};
-	}
-}
-
-void LoadSpirvData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
-{
+	vk::ShaderStageFlags stages{};
 	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
 	{
 		auto&& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos[subShaderDescriptor.subPass];
@@ -133,7 +136,7 @@ void LoadSpirvData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& s
 			file.close();
 
 			std::pair<SpvReflectShaderModule, vk::ShaderModule> shaderData{};
-			
+
 			SpvReflectResult result = spvReflectCreateShaderModule(buffer.size(), buffer.data(), &shaderData.first);
 			if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Load shader spv reflect failed.");
 
@@ -143,63 +146,36 @@ void LoadSpirvData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& s
 
 			auto stage = vk::ShaderStageFlagBits(shaderData.first.shader_stage);
 			if(subShaderCreateInfo.shaderDatas.contains(stage)) qFatal("Failed to load the same shader stage.");
+			stages |= stage;
 			
 			subShaderCreateInfo.shaderDatas[stage] = std::move(shaderData);
 		}
-
-		subShaderCreateInfo.pipelineShaderStageCreateInfos.reserve(subShaderCreateInfo.shaderDatas.size());
-		for (const auto& shaderDataPair : subShaderCreateInfo.shaderDatas)
-		{
-			subShaderCreateInfo.pipelineShaderStageCreateInfos.emplace_back(vk::PipelineShaderStageCreateFlags(), shaderDataPair.first, shaderDataPair.second.second, shaderDataPair.second.first.entry_point_name);
-		}
 	}
-}
-
-void LoadVertexInputData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
-{
-	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
+	if (stages & vk::ShaderStageFlagBits::eVertex && stages & vk::ShaderStageFlagBits::eFragment)
 	{
-		auto& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subShaderDescriptor.subPass);
-		const auto& vertexShaderReflectData = subShaderCreateInfo.shaderDatas.at(vk::ShaderStageFlagBits::eVertex).first;
-
-		uint32_t inputCount = 0;
-		SpvReflectResult result = spvReflectEnumerateInputVariables(&vertexShaderReflectData, &inputCount, NULL);
-		if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader input variables.");
-		std::vector<SpvReflectInterfaceVariable*> input_vars(inputCount);
-		result = spvReflectEnumerateInputVariables(&vertexShaderReflectData, &inputCount, input_vars.data());
-		if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader input variables.");
-
-		
-		for (uint32_t inputIndex = 0; inputIndex < inputCount; ++inputIndex)
-		{
-			const auto& inputVar = *input_vars[inputIndex];
-
-			auto name = AirEngine::Runtime::Utility::InternedString::InternedString(inputVar.name);
-
-			VertexInputInfo vertexInputInfo{};
-			vertexInputInfo.name = name;
-			vertexInputInfo.location = inputVar.location;
-			vertexInputInfo.format = vk::Format(inputVar.format);
-
-			subShaderCreateInfo.vertexInputInfos.emplace(name, std::move(vertexInputInfo));
-		}
+		shaderInfo.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+	}
+	else
+	{
+		qFatal("Failed to get right pipeline bind point.");
 	}
 }
 
-void LoadRenderPassData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void LoadRenderPassData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	shaderCreateInfo.renderPass = AirEngine::Runtime::Graphic::Manager::RenderPassManager::LoadRenderPass(shaderDescriptor.renderPass);
+	shaderInfo.renderPass = shaderCreateInfo.renderPass;
 }
 
-void CheckShaderStageInOutData(const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void CheckGraphicShaderStageInOutData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	constexpr auto GRAPHIC_SHADER_STAGES{ 
 		std::to_array<vk::ShaderStageFlagBits>(
 		{ 
 			vk::ShaderStageFlagBits::eVertex,
-			vk::ShaderStageFlagBits::eTessellationControl,
-			vk::ShaderStageFlagBits::eTessellationEvaluation,
-			vk::ShaderStageFlagBits::eGeometry,
+			//vk::ShaderStageFlagBits::eTessellationControl,
+			//vk::ShaderStageFlagBits::eTessellationEvaluation,
+			//vk::ShaderStageFlagBits::eGeometry,
 			vk::ShaderStageFlagBits::eFragment,
 		}) 
 	};
@@ -336,8 +312,7 @@ void CheckShaderStageInOutData(const ShaderDescriptor& shaderDescriptor, ShaderC
 					auto&& inIter = curInputLocationToVariableMap.find(outPair.first);
 					if (inIter != curInputLocationToVariableMap.end())
 					{
-						auto&& inPair = *inIter;
-						const auto& inVariable = *inPair.second;
+						const auto& inVariable = *(*inIter).second;
 						if (outVariable.format == inVariable.format && std::strcmp(outVariable.name, inVariable.name) == 0)
 						{
 							continue;
@@ -366,13 +341,13 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 	using namespace AirEngine::Runtime::Graphic::Rendering;
 
 	std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::tuple<uint16_t, uint8_t>> descriptorInfoNameToStartIndexAndCountMap{};
-	std::vector<uint16_t> sameNameCompactDescriptorIndexs{};
 
 	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
 	{
-		const auto& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subShaderDescriptor.subPass);
+		auto& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subShaderDescriptor.subPass);
 
 		auto subPassName = AirEngine::Runtime::Utility::InternedString(subShaderDescriptor.subPass);
+		auto&& subPassInfo = shaderCreateInfo.renderPass->Info().SubPassInfo(subPassName);
 
 		std::map<uint8_t, std::map<uint8_t, vk::DescriptorSetLayoutBinding>> setToBindingToDescriptorBindingMap{};
 		std::map<uint8_t, std::pair<Shader::DescriptorSetInfo, std::map<uint8_t, Shader::DescriptorInfo>>> setToDescriptorSetInfoAndBindingToDescriptorInfoMap{};
@@ -395,10 +370,9 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 
 				auto&& bindingToDescriptorBindingMap = setToBindingToDescriptorBindingMap[reflectDescriptorSet.set];
 
-				auto&& descriptorSetInfoAndBindingToDescriptorInfoMapPair = setToDescriptorSetInfoAndBindingToDescriptorInfoMap[reflectDescriptorSet.set];
-				auto&& descriptorSetInfo = descriptorSetInfoAndBindingToDescriptorInfoMapPair.first;
+				auto&& descriptorSetInfo = setToDescriptorSetInfoAndBindingToDescriptorInfoMap[reflectDescriptorSet.set].first;
 				descriptorSetInfo.set = reflectDescriptorSet.set;
-				auto&& bindingToDescriptorInfoMap = descriptorSetInfoAndBindingToDescriptorInfoMapPair.second;
+				auto&& bindingToDescriptorInfoMap = setToDescriptorSetInfoAndBindingToDescriptorInfoMap[reflectDescriptorSet.set].second;
 
 				for (uint32_t bindingIndex = 0; bindingIndex < reflectDescriptorSet.binding_count; ++bindingIndex)
 				{
@@ -488,6 +462,31 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 			}
 		}
 
+		//Check input
+		{
+			for (auto& setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair : setToDescriptorSetInfoAndBindingToDescriptorInfoMap)
+			{
+				const auto& set = setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair.first;
+				auto&& bindingToDescriptorInfoMap = setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair.second.second;
+				auto&& descriptorSetInfo = setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair.second.first;
+
+				for (auto& bindingToDescriptorInfoMapPair : bindingToDescriptorInfoMap)
+				{
+					const auto& binding = bindingToDescriptorInfoMapPair.first;
+					auto& descriptorInfo = bindingToDescriptorInfoMapPair.second;
+
+					if (descriptorInfo.type == vk::DescriptorType::eInputAttachment)
+					{
+						auto&& attachmentInfo = subPassInfo.AttachmentInfo(descriptorInfo.name);
+						if (descriptorInfo.imageInfo->inputAttachmentIndex != attachmentInfo.location)
+						{
+							qFatal("Input attachment do not match.");
+						}
+					}
+				}
+			}
+		}
+
 		//create layout and size
 		for (const auto& bindingToDescriptorBindingMapPair : setToBindingToDescriptorBindingMap)
 		{
@@ -495,11 +494,11 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 			const auto& bindingToDescriptorBindingMap = bindingToDescriptorBindingMapPair.second;
 
 			std::vector<vk::DescriptorSetLayoutBinding> vkDescriptorSetLayoutBindings{};
-			for (const auto& descriptorPair : bindingToDescriptorBindingMap)
+			for (const auto& bindingToDescriptorBindingMapPair : bindingToDescriptorBindingMap)
 			{
-				const auto& descriptor = descriptorPair.second;
+				const auto& descriptorBinding = bindingToDescriptorBindingMapPair.second;
 
-				vkDescriptorSetLayoutBindings.emplace_back(descriptor);
+				vkDescriptorSetLayoutBindings.emplace_back(descriptorBinding);
 			}
 
 			const bool isDynamic = setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second.rbegin()->second.descriptorCount == 0;
@@ -551,6 +550,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 
 			descriptorSetInfo.index = subShaderInfo.descriptorSetInfos.size();
 
+			subShaderInfo.setToDescriptorSetInfoIndexMap.emplace(descriptorSetInfo.set, uint8_t(subShaderInfo.descriptorSetInfos.size()));
 			subShaderInfo.descriptorSetInfos.emplace_back(descriptorSetInfo);
 
 			for (auto& bindingToDescriptorInfoMapPair : bindingToDescriptorInfoMap)
@@ -589,6 +589,246 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 	}
 }
 
+void LoadVertexInputData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	for (auto& subShaderInfoMapPair : shaderInfo.subShaderInfoMap)
+	{
+		auto&& subPassName = subShaderInfoMapPair.first;
+		auto&& subShaderInfo = subShaderInfoMapPair.second;
+
+		const auto& vertexShaderReflectData = shaderCreateInfo.subShaderCreateInfos.at(subPassName.ToString()).shaderDatas.at(vk::ShaderStageFlagBits::eVertex).first;
+
+		uint32_t inputCount = 0;
+		SpvReflectResult result = spvReflectEnumerateInputVariables(&vertexShaderReflectData, &inputCount, NULL);
+		if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader input variables.");
+		std::vector<SpvReflectInterfaceVariable*> input_vars(inputCount);
+		result = spvReflectEnumerateInputVariables(&vertexShaderReflectData, &inputCount, input_vars.data());
+		if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader input variables.");
+
+		for (uint32_t inputIndex = 0; inputIndex < inputCount; ++inputIndex)
+		{
+			const auto& inputVar = *input_vars[inputIndex];
+
+			auto name = AirEngine::Runtime::Utility::InternedString::InternedString(inputVar.name);
+
+			AirEngine::Runtime::Graphic::Rendering::Shader::VertexInputInfo vertexInputInfo{};
+			vertexInputInfo.name = name;
+			vertexInputInfo.location = inputVar.location;
+			vertexInputInfo.format = vk::Format(inputVar.format);
+
+			subShaderInfo.nameToVertexInputInfoMap.emplace(name, std::move(vertexInputInfo));
+		}
+	}
+}
+
+void CheckGraphicFragmentShaderOutData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
+	{
+		const auto& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subShaderDescriptor.subPass);
+		auto&& subpassName = AirEngine::Runtime::Utility::InternedString(subShaderDescriptor.subPass);
+		auto&& subpassInfo = shaderCreateInfo.renderPass->Info().SubPassInfo(subpassName);
+
+		const auto& fragmentShaderReflectData = subShaderCreateInfo.shaderDatas.at(vk::ShaderStageFlagBits::eFragment).first;
+
+		uint32_t variableCount = 0;
+		SpvReflectResult result = spvReflectEnumerateOutputVariables(&fragmentShaderReflectData, &variableCount, NULL);
+		if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+		std::vector<SpvReflectInterfaceVariable*> temporaryVariables{variableCount};
+		result = spvReflectEnumerateOutputVariables(&fragmentShaderReflectData, &variableCount, temporaryVariables.data());
+		if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate shader variables.");
+
+		for (const auto& variable : temporaryVariables)
+		{
+			auto&& attachmentInfo = subpassInfo.AttachmentInfo(AirEngine::Runtime::Utility::InternedString(variable->name));
+			if (attachmentInfo.location != variable->location || attachmentInfo.type != AirEngine::Runtime::Graphic::Instance::RenderPassBase::AttachmentType::COLOR)
+			{
+				qFatal("Fragment output attachment do not match.");
+			}
+		}
+	}
+}
+void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	using namespace AirEngine::Runtime;
+
+	constexpr auto DYNAMIC_STATES{
+		std::to_array<vk::DynamicState>(
+		{
+			vk::DynamicState::eViewport,
+			vk::DynamicState::eScissor,
+			vk::DynamicState::eVertexInputEXT
+		})
+	};
+	constexpr auto VIEWPORT{
+		std::to_array<vk::Viewport>(
+		{
+			vk::Viewport(0, 0, 100, 100, 0, 1)
+		})
+	};
+	constexpr auto SCISSOR{
+		std::to_array<vk::Rect2D>(
+		{
+			vk::Rect2D({0, 0}, {100, 100})
+		})
+	};
+
+	for (auto& subShaderInfoMapPair : shaderInfo.subShaderInfoMap)
+	{
+		auto&& subPassName = subShaderInfoMapPair.first;
+		auto& subShaderInfo = subShaderInfoMapPair.second;
+		auto&& setToDescriptorSetInfoIndexMap = subShaderInfo.setToDescriptorSetInfoIndexMap;
+		auto&& subShaderDescriptor = *std::find_if(shaderDescriptor.subShaders.begin(), shaderDescriptor.subShaders.end(), [&](const SubShaderDescriptor& subShaderDescriptor)->bool {return subShaderDescriptor.subPass == subPassName.ToString(); });
+		auto&& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subPassName.ToString());
+		const auto& subpassInfo = shaderCreateInfo.renderPass->Info().SubPassInfo(subPassName);
+
+		vk::PipelineLayout pipelineLayout{};
+		{
+			std::vector<vk::DescriptorSetLayout> vkDescriptorSetLayouts{};
+			for (auto& setToDescriptorSetInfoIndexMapPair : setToDescriptorSetInfoIndexMap)
+			{
+				auto&& set = setToDescriptorSetInfoIndexMapPair.first;
+				auto&& descriptorSetInfoIndex = setToDescriptorSetInfoIndexMapPair.second;
+				auto&& descriptorSetInfo = subShaderInfo.descriptorSetInfos[descriptorSetInfoIndex];
+
+				vkDescriptorSetLayouts.emplace_back(descriptorSetInfo.layout);
+			}
+
+			vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{vk::PipelineLayoutCreateFlags(), vkDescriptorSetLayouts};
+			pipelineLayout = vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).createPipelineLayout(pipelineLayoutCreateInfo);
+		}
+
+		vk::Pipeline pipeline{};
+		{
+			vk::PipelineViewportStateCreateInfo pipelineViewportStateCreateInfo
+			{
+				vk::PipelineViewportStateCreateFlags(),
+					VIEWPORT,
+					SCISSOR
+			};
+			vk::PipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo
+			{
+				vk::PipelineInputAssemblyStateCreateFlags(),
+					vk::PrimitiveTopology::eTriangleList,
+					VK_FALSE
+			};
+			vk::PipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo
+			(
+				vk::PipelineRasterizationStateCreateFlags(),
+				VK_FALSE,
+				VK_FALSE,
+				vk::PolygonMode::eFill,
+				Utility::StringToVulkanypeTransfer::ParseToVkCullModeFlags(subShaderDescriptor.cullModes),
+				Utility::StringToVulkanypeTransfer::ParseToVkFrontFace(subShaderDescriptor.frountFace),
+				VK_FALSE,
+				0,
+				0,
+				0,
+				1
+			);
+
+			vk::PipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo
+			(
+				vk::PipelineMultisampleStateCreateFlags(),
+				vk::SampleCountFlagBits::e1,
+				VK_FALSE
+			);
+
+			vk::PipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo
+			(
+				vk::PipelineDepthStencilStateCreateFlags(),
+				subShaderDescriptor.depthTestEnable,
+				subShaderDescriptor.depthWriteEnable,
+				Utility::StringToVulkanypeTransfer::ParseToVkCompareOp(subShaderDescriptor.depthCompareOp)
+			);
+			std::vector<vk::PipelineColorBlendAttachmentState> vkPipelineColorBlendAttachmentStates{subShaderDescriptor.colorAttachmentBlendStates.size()};
+			{
+				for (const auto& colorAttachmentBlendStateDescriptor : subShaderDescriptor.colorAttachmentBlendStates)
+				{
+					auto&& attachmentName = colorAttachmentBlendStateDescriptor.colorAttachment;
+
+					auto&& attachmentInfo = subpassInfo.AttachmentInfo(Utility::InternedString(attachmentName));
+					if (attachmentInfo.type == AirEngine::Runtime::Graphic::Instance::RenderPassBase::AttachmentType::COLOR)
+					{
+						auto&& vkPipelineColorBlendAttachmentState = vkPipelineColorBlendAttachmentStates[attachmentInfo.location];
+						vkPipelineColorBlendAttachmentState = vk::PipelineColorBlendAttachmentState
+						(
+							colorAttachmentBlendStateDescriptor.blendEnable,
+							Utility::StringToVulkanypeTransfer::ParseToVkBlendFactor(colorAttachmentBlendStateDescriptor.srcColorBlendFactor),
+							Utility::StringToVulkanypeTransfer::ParseToVkBlendFactor(colorAttachmentBlendStateDescriptor.dstColorBlendFactor),
+							Utility::StringToVulkanypeTransfer::ParseToVkBlendOp(colorAttachmentBlendStateDescriptor.colorBlendOp),
+							Utility::StringToVulkanypeTransfer::ParseToVkBlendFactor(colorAttachmentBlendStateDescriptor.srcAlphaBlendFactor),
+							Utility::StringToVulkanypeTransfer::ParseToVkBlendFactor(colorAttachmentBlendStateDescriptor.dstAlphaBlendFactor),
+							Utility::StringToVulkanypeTransfer::ParseToVkBlendOp(colorAttachmentBlendStateDescriptor.alphaBlendOp),
+							Utility::StringToVulkanypeTransfer::ParseToVkColorComponentFlags(colorAttachmentBlendStateDescriptor.colorWriteMasks)
+						);
+					}
+					else
+					{
+						qFatal("Blend state can only be used to color attachment.");
+					}
+				}
+			}
+			vk::PipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo
+			(
+				vk::PipelineColorBlendStateCreateFlags(),
+				false,
+				vk::LogicOp::eClear,
+				vkPipelineColorBlendAttachmentStates
+			);
+			vk::PipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo
+			(
+				vk::PipelineDynamicStateCreateFlags(),
+				DYNAMIC_STATES
+			);
+			std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos{};
+			for (const auto& shaderDatasPair : subShaderCreateInfo.shaderDatas)
+			{
+				const auto& stage = shaderDatasPair.first;
+				const auto& shaderReflectData = shaderDatasPair.second.first;
+				const auto& shaderModule = shaderDatasPair.second.second;
+				pipelineShaderStageCreateInfos.emplace_back(vk::PipelineShaderStageCreateInfo(vk::PipelineShaderStageCreateFlags(), stage, shaderModule, shaderReflectData.entry_point_name));
+			}
+			vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo
+			(
+				vk::PipelineCreateFlags(),
+				pipelineShaderStageCreateInfos,
+				nullptr,
+				&pipelineInputAssemblyStateCreateInfo,
+				nullptr,
+				&pipelineViewportStateCreateInfo,
+				&pipelineRasterizationStateCreateInfo,
+				&pipelineMultisampleStateCreateInfo,
+				&pipelineDepthStencilStateCreateInfo,
+				&pipelineColorBlendStateCreateInfo,
+				&pipelineDynamicStateCreateInfo,
+				pipelineLayout,
+				shaderCreateInfo.renderPass->VkHandle(),
+				shaderCreateInfo.renderPass->Info().SubPassInfo(subPassName).Index()
+			);
+			pipeline = vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).createGraphicsPipeline({}, graphicsPipelineCreateInfo).value;
+		}		
+
+		subShaderInfo.pipelineLayout = pipelineLayout;
+		subShaderInfo.pipeline = pipeline;
+	}
+}
+void UnloadSpirvData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	for (auto& subShaderCreateInfoPair : shaderCreateInfo.subShaderCreateInfos)
+	{
+		auto&& shaderDatas = subShaderCreateInfoPair.second.shaderDatas;
+		for (auto& shaderDatasPair : shaderDatas)
+		{
+			auto&& reflectShaderData = shaderDatasPair.second.first;
+			auto&& shaderData = shaderDatasPair.second.second;
+
+			spvReflectDestroyShaderModule(&reflectShaderData);
+			vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).destroyShaderModule(shaderData);
+		}
+	}
+}
+
 void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Runtime::Graphic::Rendering::Shader* shader, const std::string path, bool* isInLoading)
 {
 	//Load descriptor
@@ -603,14 +843,27 @@ void AirEngine::Runtime::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Ru
 
 	ShaderCreateInfo shaderCreateInfo{};
 	
+	LoadSpirvData(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+	switch (shader->_shaderInfo.pipelineBindPoint)
+	{
+		case vk::PipelineBindPoint::eGraphics:
+		{
+			LoadRenderPassData(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+			CheckGraphicShaderStageInOutData(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+			ParseShaderInfo(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+			LoadVertexInputData(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+			CheckGraphicFragmentShaderOutData(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+			CreateGraphicPipeline(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+			break;
+		}
+		default:
+		{
+			qFatal("Do not support this shader type.");
+			break;
+		}
+	}
+	UnloadSpirvData(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
 
-	AllocateDataSpace(shaderDescriptor, shaderCreateInfo);
-	LoadSpirvData(shaderDescriptor, shaderCreateInfo);
-	LoadVertexInputData(shaderDescriptor, shaderCreateInfo);
-	LoadRenderPassData(shaderDescriptor, shaderCreateInfo);
-	CheckShaderStageInOutData(shaderDescriptor, shaderCreateInfo);
-	ParseShaderInfo(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
-	
 	*isInLoading = false;
 }
 

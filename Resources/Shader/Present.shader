@@ -11,24 +11,29 @@
                 "../../Resources/Shader/Spv/Present.frag.spv"
             ],
 
-            "cullMode": "",
+            "cullModes": ["BACK"],
+            "frountFace": "CLOCKWISE",
 
             "depthTestEnable": true,
             "depthWriteEnable": true,
-            "depthCompareOp": "",
+            "depthCompareOp": "LESS",
 
-            "blendEnable": true,
-            "srcColorBlendFactor": "",
-            "colorBlendOp": "",
-            "dstColorBlendFactor": "",
-            "srcAlphaBlendFactor": "",
-            "alphaBlendOp": "",
-            "dstAlphaBlendFactor": "",
-
-            "colorWriteMasks": 
+            "colorAttachmentBlendStates":
             [
+                {
+                    "colorAttachment": "ColorAttachment",
 
-            ] 
+                    "blendEnable": false,
+                    "srcColorBlendFactor": "ZERO",
+                    "colorBlendOp": "ADD",
+                    "dstColorBlendFactor": "ZERO",
+                    "srcAlphaBlendFactor": "ZERO",
+                    "alphaBlendOp": "ADD",
+                    "dstAlphaBlendFactor": "ZERO",
+        
+                    "colorWriteMasks": ["R", "G", "B"] 
+                }
+            ]
         }
     ]
 }

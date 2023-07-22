@@ -32,6 +32,8 @@ namespace AirEngine
 					struct AttachmentInfo
 					{
 						Utility::InternedString name;
+						uint32_t attachmentInfoIndex;
+						uint32_t attachmentIndex;
 						uint32_t location;
 						vk::Format format;
 						vk::ImageLayout layout;
@@ -42,9 +44,9 @@ namespace AirEngine
 						friend class RenderPassBuilder;
 					private:
 						Utility::InternedString _name;
+						uint32_t _index;
 						std::vector<AttachmentInfo> _attachments;
 						std::unordered_map< Utility::InternedString, uint32_t> _nameToIndexMap;
-						std::unordered_map< uint32_t, uint32_t> _locationToIndexMap;
 					public:
 						inline Utility::InternedString Name() const
 						{
@@ -54,20 +56,23 @@ namespace AirEngine
 						{
 							return _attachments.at(_nameToIndexMap.at(name));
 						}
-						inline const RenderPassBase::AttachmentInfo& AttachmentInfo(uint32_t location) const
+						inline uint32_t Index()const
 						{
-							return _attachments.at(_locationToIndexMap.at(location));
+							return _index;
 						}
 					};
 					struct RenderPassInfo
 					{
+						friend class RenderPassBuilder;
+					private:
 						Utility::InternedString _name;
 						std::unordered_map<Utility::InternedString, SubPassInfo> _subPassInfos;
+					public:
 						inline Utility::InternedString Name() const
 						{
 							return _name;
 						}
-						inline const SubPassInfo& AttachmentInfo(Utility::InternedString name) const
+						inline const SubPassInfo& SubPassInfo(Utility::InternedString name) const
 						{
 							return _subPassInfos.at(name);
 						}
@@ -77,12 +82,12 @@ namespace AirEngine
 					{
 						friend class RenderPassBuilder;
 					private:
-						std::string _name;				
+						Utility::InternedString _name;
 						vk::PipelineBindPoint _pipelineBindPoint;
-						std::map<std::string, vk::AttachmentReference2> _coloreReferences;
-						std::optional<std::pair<std::string, vk::AttachmentReference2>> _depthReference;
-						std::map<std::string, vk::AttachmentReference2> _inputReferences;
-						std::vector<std::string> _preserveReferences;
+						std::vector<std::pair<Utility::InternedString, vk::AttachmentReference2>> _coloreReferences;
+						std::optional<std::pair<Utility::InternedString, vk::AttachmentReference2>> _depthReference;
+						std::vector<std::pair<Utility::InternedString, vk::AttachmentReference2>> _inputReferences;
+						std::vector<Utility::InternedString> _preserveReferences;
 					public:
 						RenderSubpassBuilder& SetName(const std::string& name);
 						RenderSubpassBuilder& SetPipelineBindPoint(vk::PipelineBindPoint pipelineBindPoint);
@@ -97,7 +102,7 @@ namespace AirEngine
 					public:
 						struct AttachmentDescriptor
 						{
-							std::string name;
+							Utility::InternedString name;
 							vk::Format format;
 							vk::AttachmentLoadOp loadOp;
 							vk::AttachmentStoreOp storeOp;
@@ -108,8 +113,8 @@ namespace AirEngine
 						};
 						struct DependencyDescriptor
 						{
-							std::string srcSubpass;
-							std::string dstSubpass;
+							Utility::InternedString srcSubpass;
+							Utility::InternedString dstSubpass;
 							vk::PipelineStageFlags2 srcStageMask;
 							vk::PipelineStageFlags2 dstStageMask;
 							vk::AccessFlags2 srcAccessMask;
@@ -135,10 +140,12 @@ namespace AirEngine
 					private:
 						vk::RenderPass Build() const;
 						RenderPassInfo BuildInfo() const;
-						std::string _name;
-						std::map<std::string, vk::AttachmentDescription2> _vkAttachmentDescriptionMap;
-						std::vector<RenderSubpassBuilder> _renderSubpassBuilders;
-						std::vector<std::tuple<std::string, std::string, vk::DependencyFlags, vk::MemoryBarrier2>> _srcDstDependencyBarriers;
+						Utility::InternedString _name;
+						mutable std::map<Utility::InternedString, uint32_t> _attachmentNameToIndexMap;
+						mutable std::vector<vk::AttachmentDescription2> _vkAttachmentDescriptions;
+						mutable std::map<Utility::InternedString, uint32_t> _subpassNameToIndexMap;
+						mutable std::vector<RenderSubpassBuilder> _renderSubpassBuilders;
+						mutable std::vector<std::tuple<Utility::InternedString, Utility::InternedString, vk::DependencyFlags, vk::MemoryBarrier2>> _srcDstDependencyBarriers;
 					};
 				private:
 					vk::RenderPass _vkRenderPass;
@@ -150,6 +157,10 @@ namespace AirEngine
 					inline const RenderPassInfo& Info()const
 					{
 						return _renderPassInfo;
+					}
+					inline vk::RenderPass VkHandle()const
+					{
+						return _vkRenderPass;
 					}
 				};
 
