@@ -14,6 +14,10 @@ namespace AirEngine
 		}
 		namespace Graphic
 		{
+			namespace Instance
+			{
+				class RenderPassBase;
+			}
 			namespace Rendering
 			{
 				class AIR_ENGINE_API Shader final
@@ -24,6 +28,12 @@ namespace AirEngine
 					struct DescriptorSetInfo;
 					struct SubShaderInfo;
 					struct ShaderInfo;
+					struct VertexInputInfo
+					{
+						AirEngine::Runtime::Utility::InternedString name;
+						vk::Format format;
+						uint32_t location;
+					};
 					struct DescriptorInfo
 					{
 						AirEngine::Runtime::Utility::InternedString name;
@@ -51,8 +61,8 @@ namespace AirEngine
 					struct DescriptorSetInfo
 					{
 						uint8_t set;
-						uint16_t index;
-						std::vector<uint8_t> descriptorInfoIndexs;
+						uint8_t index;
+						std::vector<uint16_t> descriptorInfoIndexs;
 						uint16_t solidByteSize;
 						bool isDynamicByteSize;
 						vk::DescriptorSetLayout layout;
@@ -62,15 +72,21 @@ namespace AirEngine
 					struct SubShaderInfo
 					{
 						AirEngine::Runtime::Utility::InternedString subPass;
+						std::unordered_map< AirEngine::Runtime::Utility::InternedString, VertexInputInfo> nameToVertexInputInfoMap;
 						std::vector<DescriptorInfo> descriptorInfos{};
 						std::vector<DescriptorSetInfo> descriptorSetInfos{};
 						std::unordered_map<AirEngine::Runtime::Utility::InternedString, uint16_t> descriptorNameToDescriptorInfoIndexMap{};
+						std::unordered_map<uint8_t, uint8_t> setToDescriptorSetInfoIndexMap;
+						vk::PipelineLayout pipelineLayout;
+						vk::Pipeline pipeline;
 
 						const ShaderInfo* shaderInfo;
 					};
 					struct ShaderInfo
 					{
+						vk::PipelineBindPoint pipelineBindPoint;
 						std::unordered_map<AirEngine::Runtime::Utility::InternedString, SubShaderInfo> subShaderInfoMap{};
+						Instance::RenderPassBase* renderPass;
 					};
 				private:
 					ShaderInfo _shaderInfo;

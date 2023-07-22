@@ -9,7 +9,7 @@ REGISTRATION
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder& AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder::SetName(const std::string& name)
 {
-	_name = name;
+	_name = Utility::InternedString(name);
 	return *this;
 }
 
@@ -20,20 +20,23 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder& AirEng
 	vk::ImageLayout initialLayout, vk::ImageLayout finalLayout
 )
 {
-	_vkAttachmentDescriptionMap[name] = 
-	{
+	auto&& key = Utility::InternedString(name);
+
+	_attachmentNameToIndexMap.emplace(key, uint32_t(_vkAttachmentDescriptions.size()));
+	_vkAttachmentDescriptions.emplace_back(
 		vk::AttachmentDescriptionFlags(0),
 		format,
 		vk::SampleCountFlagBits::e1,
 		loadOp, storeOp,
 		vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
 		initialLayout, finalLayout
-	};
+	);
 	return *this;
 }
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder& AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder::AddSubpass(const RenderSubpassBuilder& renderSubpassBuilder)
 {
+	_subpassNameToIndexMap.emplace(renderSubpassBuilder._name, uint32_t(_renderSubpassBuilders.size()));
 	_renderSubpassBuilders.emplace_back(renderSubpassBuilder);
 	return *this;
 }
@@ -48,7 +51,7 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder& AirEng
 {
 	_srcDstDependencyBarriers.emplace_back
 	(
-		srcSubpass, dstSubpass, 
+		Utility::InternedString(srcSubpass), Utility::InternedString(dstSubpass),
 		dependencyFlags,
 		vk::MemoryBarrier2(
 			srcStageMask, srcAccessMask, 
@@ -60,43 +63,40 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder& AirEng
 
 vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder::Build() const
 {
-	std::map<std::string, uint32_t> attachmentNameToIndexMap{};
-	std::vector<vk::AttachmentDescription2> vkAttachmentDescriptions{};
-	{
-		vkAttachmentDescriptions.reserve(_vkAttachmentDescriptionMap.size());
-
-		uint32_t vkAttachmentDescriptionIndex = 0;
-		for (const auto& vkAttachmentDescription : _vkAttachmentDescriptionMap)
-		{
-			vkAttachmentDescriptions.emplace_back(vkAttachmentDescription.second);
-			attachmentNameToIndexMap[vkAttachmentDescription.first] = vkAttachmentDescriptionIndex++;
-		}
-	}
-
-	std::map<std::string, uint32_t> subpassNameToIndexMap{};
 	std::vector<vk::SubpassDescription2> vkSubpassDescriptions{_renderSubpassBuilders.size()};
 	std::vector<vk::AttachmentReference2> vkAttachmentReferences{};
-	std::vector<uint32_t> preserveAttachmentIndexs{};
 	uint32_t totalAttachmentReferenceCount = 0;
+	std::vector<uint32_t> preserveAttachmentIndexs{};
 	uint32_t totalPreserveAttachmentCount = 0;
 	{
-		subpassNameToIndexMap["ExternalSubpass"] = VK_SUBPASS_EXTERNAL;
+		_subpassNameToIndexMap[Utility::InternedString("ExternalSubpass")] = VK_SUBPASS_EXTERNAL;
 		for (uint32_t subpassIndex = 0; subpassIndex < _renderSubpassBuilders.size(); subpassIndex++)
 		{
 			const auto& subpassBuilder = _renderSubpassBuilders[subpassIndex];
 			auto& vkSubpassDescription = vkSubpassDescriptions[subpassIndex];
 
+			_subpassNameToIndexMap[subpassBuilder._name] = subpassIndex;
+
 			vkSubpassDescription.flags = vk::SubpassDescriptionFlags(0);
 			vkSubpassDescription.pipelineBindPoint = vkSubpassDescription.pipelineBindPoint;
 			vkSubpassDescription.viewMask = 0;
+			vkSubpassDescription.pNext = nullptr;
+
+			//input
 			vkSubpassDescription.inputAttachmentCount = subpassBuilder._inputReferences.size();
 			vkSubpassDescription.pInputAttachments = reinterpret_cast<vk::AttachmentReference2*>(size_t(totalAttachmentReferenceCount));
 			totalAttachmentReferenceCount += subpassBuilder._inputReferences.size();
+
+			//color
 			vkSubpassDescription.colorAttachmentCount = subpassBuilder._coloreReferences.size();
 			vkSubpassDescription.pColorAttachments = reinterpret_cast<vk::AttachmentReference2*>(size_t(totalAttachmentReferenceCount));
 			totalAttachmentReferenceCount += subpassBuilder._coloreReferences.size();
+
+			//resolve
 			vkSubpassDescription.pResolveAttachments = nullptr;
 			totalAttachmentReferenceCount += 0;
+
+			//depth
 			if (subpassBuilder._depthReference)
 			{
 				vkSubpassDescription.pDepthStencilAttachment = reinterpret_cast<vk::AttachmentReference2*>(size_t(totalAttachmentReferenceCount));
@@ -105,17 +105,13 @@ vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPass
 			else
 			{
 				vkSubpassDescription.pDepthStencilAttachment = nullptr;
+				totalAttachmentReferenceCount += 0;
 			}
+
+			//preserve
 			vkSubpassDescription.preserveAttachmentCount = subpassBuilder._preserveReferences.size();
 			vkSubpassDescription.pPreserveAttachments = reinterpret_cast<uint32_t*>(size_t(totalPreserveAttachmentCount));
 			totalPreserveAttachmentCount += subpassBuilder._preserveReferences.size();
-
-			vkSubpassDescription.pPreserveAttachments = nullptr;
-			totalAttachmentReferenceCount += subpassBuilder._inputReferences.size();
-
-			vkSubpassDescription.pNext = nullptr;
-
-			subpassNameToIndexMap[subpassBuilder._name] = subpassIndex;
 		}
 
 		vkAttachmentReferences.reserve(totalAttachmentReferenceCount);
@@ -126,24 +122,27 @@ vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPass
 			const auto& subpassBuilder = _renderSubpassBuilders[subpassIndex];
 			auto& vkSubpassDescription = vkSubpassDescriptions[subpassIndex];
 			
+			//input
 			for (const auto& inputReferencePair: subpassBuilder._inputReferences)
 			{
 				vkAttachmentReferences.emplace_back(inputReferencePair.second);
-				vkAttachmentReferences.back().attachment = attachmentNameToIndexMap[inputReferencePair.first];
+				vkAttachmentReferences.back().attachment = _attachmentNameToIndexMap[inputReferencePair.first];
 			}
 			vkSubpassDescription.pInputAttachments = vkAttachmentReferences.data() + reinterpret_cast<size_t>(vkSubpassDescription.pInputAttachments);
 
+			//color
 			for (const auto& colorReferencePair: subpassBuilder._coloreReferences)
 			{
 				vkAttachmentReferences.emplace_back(colorReferencePair.second);
-				vkAttachmentReferences.back().attachment = attachmentNameToIndexMap[colorReferencePair.first];
+				vkAttachmentReferences.back().attachment = _attachmentNameToIndexMap[colorReferencePair.first];
 			}
 			vkSubpassDescription.pColorAttachments = vkAttachmentReferences.data() + reinterpret_cast<size_t>(vkSubpassDescription.pColorAttachments);
 
+			//depth
 			if (subpassBuilder._depthReference)
 			{
 				vkAttachmentReferences.emplace_back(subpassBuilder._depthReference.value().second);
-				vkAttachmentReferences.back().attachment = attachmentNameToIndexMap[subpassBuilder._depthReference.value().first];
+				vkAttachmentReferences.back().attachment = _attachmentNameToIndexMap[subpassBuilder._depthReference.value().first];
 				vkSubpassDescription.pDepthStencilAttachment = vkAttachmentReferences.data() + reinterpret_cast<size_t>(vkSubpassDescription.pDepthStencilAttachment);
 			}
 			else
@@ -151,16 +150,16 @@ vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPass
 				vkSubpassDescription.pDepthStencilAttachment = nullptr;
 			}
 
+			//preserve
 			for (const auto& preserveReference : subpassBuilder._preserveReferences)
 			{
-				preserveAttachmentIndexs.emplace_back(attachmentNameToIndexMap[preserveReference]);
+				preserveAttachmentIndexs.emplace_back(_attachmentNameToIndexMap[preserveReference]);
 			}
 			vkSubpassDescription.pPreserveAttachments = preserveAttachmentIndexs.data() + reinterpret_cast<size_t>(vkSubpassDescription.pPreserveAttachments);
 		}
 	}
 
 	std::vector<vk::SubpassDependency2> vkSubpassDependencys{_srcDstDependencyBarriers.size(), vk::SubpassDependency2{}};
-	std::vector<vk::MemoryBarrier2> vkMemoryBarriers{_srcDstDependencyBarriers.size(), vk::MemoryBarrier2{}};
 	{
 		for (uint32_t dependencyIndex = 0; dependencyIndex < _srcDstDependencyBarriers.size(); dependencyIndex++)
 		{
@@ -168,8 +167,8 @@ vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPass
 			auto& vkSubpassDependency = vkSubpassDependencys[dependencyIndex];
 			auto& vkMemoryBarrier = std::get<3>(tuple);
 
-			vkSubpassDependency.srcSubpass = subpassNameToIndexMap[std::get<0>(tuple)];
-			vkSubpassDependency.dstSubpass = subpassNameToIndexMap[std::get<1>(tuple)];
+			vkSubpassDependency.srcSubpass = _subpassNameToIndexMap[std::get<0>(tuple)];
+			vkSubpassDependency.dstSubpass = _subpassNameToIndexMap[std::get<1>(tuple)];
 			vkSubpassDependency.srcStageMask = vk::PipelineStageFlags(0);
 			vkSubpassDependency.dstStageMask = vk::PipelineStageFlags(0);
 			vkSubpassDependency.srcAccessMask = vk::AccessFlags(0);
@@ -182,8 +181,8 @@ vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPass
 
 	vk::RenderPassCreateInfo2 vkRenderPassCreateInfo{};
 	vkRenderPassCreateInfo.flags = vk::RenderPassCreateFlags(0);
-	vkRenderPassCreateInfo.attachmentCount = vkAttachmentDescriptions.size();
-	vkRenderPassCreateInfo.pAttachments = vkAttachmentDescriptions.data();
+	vkRenderPassCreateInfo.attachmentCount = _vkAttachmentDescriptions.size();
+	vkRenderPassCreateInfo.pAttachments = _vkAttachmentDescriptions.data();
 	vkRenderPassCreateInfo.subpassCount = vkSubpassDescriptions.size();
 	vkRenderPassCreateInfo.pSubpasses = vkSubpassDescriptions.data();
 	vkRenderPassCreateInfo.dependencyCount = vkSubpassDependencys.size();
@@ -197,19 +196,6 @@ vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPass
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassInfo AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder::BuildInfo() const
 {
-	std::map<std::string, uint32_t> attachmentNameToIndexMap{};
-	std::vector<vk::AttachmentDescription2> vkAttachmentDescriptions{};
-	{
-		vkAttachmentDescriptions.reserve(_vkAttachmentDescriptionMap.size());
-
-		uint32_t vkAttachmentDescriptionIndex = 0;
-		for (const auto& vkAttachmentDescription : _vkAttachmentDescriptionMap)
-		{
-			vkAttachmentDescriptions.emplace_back(vkAttachmentDescription.second);
-			attachmentNameToIndexMap[vkAttachmentDescription.first] = vkAttachmentDescriptionIndex++;
-		}
-	}
-
 	RenderPassInfo renderPassInfo{};
 	renderPassInfo._name = Utility::InternedString(_name);
 
@@ -220,18 +206,22 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassInfo AirEngine:
 
 		SubPassInfo subPassInfo{};
 		subPassInfo._name = Utility::InternedString(subpassBuilder._name);
+		subPassInfo._index = subpassIndex;
 
-		for (const auto& pair : subpassBuilder._coloreReferences)
+		for (uint32_t coloreReferenceIndex = 0; coloreReferenceIndex < subpassBuilder._coloreReferences.size(); ++coloreReferenceIndex)
 		{
+			auto&& pair = subpassBuilder._coloreReferences[coloreReferenceIndex];
+
 			AttachmentInfo attachmentInfo{};
 			attachmentInfo.name = Utility::InternedString(pair.first);
-			attachmentInfo.location = attachmentNameToIndexMap.at(pair.first);
-			attachmentInfo.format = vkAttachmentDescriptions.at(attachmentNameToIndexMap.at(pair.first)).format;
+			attachmentInfo.attachmentInfoIndex = uint32_t(subPassInfo._attachments.size());
+			attachmentInfo.attachmentIndex = _attachmentNameToIndexMap.at(pair.first);
+			attachmentInfo.location = coloreReferenceIndex;
+			attachmentInfo.format = _vkAttachmentDescriptions.at(_attachmentNameToIndexMap.at(pair.first)).format;
 			attachmentInfo.layout = pair.second.layout;
 			attachmentInfo.type = AttachmentType::COLOR;
 
-			subPassInfo._locationToIndexMap.emplace(attachmentInfo.location, uint32_t(subPassInfo._attachments.size()));
-			subPassInfo._nameToIndexMap.emplace(attachmentInfo.name, uint32_t(subPassInfo._attachments.size()));
+			subPassInfo._nameToIndexMap.emplace(attachmentInfo.name, attachmentInfo.attachmentInfoIndex);
 
 			subPassInfo._attachments.emplace_back(attachmentInfo);
 		}
@@ -241,28 +231,31 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassInfo AirEngine:
 
 			AttachmentInfo attachmentInfo{};
 			attachmentInfo.name = Utility::InternedString(pair.first);
-			attachmentInfo.location = attachmentNameToIndexMap.at(pair.first);
-			attachmentInfo.format = vkAttachmentDescriptions.at(attachmentNameToIndexMap.at(pair.first)).format;
+			attachmentInfo.attachmentInfoIndex = uint32_t(subPassInfo._attachments.size());
+			attachmentInfo.attachmentIndex = _attachmentNameToIndexMap.at(pair.first);
+			attachmentInfo.location = -1;
+			attachmentInfo.format = _vkAttachmentDescriptions.at(_attachmentNameToIndexMap.at(pair.first)).format;
 			attachmentInfo.layout = pair.second.layout;
 			attachmentInfo.type = AttachmentType::DEPTH;
 
-			subPassInfo._locationToIndexMap.emplace(attachmentInfo.location, uint32_t(subPassInfo._attachments.size()));
-			subPassInfo._nameToIndexMap.emplace(attachmentInfo.name, uint32_t(subPassInfo._attachments.size()));
+			subPassInfo._nameToIndexMap.emplace(attachmentInfo.name, attachmentInfo.attachmentInfoIndex);
 
 			subPassInfo._attachments.emplace_back(attachmentInfo);
-
 		}
-		for (const auto& pair : subpassBuilder._inputReferences)
+		for (uint32_t inputReferenceIndex = 0; inputReferenceIndex < subpassBuilder._inputReferences.size(); ++inputReferenceIndex)
 		{
+			auto&& pair = subpassBuilder._inputReferences[inputReferenceIndex];
+
 			AttachmentInfo attachmentInfo{};
 			attachmentInfo.name = Utility::InternedString(pair.first);
-			attachmentInfo.location = attachmentNameToIndexMap.at(pair.first);
-			attachmentInfo.format = vkAttachmentDescriptions.at(attachmentNameToIndexMap.at(pair.first)).format;
+			attachmentInfo.attachmentInfoIndex = uint32_t(subPassInfo._attachments.size());
+			attachmentInfo.attachmentIndex = _attachmentNameToIndexMap.at(pair.first);
+			attachmentInfo.location = inputReferenceIndex;
+			attachmentInfo.format = _vkAttachmentDescriptions.at(_attachmentNameToIndexMap.at(pair.first)).format;
 			attachmentInfo.layout = pair.second.layout;
 			attachmentInfo.type = AttachmentType::INPUT;
 
-			subPassInfo._locationToIndexMap.emplace(attachmentInfo.location, uint32_t(subPassInfo._attachments.size()));
-			subPassInfo._nameToIndexMap.emplace(attachmentInfo.name, uint32_t(subPassInfo._attachments.size()));
+			subPassInfo._nameToIndexMap.emplace(attachmentInfo.name, attachmentInfo.attachmentInfoIndex);
 
 			subPassInfo._attachments.emplace_back(attachmentInfo);
 		}
@@ -275,7 +268,7 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassInfo AirEngine:
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder& AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder::SetName(const std::string& name)
 {
-	_name = name;
+	_name = Utility::InternedString(name);
 	return *this;
 }
 
@@ -287,12 +280,14 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder& Air
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder& AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder::AddColorAttachment(const std::string& name, vk::ImageLayout layout)
 {
-	_coloreReferences[name] =
-	{
-		uint32_t(-1),
-		layout, 
-		vk::ImageAspectFlags(0)
-	};
+	_coloreReferences.emplace_back(
+		Utility::InternedString(name),
+		vk::AttachmentReference2{
+			uint32_t(-1),
+			layout,
+			vk::ImageAspectFlags(0)
+		}
+	);
 	return *this;
 }
 
@@ -300,7 +295,7 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder& Air
 {
 	_depthReference =
 	{
-		name,
+		Utility::InternedString(name),
 		{
 			uint32_t(-1),
 			layout,
@@ -312,18 +307,20 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder& Air
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder& AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder::AddPreserveAttachment(const std::string& name)
 {
-	_preserveReferences.emplace_back(name);
+	_preserveReferences.emplace_back(Utility::InternedString(name));
 	return *this;
 }
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder& AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderSubpassBuilder::AddInputAttachment(const std::string& name, vk::ImageLayout layout, vk::ImageAspectFlags aspectMask)
 {
-	_inputReferences[name] =
-	{
-		uint32_t(-1),
-		layout,
-		aspectMask
-	};
+	_inputReferences.emplace_back(
+		Utility::InternedString(name),
+		vk::AttachmentReference2{
+			uint32_t(-1),
+			layout,
+			aspectMask
+		}
+	);
 	return *this;
 }
 

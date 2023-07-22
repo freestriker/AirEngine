@@ -26,15 +26,15 @@ namespace AirEngine
 				static const std::unordered_map<std::string, vk::CullModeFlagBits> _vkCullModeFlagBitsStringToVkCullModeFlagBitsMap;
 				static const std::unordered_map<std::string, vk::CompareOp> _vkCompareOpStringToVkCompareOpMap;
 			public:
-				inline vk::BlendOp ParseToVkBlendOp(const std::string& type) const
+				static inline vk::BlendOp ParseToVkBlendOp(const std::string& type)
 				{
 					return _vkBlendOpStringToVkBlendOpMap.at(type);
 				}
-				vk::BlendFactor ParseToVkBlendFactor(const std::string& type)
+				static inline vk::BlendFactor ParseToVkBlendFactor(const std::string& type)
 				{
 					return _vkBlendFactorStringToVkBlendFactorMap.at(type);
 				}
-				vk::ColorComponentFlags ParseToVkColorComponentFlags(const std::vector<std::string>& types)
+				static inline vk::ColorComponentFlags ParseToVkColorComponentFlags(const std::vector<std::string>& types)
 				{
 					vk::ColorComponentFlags flag{};
 					for (const auto& type : types)
@@ -43,7 +43,7 @@ namespace AirEngine
 					}
 					return flag;
 				}
-				vk::CullModeFlags ParseToVkCullModeFlags(const std::vector<std::string>& types)
+				static inline vk::CullModeFlags ParseToVkCullModeFlags(const std::vector<std::string>& types)
 				{
 					vk::CullModeFlags flag{};
 					for (const auto& type : types)
@@ -52,9 +52,15 @@ namespace AirEngine
 					}
 					return flag;
 				}
-				vk::CompareOp ParseToVkCompareOp(const std::string& type)
+				static inline vk::CompareOp ParseToVkCompareOp(const std::string& type)
 				{
 					return _vkCompareOpStringToVkCompareOpMap.at(type);
+				}
+				static inline vk::FrontFace ParseToVkFrontFace(const std::string& type)
+				{
+					if (type == "COUNTER_CLOCKWISE") return vk::FrontFace::eCounterClockwise;
+					else if (type == "CLOCKWISE") return vk::FrontFace::eClockwise;
+					else return vk::FrontFace();
 				}
 			};
 		}
