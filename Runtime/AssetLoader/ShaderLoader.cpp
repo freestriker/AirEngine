@@ -109,6 +109,7 @@ struct ShaderDescriptor
 struct SubShaderCreateInfo
 {
 	std::unordered_map<vk::ShaderStageFlagBits, std::pair<SpvReflectShaderModule, vk::ShaderModule>> shaderDatas;
+	std::optional<vk::PushConstantRange> pushConstantRange;
 };
 struct ShaderCreateInfo
 {
@@ -357,6 +358,34 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 		{
 			const auto& shaderReflectData = shaderReflectDataPair.second.first;
 
+			///push_constant
+			{
+				uint32_t pushConstantCount = 0;
+				SpvReflectResult result = spvReflectEnumeratePushConstantBlocks(&shaderReflectData, &pushConstantCount, nullptr);
+				assert(result == SPV_REFLECT_RESULT_SUCCESS);
+				std::vector< SpvReflectBlockVariable*> blockVariables = std::vector< SpvReflectBlockVariable*>(pushConstantCount, nullptr);
+				result = spvReflectEnumeratePushConstantBlocks(&shaderReflectData, &pushConstantCount, blockVariables.data());
+				assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+				if (pushConstantCount > 0)
+				{
+					if (pushConstantCount > 1) qFatal("Can not have multiple push constant block in one shader stage.");
+
+					const auto& blockVariable = *blockVariables.front();
+					vk::PushConstantRange range(vk::ShaderStageFlagBits(shaderReflectData.shader_stage), 0, blockVariable.size);
+
+					if (subShaderCreateInfo.pushConstantRange)
+					{
+						subShaderCreateInfo.pushConstantRange->size = std::max(subShaderCreateInfo.pushConstantRange->size, range.size);
+						subShaderCreateInfo.pushConstantRange->stageFlags |= range.stageFlags;
+					}
+					else
+					{
+						subShaderCreateInfo.pushConstantRange = range;
+					}
+				}
+			}
+
 			uint32_t descriptorSetCount = 0;
 			SpvReflectResult result = spvReflectEnumerateDescriptorSets(&shaderReflectData, &descriptorSetCount, NULL);
 			if (result != SPV_REFLECT_RESULT_SUCCESS) qFatal("Failed to enumerate descriptor sets.");
@@ -542,6 +571,20 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 		//compact object
 		auto& subShaderInfo = shaderInfo.subShaderInfoMap[subPassName];
 		subShaderInfo.subPass = subPassName;
+		{
+			if (subShaderCreateInfo.pushConstantRange)
+			{
+				subShaderInfo.pushConstantInfo.valid = true;
+				subShaderInfo.pushConstantInfo.shaderStageFlags = subShaderCreateInfo.pushConstantRange->stageFlags;
+				subShaderInfo.pushConstantInfo.size = subShaderCreateInfo.pushConstantRange->size;
+			}
+			else
+			{
+				subShaderInfo.pushConstantInfo.valid = false;
+				subShaderInfo.pushConstantInfo.shaderStageFlags = {};
+				subShaderInfo.pushConstantInfo.size = -1;
+			}
+		}
 		for (auto& setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair : setToDescriptorSetInfoAndBindingToDescriptorInfoMap)
 		{
 			const auto& set = setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair.first;

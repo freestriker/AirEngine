@@ -69,6 +69,12 @@ namespace AirEngine
 
 						const SubShaderInfo* subShaderInfo;
 					};
+					struct PushConstantInfo
+					{
+						vk::ShaderStageFlags shaderStageFlags;
+						uint32_t size;
+						bool valid;
+					};
 					struct SubShaderInfo
 					{
 						AirEngine::Runtime::Utility::InternedString subPass;
@@ -79,6 +85,7 @@ namespace AirEngine
 						std::unordered_map<uint8_t, uint8_t> setToDescriptorSetInfoIndexMap;
 						vk::PipelineLayout pipelineLayout;
 						vk::Pipeline pipeline;
+						PushConstantInfo pushConstantInfo;
 
 						const ShaderInfo* shaderInfo;
 					};

@@ -10,6 +10,8 @@ layout (set = 0, binding = 1) uniform MatrixData
 layout (set = 0, binding = 3) uniform sampler2DArray sampler2dArray;
 layout (set = 0, binding = 4) uniform samplerCube cubes[];
 
+layout(push_constant) uniform TransformConstant { layout(offset = 16) vec4 uiTransform; } pcTransform;
+
 layout(location = 0) in vec3 outPosition;
 layout(location = 0) out vec4 ColorAttachment;
 
