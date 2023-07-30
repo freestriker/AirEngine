@@ -22,7 +22,7 @@ target_link_libraries(Runtime PUBLIC BDWgc::gc BDWgc::cord BDWgc::gccpp BDWgc::g
 
 target_include_directories(Runtime PUBLIC ${Boost_INCLUDE_DIRS})
 find_package(Boost COMPONENTS fiber REQUIRED)
-target_link_libraries(Runtime PUBLIC Boost::fiber)
+target_link_libraries(Runtime PUBLIC Boost::boost Boost::fiber)
 
 find_package(cityhash CONFIG REQUIRED)
 target_link_libraries(Runtime PUBLIC cityhash)
