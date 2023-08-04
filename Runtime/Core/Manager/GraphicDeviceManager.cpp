@@ -14,6 +14,10 @@ vkb::Instance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbInsta
 vkb::PhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbPhysicalDevice{};
 vkb::Device AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbDevice{};
 
+vk::Instance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_instance{};
+vk::PhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_physicalDevice{};
+vk::Device AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_device{};
+
 VmaAllocator AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vmaAllocator{ VK_NULL_HANDLE };
 
 std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::Queue>> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_queueMap{ };
@@ -75,6 +79,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstan
 
 	_vkbInstance = vkbResult.value();
 	_vkInstance = _vkbInstance.instance;
+	_instance = vk::Instance(_vkInstance);
 }
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
@@ -153,6 +158,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	}
 	_vkbPhysicalDevice = physicalDeviceResult.value();
 	_vkPhysicalDevice = _vkbPhysicalDevice.physical_device;
+	_physicalDevice = vk::PhysicalDevice(_vkPhysicalDevice);
 
 	std::vector<vkb::CustomQueueDescription> customQueueDescriptions;
 	uint32_t graphicQueueFamily = 0;
@@ -215,7 +221,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	}
 	_vkbDevice = deviceResult.value();
 	_vkDevice = _vkbDevice.device;
-
+	_device = vk::Device(_vkDevice);
 
 	VkQueue queue = VK_NULL_HANDLE;
 
@@ -237,8 +243,8 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::SetDefaultDispatch
 	vk::DynamicLoader dynamicLoader{};
 	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Instance(_vkInstance));
-	VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Device(_vkDevice));
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(Instance());
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(Device());
 }
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAllocator()

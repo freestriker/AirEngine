@@ -548,7 +548,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 				&setLayoutBindingFlags
 			);
 
-			auto&& layout = vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+			auto&& layout = AirEngine::Runtime::Core::Manager::GraphicDeviceManager::Device().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 
 			for(auto& bindingToDescriptorInfoMapPair: setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second)
 			{
@@ -556,7 +556,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 				auto& descriptorInfo = bindingToDescriptorInfoMapPair.second;
 				descriptorInfo.singleDescriptorByteSize = AirEngine::Runtime::Graphic::Manager::ShaderManager::DescriptorSize(descriptorInfo.type);
 				descriptorInfo.solidByteSizeInDescriptorSet = descriptorInfo.singleDescriptorByteSize * descriptorInfo.descriptorCount;
-				descriptorInfo.startByteOffsetInDescriptorSet = uint16_t(vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).getDescriptorSetLayoutBindingOffsetEXT(layout, uint32_t(binding)));
+				descriptorInfo.startByteOffsetInDescriptorSet = uint16_t(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::Device().getDescriptorSetLayoutBindingOffsetEXT(layout, uint32_t(binding)));
 			}
 
 			auto&& descriptorSetInfo = setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).first;
@@ -565,7 +565,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 			descriptorSetInfo.solidByteSize = 
 				isDynamic ? 
 				setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second.rbegin()->second.startByteOffsetInDescriptorSet: 
-				uint16_t(vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).getDescriptorSetLayoutSizeEXT(layout));
+				uint16_t(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::Device().getDescriptorSetLayoutSizeEXT(layout));
 		}
 
 		//compact object
@@ -738,7 +738,7 @@ void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::Shader::Shade
 			}
 
 			vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{vk::PipelineLayoutCreateFlags(), vkDescriptorSetLayouts};
-			pipelineLayout = vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).createPipelineLayout(pipelineLayoutCreateInfo);
+			pipelineLayout = AirEngine::Runtime::Core::Manager::GraphicDeviceManager::Device().createPipelineLayout(pipelineLayoutCreateInfo);
 		}
 
 		vk::Pipeline pipeline{};
@@ -849,7 +849,7 @@ void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::Shader::Shade
 				shaderCreateInfo.renderPass->VkHandle(),
 				shaderCreateInfo.renderPass->Info().SubPassInfo(subPassName).Index()
 			);
-			pipeline = vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).createGraphicsPipeline({}, graphicsPipelineCreateInfo).value;
+			pipeline = AirEngine::Runtime::Core::Manager::GraphicDeviceManager::Device().createGraphicsPipeline({}, graphicsPipelineCreateInfo).value;
 		}		
 
 		subShaderInfo.pipelineLayout = pipelineLayout;
@@ -867,7 +867,7 @@ void UnloadSpirvData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 			auto&& shaderData = shaderDatasPair.second.second;
 
 			spvReflectDestroyShaderModule(&reflectShaderData);
-			vk::Device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice()).destroyShaderModule(shaderData);
+			AirEngine::Runtime::Core::Manager::GraphicDeviceManager::Device().destroyShaderModule(shaderData);
 		}
 	}
 }
