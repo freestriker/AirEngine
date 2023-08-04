@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include "../../Utility/InternedString.hpp"
 #include "../../Graphic/Instance/Queue.hpp"
+#include "vulkan/vulkan.hpp"
 
 namespace AirEngine
 {
@@ -29,6 +30,10 @@ namespace AirEngine
 					static vkb::Instance _vkbInstance;
 					static vkb::PhysicalDevice _vkbPhysicalDevice;
 					static vkb::Device _vkbDevice;
+
+					static vk::Instance _instance;
+					static vk::PhysicalDevice _physicalDevice;
+					static vk::Device _device;
 
 					static VmaAllocator _vmaAllocator;
 
@@ -53,6 +58,7 @@ namespace AirEngine
 					{
 						return _vkDevice;
 					}
+
 					static inline vkb::Instance& VkbInstance()
 					{
 						return _vkbInstance;
@@ -64,6 +70,19 @@ namespace AirEngine
 					static inline vkb::Device& VkbDevice()
 					{
 						return _vkbDevice;
+					}
+
+					static inline vk::Instance& Instance()
+					{
+						return _instance;
+					}
+					static inline vk::PhysicalDevice& PhysicalDevice()
+					{
+						return _physicalDevice;
+					}
+					static inline vk::Device& Device()
+					{
+						return _device;
 					}
 					static inline VmaAllocator VmaAllocator()
 					{

@@ -191,7 +191,7 @@ vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPass
 	vkRenderPassCreateInfo.pCorrelatedViewMasks = nullptr;
 	vkRenderPassCreateInfo.pNext = nullptr;
 
-	return vk::Device(Core::Manager::GraphicDeviceManager::VkDevice()).createRenderPass2(vkRenderPassCreateInfo);
+	return Core::Manager::GraphicDeviceManager::Device().createRenderPass2(vkRenderPassCreateInfo);
 }
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassInfo AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder::BuildInfo() const
