@@ -1,5 +1,5 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/Fiber.hpp"
@@ -42,12 +42,12 @@ namespace AirEngine
 						std::vector<CommandBufferSubmitSemaphoreInfo> signalInfos;
 					};
 				private:
-					VkQueue _vkQueue;
+					vk::Queue _vkQueue;
 					Utility::Fiber::mutex _mutex;
 					Utility::InternedString _name;
 					uint32_t _familyIndex;
 					std::vector<CommandBufferSubmitInfo> _submitInfos;
-					Queue(VkQueue queue, uint32_t familyIndex, Utility::InternedString name)
+					Queue(vk::Queue queue, uint32_t familyIndex, Utility::InternedString name)
 						: _vkQueue(queue)
 						, _mutex()
 						, _name(name)
@@ -64,7 +64,7 @@ namespace AirEngine
 					{
 						return _mutex;
 					}
-					inline VkQueue VkHandle() const
+					inline vk::Queue VkHandle() const
 					{
 						return _vkQueue;
 					}

@@ -1,5 +1,5 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Core/Manager/GraphicDeviceManager.hpp"
@@ -18,24 +18,24 @@ namespace AirEngine
 				class AIR_ENGINE_API Buffer final
 				{
 				private:
-					VkBuffer _vkBuffer;
-					VkDeviceSize _size;
-					VkBufferUsageFlags _usage;
+					vk::Buffer _vkBuffer;
+					vk::DeviceSize _size;
+					vk::BufferUsageFlags _usage;
 					std::shared_ptr<Memory> _memory;
 				public:
-					Buffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags property, VmaAllocationCreateFlags flags = 0, VmaMemoryUsage memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_AUTO);
-					Buffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, std::shared_ptr<Memory> memory);
-					Buffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage);
+					Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, vk::MemoryPropertyFlags property, VmaAllocationCreateFlags flags = 0, VmaMemoryUsage memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_AUTO);
+					Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, std::shared_ptr<Memory> memory);
+					Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage);
 					~Buffer();
-					inline VkBuffer VkHandle() const
+					inline vk::Buffer VkHandle() const
 					{
 						return _vkBuffer;
 					}
-					inline VkDeviceSize Size() const
+					inline vk::DeviceSize Size() const
 					{
 						return _size;
 					}
-					inline VkDeviceSize Offset() const
+					inline vk::DeviceSize Offset() const
 					{
 						return 0;
 					}
