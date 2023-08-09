@@ -5,10 +5,8 @@
 #include "../FrontEnd/FrontEndBase.hpp"
 #include <vulkan/vk_enum_string_helper.h>
 #include "../../Graphic/Manager/ShaderManager.hpp"
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
-VkInstance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkInstance = VK_NULL_HANDLE;
-VkPhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkPhysicalDevice{ VK_NULL_HANDLE };
-VkDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkDevice{ VK_NULL_HANDLE };
 
 vkb::Instance AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbInstance{};
 vkb::PhysicalDevice AirEngine::Runtime::Core::Manager::GraphicDeviceManager::_vkbPhysicalDevice{};
@@ -45,8 +43,6 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstance()
 {
-	_vkInstance = VK_NULL_HANDLE;
-
 	vkb::InstanceBuilder instanceBuilder;	
 	instanceBuilder = instanceBuilder
 		.set_engine_name("AiEngine")
@@ -78,8 +74,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateVulkanInstan
 	if (!vkbResult) qFatal("Create vulkan instance failed.");
 
 	_vkbInstance = vkbResult.value();
-	_vkInstance = _vkbInstance.instance;
-	_instance = vk::Instance(_vkInstance);
+	_instance = vk::Instance(_vkbInstance.instance);
 }
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
@@ -157,8 +152,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 		qFatal((std::string("Failed to select Vulkan Physical Device. Error: ") + std::string(physicalDeviceResult.error().message())).c_str());
 	}
 	_vkbPhysicalDevice = physicalDeviceResult.value();
-	_vkPhysicalDevice = _vkbPhysicalDevice.physical_device;
-	_physicalDevice = vk::PhysicalDevice(_vkPhysicalDevice);
+	_physicalDevice = vk::PhysicalDevice(_vkbPhysicalDevice.physical_device);
 
 	std::vector<vkb::CustomQueueDescription> customQueueDescriptions;
 	uint32_t graphicQueueFamily = 0;
@@ -220,21 +214,19 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 		qFatal((std::string("Failed to create Vulkan device. Error: ") + std::string(deviceResult.error().message())).c_str());
 	}
 	_vkbDevice = deviceResult.value();
-	_vkDevice = _vkbDevice.device;
-	_device = vk::Device(_vkDevice);
+	_device = vk::Device(_vkbDevice.device);
 
-	VkQueue queue = VK_NULL_HANDLE;
+	vk::Queue queue{};
 
-	vkGetDeviceQueue(_vkDevice, graphicQueueFamily, 0, &queue);
+	queue = _device.getQueue(graphicQueueFamily, 0);
 	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("GraphicQueue"))));
-
-	vkGetDeviceQueue(_vkDevice, graphicQueueFamily, 1, &queue);
+	queue = _device.getQueue(graphicQueueFamily, 1);
 	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("TransferQueue"))));
 
 	if (isWindow)
 	{
-		vkGetDeviceQueue(_vkDevice, graphicQueueFamily, 2, &queue);
-		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("GraphicQueue"))));
+		queue = _device.getQueue(graphicQueueFamily, 2);
+		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("PresentQueue"))));
 	}
 }
 
@@ -255,9 +247,9 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAlloca
 
 	VmaAllocatorCreateInfo allocatorCreateInfo{};
 	allocatorCreateInfo.vulkanApiVersion = VKB_VK_API_VERSION_1_3;
-	allocatorCreateInfo.physicalDevice = _vkPhysicalDevice;
-	allocatorCreateInfo.device = _vkDevice;
-	allocatorCreateInfo.instance = _vkInstance;
+	allocatorCreateInfo.physicalDevice = _vkbPhysicalDevice.physical_device;
+	allocatorCreateInfo.device = _vkbDevice.device;
+	allocatorCreateInfo.instance = _vkbInstance.instance;
 	allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
 	vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator);

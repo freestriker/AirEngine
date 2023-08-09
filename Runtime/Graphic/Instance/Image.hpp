@@ -18,98 +18,98 @@ namespace AirEngine
 					Image final
 				{
 				private:
-					VkFormat _format;
-					VkExtent3D _extent3D;
-					VkImageType _imageType;
-					VkImageTiling _imageTiling;
-					VkImageUsageFlags _imageUsageFlags;
-					VkImageCreateFlags _imageCreateFlags;
+					vk::Format _format;
+					vk::Extent3D _extent3D;
+					vk::ImageType _imageType;
+					vk::ImageTiling _imageTiling;
+					vk::ImageUsageFlags _imageUsageFlags;
+					vk::ImageCreateFlags _imageCreateFlags;
 					uint32_t _layerCount;
 					uint32_t _mipmapLevelCount;
-					VkImage _image;
+					vk::Image _image;
 					bool _isNative;
 					std::shared_ptr<Memory> _memory;
 				public:
 					Image(
-						VkFormat format,
-						VkExtent3D extent3D,
-						VkImageType imageType,
+						vk::Format format,
+						vk::Extent3D extent3D,
+						vk::ImageType imageType,
 						uint32_t layerCount,
 						uint32_t mipmapLevelCount,
-						VkImageUsageFlags imageUsageFlags,
-						VkMemoryPropertyFlags property,
-						VkImageTiling imageTiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL,
-						VkImageCreateFlags imageCreateFlags = 0,
+						vk::ImageUsageFlags imageUsageFlags,
+						vk::MemoryPropertyFlags property,
+						vk::ImageTiling imageTiling = vk::ImageTiling::eOptimal,
+						vk::ImageCreateFlags imageCreateFlags = {},
 						VmaAllocationCreateFlags flags = 0, VmaMemoryUsage memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_AUTO
 					);
 					Image(
-						VkFormat format,
-						VkExtent3D extent3D,
-						VkImageType imageType,
+						vk::Format format,
+						vk::Extent3D extent3D,
+						vk::ImageType imageType,
 						uint32_t layerCount,
 						uint32_t mipmapLevelCount,
-						VkImageUsageFlags imageUsageFlags,
+						vk::ImageUsageFlags imageUsageFlags,
 						std::shared_ptr<Memory> memory,
-						VkImageTiling imageTiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL,
-						VkImageCreateFlags imageCreateFlags = 0
+						vk::ImageTiling imageTiling = vk::ImageTiling::eOptimal,
+						vk::ImageCreateFlags imageCreateFlags = {}
 					);
 					Image(
-						VkFormat format,
-						VkExtent3D extent3D,
-						VkImageType imageType,
+						vk::Format format,
+						vk::Extent3D extent3D,
+						vk::ImageType imageType,
 						uint32_t layerCount,
 						uint32_t mipmapLevelCount,
-						VkImageUsageFlags imageUsageFlags,
-						VkImageTiling imageTiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL,
-						VkImageCreateFlags imageCreateFlags = 0
+						vk::ImageUsageFlags imageUsageFlags,
+						vk::ImageTiling imageTiling = vk::ImageTiling::eOptimal,
+						vk::ImageCreateFlags imageCreateFlags = {}
 					);
 					Image(
-						VkImage image,
-						VkFormat format,
-						VkExtent3D extent3D,
-						VkImageType imageType,
+						vk::Image image,
+						vk::Format format,
+						vk::Extent3D extent3D,
+						vk::ImageType imageType,
 						uint32_t layerCount,
 						uint32_t mipmapLevelCount,
-						VkImageUsageFlags imageUsageFlags,
-						VkImageTiling imageTiling = VkImageTiling::VK_IMAGE_TILING_OPTIMAL,
-						VkImageCreateFlags imageCreateFlags = 0
+						vk::ImageUsageFlags imageUsageFlags,
+						vk::ImageTiling imageTiling = vk::ImageTiling::eOptimal,
+						vk::ImageCreateFlags imageCreateFlags = {}
 					);
 					static Image* CreateSwapchainImage(
-						VkImage image,
-						VkFormat format,
-						VkExtent2D extent2D,
-						VkImageUsageFlags imageUsageFlags
+						vk::Image image,
+						vk::Format format,
+						vk::Extent2D extent2D,
+						vk::ImageUsageFlags imageUsageFlags
 					);
 					~Image();
-					inline VkImage VkHandle() const
+					inline vk::Image VkHandle() const
 					{
 						return _image;
 					}
-					inline VkFormat Format() const
+					inline vk::Format Format() const
 					{
 						return _format;
 					}
-					inline VkExtent3D Extent3D() const
+					inline vk::Extent3D Extent3D() const
 					{
 						return _extent3D;
 					}
-					inline VkExtent2D Extent2D() const
+					inline vk::Extent2D Extent2D() const
 					{
 						return { _extent3D.width, _extent3D.height };
 					}
-					inline VkImageType ImageType() const
+					inline vk::ImageType ImageType() const
 					{
 						return _imageType;
 					}
-					inline VkImageTiling ImageTiling() const
+					inline vk::ImageTiling ImageTiling() const
 					{
 						return _imageTiling;
 					}
-					inline VkImageUsageFlags ImageUsageFlags() const
+					inline vk::ImageUsageFlags ImageUsageFlags() const
 					{
 						return _imageUsageFlags;
 					}
-					inline VkImageCreateFlags ImageCreateFlags() const
+					inline vk::ImageCreateFlags ImageCreateFlags() const
 					{
 						return _imageCreateFlags;
 					}
@@ -130,9 +130,9 @@ namespace AirEngine
 					{
 						_memory.reset();
 					}
-					static std::vector<VkExtent3D> GetPerMipmapLevelExtent3D(const VkExtent3D& extent, uint32_t mipMapLevelCount)
+					static std::vector<vk::Extent3D> GetPerMipmapLevelExtent3D(const vk::Extent3D& extent, uint32_t mipMapLevelCount)
 					{
-						std::vector<VkExtent3D> pmlImageExtent(mipMapLevelCount);
+						std::vector<vk::Extent3D> pmlImageExtent(mipMapLevelCount);
 						pmlImageExtent[0] = extent;
 						for (int mipMapLevelIndex = 1; mipMapLevelIndex < mipMapLevelCount; mipMapLevelIndex++)
 						{
@@ -142,12 +142,12 @@ namespace AirEngine
 							height = std::max(1u, height);
 							auto depth = pmlImageExtent[mipMapLevelIndex - 1].depth / 2;
 							depth = std::max(1u, depth);
-							VkExtent3D extent = { width, height, depth };
+							vk::Extent3D extent = { width, height, depth };
 							pmlImageExtent[mipMapLevelIndex] = extent;
 						}
 						return pmlImageExtent;
 					}
-					inline std::vector<VkExtent3D> PerMipmapLevelExtent3D()const
+					inline std::vector<vk::Extent3D> PerMipmapLevelExtent3D()const
 					{
 						return GetPerMipmapLevelExtent3D(_extent3D, _mipmapLevelCount);
 					}

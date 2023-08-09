@@ -4,7 +4,7 @@
 
 AirEngine::Runtime::Graphic::Instance::Image::~Image()
 {
-	if(!_isNative) vkDestroyImage(Core::Manager::GraphicDeviceManager::VkDevice(), _image, nullptr);
+	if(!_isNative) Core::Manager::GraphicDeviceManager::Device().destroyImage(_image);
 }
 
 void AirEngine::Runtime::Graphic::Instance::Image::SetMemory(std::shared_ptr<Instance::Memory> memory)
@@ -15,15 +15,15 @@ void AirEngine::Runtime::Graphic::Instance::Image::SetMemory(std::shared_ptr<Ins
 }
 
 AirEngine::Runtime::Graphic::Instance::Image::Image(
-	VkFormat format,
-	VkExtent3D extent3D,
-	VkImageType imageType,
+	vk::Format format,
+	vk::Extent3D extent3D,
+	vk::ImageType imageType,
 	uint32_t layerCount,
 	uint32_t mipmapLevelCount,
-	VkImageUsageFlags imageUsageFlags,
-	VkMemoryPropertyFlags property,
-	VkImageTiling imageTiling,
-	VkImageCreateFlags imageCreateFlags,
+	vk::ImageUsageFlags imageUsageFlags,
+	vk::MemoryPropertyFlags property,
+	vk::ImageTiling imageTiling,
+	vk::ImageCreateFlags imageCreateFlags,
 	VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage
 )
 	: _format(format)
@@ -34,48 +34,50 @@ AirEngine::Runtime::Graphic::Instance::Image::Image(
 	, _imageCreateFlags(imageCreateFlags)
 	, _layerCount(layerCount)
 	, _mipmapLevelCount(mipmapLevelCount)
-	, _image(VK_NULL_HANDLE)
+	, _image()
 	, _memory()
 	, _isNative(false)
 {
 	VkImageCreateInfo imageCreateInfo{};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageCreateInfo.imageType = _imageType;
+	imageCreateInfo.imageType = VkImageType(_imageType);
 	imageCreateInfo.extent = _extent3D;
 	imageCreateInfo.mipLevels = _mipmapLevelCount;
 	imageCreateInfo.arrayLayers = _layerCount;
-	imageCreateInfo.format = _format;
-	imageCreateInfo.tiling = _imageTiling;
-	imageCreateInfo.initialLayout = VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED;
-	imageCreateInfo.usage = _imageUsageFlags;
+	imageCreateInfo.format = VkFormat(_format);
+	imageCreateInfo.tiling = VkImageTiling(_imageTiling);
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageCreateInfo.usage = VkImageUsageFlags(_imageUsageFlags);
 	imageCreateInfo.samples = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	imageCreateInfo.flags = _imageCreateFlags;
+	imageCreateInfo.flags = VkImageCreateFlags(_imageCreateFlags);
 
 	VmaAllocationCreateInfo vmaCreateInfo{};
 	vmaCreateInfo.flags = flags;
 	vmaCreateInfo.usage = memoryUsage;
-	vmaCreateInfo.requiredFlags = property;
+	vmaCreateInfo.requiredFlags = property.operator unsigned int();
 
 	VmaAllocationInfo vmaInfo{};
-	VmaAllocation vmaAllocation;
-	auto result = vmaCreateImage(Core::Manager::GraphicDeviceManager::VmaAllocator(), &imageCreateInfo, &vmaCreateInfo, &_image, &vmaAllocation, &vmaInfo);
+	VmaAllocation vmaAllocation{};
+	VkImage vkImage{};
+	auto result = vmaCreateImage(Core::Manager::GraphicDeviceManager::VmaAllocator(), &imageCreateInfo, &vmaCreateInfo, &vkImage, &vmaAllocation, &vmaInfo);
 
 	if (VK_SUCCESS != result) qFatal("Failed to create image.");
 
+	_image = vkImage;
 	_memory = std::shared_ptr<Instance::Memory>(new Instance::Memory(vmaAllocation, vmaInfo));
 }
 
 AirEngine::Runtime::Graphic::Instance::Image::Image(
-	VkFormat format,
-	VkExtent3D extent3D,
-	VkImageType imageType,
+	vk::Format format,
+	vk::Extent3D extent3D,
+	vk::ImageType imageType,
 	uint32_t layerCount,
 	uint32_t mipmapLevelCount,
-	VkImageUsageFlags imageUsageFlags,
+	vk::ImageUsageFlags imageUsageFlags,
 	std::shared_ptr<Instance::Memory> memory,
-	VkImageTiling imageTiling,
-	VkImageCreateFlags imageCreateFlags
+	vk::ImageTiling imageTiling,
+	vk::ImageCreateFlags imageCreateFlags
 )
 	: _format(format)
 	, _extent3D(extent3D)
@@ -85,42 +87,39 @@ AirEngine::Runtime::Graphic::Instance::Image::Image(
 	, _imageCreateFlags(imageCreateFlags)
 	, _layerCount(layerCount)
 	, _mipmapLevelCount(mipmapLevelCount)
-	, _image(VK_NULL_HANDLE)
+	, _image()
 	, _memory()
 	, _isNative(false)
 {
-	VkImageCreateInfo imageCreateInfo{};
-	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	vk::ImageCreateInfo imageCreateInfo{};
 	imageCreateInfo.imageType = _imageType;
 	imageCreateInfo.extent = _extent3D;
 	imageCreateInfo.mipLevels = _mipmapLevelCount;
 	imageCreateInfo.arrayLayers = _layerCount;
 	imageCreateInfo.format = _format;
 	imageCreateInfo.tiling = _imageTiling;
-	imageCreateInfo.initialLayout = VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED;
+	imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
 	imageCreateInfo.usage = _imageUsageFlags;
-	imageCreateInfo.samples = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
-	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.samples = vk::SampleCountFlagBits::e1;
+	imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 	imageCreateInfo.flags = _imageCreateFlags;
 
-	auto imageResult = vkCreateImage(Core::Manager::GraphicDeviceManager::VkDevice(), &imageCreateInfo, nullptr, &_image);
-
-	if (VK_SUCCESS != imageResult) qFatal("Failed to create image.");
+	_image = Core::Manager::GraphicDeviceManager::Device().createImage(imageCreateInfo);
 
 	auto bindResult = vmaBindImageMemory(Core::Manager::GraphicDeviceManager::VmaAllocator(), _memory->Allocation(), _image);
 
-	if (VK_SUCCESS != bindResult) qFatal("Failed to bind image.");
+	if (VkResult::VK_SUCCESS != bindResult) qFatal("Failed to bind image.");
 }
 
 AirEngine::Runtime::Graphic::Instance::Image::Image(
-	VkFormat format,
-	VkExtent3D extent3D,
-	VkImageType imageType,
+	vk::Format format,
+	vk::Extent3D extent3D,
+	vk::ImageType imageType,
 	uint32_t layerCount,
 	uint32_t mipmapLevelCount,
-	VkImageUsageFlags imageUsageFlags,
-	VkImageTiling imageTiling,
-	VkImageCreateFlags imageCreateFlags
+	vk::ImageUsageFlags imageUsageFlags,
+	vk::ImageTiling imageTiling,
+	vk::ImageCreateFlags imageCreateFlags
 )
 	: _format(format)
 	, _extent3D(extent3D)
@@ -130,39 +129,36 @@ AirEngine::Runtime::Graphic::Instance::Image::Image(
 	, _imageCreateFlags(imageCreateFlags)
 	, _layerCount(layerCount)
 	, _mipmapLevelCount(mipmapLevelCount)
-	, _image(VK_NULL_HANDLE)
+	, _image()
 	, _memory()
 	, _isNative(false)
 {
-	VkImageCreateInfo imageCreateInfo{};
-	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	vk::ImageCreateInfo imageCreateInfo{};
 	imageCreateInfo.imageType = _imageType;
 	imageCreateInfo.extent = _extent3D;
 	imageCreateInfo.mipLevels = _mipmapLevelCount;
 	imageCreateInfo.arrayLayers = _layerCount;
 	imageCreateInfo.format = _format;
 	imageCreateInfo.tiling = _imageTiling;
-	imageCreateInfo.initialLayout = VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED;
+	imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
 	imageCreateInfo.usage = _imageUsageFlags;
-	imageCreateInfo.samples = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
-	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.samples = vk::SampleCountFlagBits::e1;
+	imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 	imageCreateInfo.flags = _imageCreateFlags;
 
-	auto imageResult = vkCreateImage(Core::Manager::GraphicDeviceManager::VkDevice(), &imageCreateInfo, nullptr, &_image);
-
-	if (VK_SUCCESS != imageResult) qFatal("Failed to create image.");
+	_image = Core::Manager::GraphicDeviceManager::Device().createImage(imageCreateInfo);
 }
 
 AirEngine::Runtime::Graphic::Instance::Image::Image(
-	VkImage image,
-	VkFormat format,
-	VkExtent3D extent3D,
-	VkImageType imageType,
+	vk::Image image,
+	vk::Format format,
+	vk::Extent3D extent3D,
+	vk::ImageType imageType,
 	uint32_t layerCount,
 	uint32_t mipmapLevelCount,
-	VkImageUsageFlags imageUsageFlags,
-	VkImageTiling imageTiling,
-	VkImageCreateFlags imageCreateFlags
+	vk::ImageUsageFlags imageUsageFlags,
+	vk::ImageTiling imageTiling,
+	vk::ImageCreateFlags imageCreateFlags
 )
 	: _format(format)
 	, _extent3D(extent3D)
@@ -179,11 +175,11 @@ AirEngine::Runtime::Graphic::Instance::Image::Image(
 }
 
 AirEngine::Runtime::Graphic::Instance::Image* AirEngine::Runtime::Graphic::Instance::Image::CreateSwapchainImage(
-	VkImage image, 
-	VkFormat format, 
-	VkExtent2D extent2D, 
-	VkImageUsageFlags imageUsageFlags
+	vk::Image image, 
+	vk::Format format, 
+	vk::Extent2D extent2D, 
+	vk::ImageUsageFlags imageUsageFlags
 )
 {
-	return new Image(image, format, { extent2D.width, extent2D.height, 1 }, VK_IMAGE_TYPE_2D, 1, 1, imageUsageFlags);
+	return new Image(image, format, { extent2D.width, extent2D.height, 1 }, vk::ImageType::e2D, 1, 1, imageUsageFlags);
 }

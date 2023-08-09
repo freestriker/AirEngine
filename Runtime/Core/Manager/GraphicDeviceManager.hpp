@@ -1,6 +1,5 @@
 #pragma once
 #include "ManagerBase.hpp"
-#include <vulkan/vulkan_core.h>
 #include "../../Utility/Initializer.hpp"
 #include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
@@ -23,10 +22,6 @@ namespace AirEngine
 				private:
 					NO_COPY_MOVE(GraphicDeviceManager)
 				protected:
-					static VkInstance _vkInstance;
-					static VkPhysicalDevice _vkPhysicalDevice;
-					static VkDevice _vkDevice;
-
 					static vkb::Instance _vkbInstance;
 					static vkb::PhysicalDevice _vkbPhysicalDevice;
 					static vkb::Device _vkbDevice;
@@ -46,19 +41,6 @@ namespace AirEngine
 					static void CreateMemoryAllocator();
 					static void InitializeGraphicManagers();
 				public:
-					static inline VkInstance VkInstance()
-					{
-						return _vkInstance;
-					}
-					static inline VkPhysicalDevice VkPhysicalDevice()
-					{
-						return _vkPhysicalDevice;
-					}
-					static inline VkDevice VkDevice()
-					{
-						return _vkDevice;
-					}
-
 					static inline vkb::Instance& VkbInstance()
 					{
 						return _vkbInstance;

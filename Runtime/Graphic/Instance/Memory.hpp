@@ -1,5 +1,5 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 #include <vk_mem_alloc.h>
@@ -20,24 +20,24 @@ namespace AirEngine
 				private:
 					const VmaAllocation _vmaAllocation;
 					const uint32_t _memoryType;
-					const VkDeviceMemory _vkDeviceMemory;
-					const VkDeviceSize _offset;
-					const VkDeviceSize _size;
+					const vk::DeviceMemory _vkDeviceMemory;
+					const vk::DeviceSize _offset;
+					const vk::DeviceSize _size;
 				private:
 					Memory(VmaAllocation vmaAllocation, const VmaAllocationInfo& vmaInfo);
 				public:
 					~Memory();
 					NO_COPY_MOVE(Memory)
 					
-					inline VkDeviceMemory VkHandle()const
+					inline vk::DeviceMemory VkHandle()const
 					{
 						return _vkDeviceMemory;
 					}
-					inline VkDeviceSize Size()const
+					inline vk::DeviceSize Size()const
 					{
 						return _size;
 					}
-					inline VkDeviceSize Offset()const
+					inline vk::DeviceSize Offset()const
 					{
 						return _offset;
 					}
