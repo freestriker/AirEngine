@@ -2,32 +2,26 @@
 #include "../../Core/Manager/GraphicDeviceManager.hpp"
 #include "CommandBuffer.hpp"
 
-AirEngine::Runtime::Graphic::Command::CommandPool::CommandPool(const Utility::InternedString queueName, VkCommandPoolCreateFlags flags)
-	: _vkCommandPool(VK_NULL_HANDLE)
+AirEngine::Runtime::Graphic::Command::CommandPool::CommandPool(const Utility::InternedString queueName, vk::CommandPoolCreateFlags flags)
+	: _vkCommandPool()
 	, _queue(&Core::Manager::GraphicDeviceManager::Queue(queueName))
 	, _flags(flags)
 {
-	VkCommandPoolCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	createInfo.flags = flags;
-	createInfo.queueFamilyIndex = _queue->FamilyIndex();
-
-	auto result = vkCreateCommandPool(Core::Manager::GraphicDeviceManager::VkDevice(), &createInfo, nullptr, &_vkCommandPool);
-	if (result != VK_SUCCESS) qFatal("Failed to create command pool.");
+	_vkCommandPool = Core::Manager::GraphicDeviceManager::Device().createCommandPool(vk::CommandPoolCreateInfo(flags, _queue->FamilyIndex()));
 }
 
 AirEngine::Runtime::Graphic::Command::CommandPool::~CommandPool()
 {
 	_commandBufferMap.clear();
-	vkDestroyCommandPool(Core::Manager::GraphicDeviceManager::VkDevice(), _vkCommandPool, nullptr);
+	Core::Manager::GraphicDeviceManager::Device().destroyCommandPool(_vkCommandPool);
 }
 
 void AirEngine::Runtime::Graphic::Command::CommandPool::Reset()
 {
-	vkResetCommandPool(Core::Manager::GraphicDeviceManager::VkDevice(), _vkCommandPool, VkCommandPoolResetFlagBits::VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+	Core::Manager::GraphicDeviceManager::Device().resetCommandPool(_vkCommandPool, vk::CommandPoolResetFlagBits::eReleaseResources);
 }
 
-AirEngine::Runtime::Graphic::Command::CommandBuffer& AirEngine::Runtime::Graphic::Command::CommandPool::CreateCommandBuffer(Utility::InternedString commandBufferName, VkCommandBufferLevel level)
+AirEngine::Runtime::Graphic::Command::CommandBuffer& AirEngine::Runtime::Graphic::Command::CommandPool::CreateCommandBuffer(Utility::InternedString commandBufferName, vk::CommandBufferLevel level)
 {
 	auto&& commandBuffer = new Command::CommandBuffer(commandBufferName, this, level);
 	_commandBufferMap.insert(std::make_pair(commandBufferName, std::move(commandBuffer)));

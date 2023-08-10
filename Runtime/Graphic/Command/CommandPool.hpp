@@ -21,20 +21,20 @@ namespace AirEngine
 				class AIR_ENGINE_API CommandPool final
 				{
 				private:
-					VkCommandPool _vkCommandPool;
+					vk::CommandPool _vkCommandPool;
 					Instance::Queue* _queue;
-					VkCommandPoolCreateFlags _flags;
+					vk::CommandPoolCreateFlags _flags;
 					std::map<Utility::InternedString, std::unique_ptr<Command::CommandBuffer>> _commandBufferMap;
 				public:
-					CommandPool(const Utility::InternedString queueName, VkCommandPoolCreateFlags flags = 0);
+					CommandPool(const Utility::InternedString queueName, vk::CommandPoolCreateFlags flags = {});
 					~CommandPool();
 					NO_COPY_MOVE(CommandPool)
 
-					inline VkCommandPool& VkHandle()
+					inline vk::CommandPool& VkHandle()
 					{
 						return _vkCommandPool;
 					}
-					inline VkCommandPoolCreateFlags VkCreateFlags()
+					inline vk::CommandPoolCreateFlags VkCreateFlags()
 					{
 						return _flags;
 					}
@@ -48,7 +48,7 @@ namespace AirEngine
 					{
 						return *(_commandBufferMap[commandBufferName]);
 					}
-					Command::CommandBuffer& CreateCommandBuffer(Utility::InternedString commandBufferName, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+					Command::CommandBuffer& CreateCommandBuffer(Utility::InternedString commandBufferName, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary);
 					void DestroyCommandBuffer(Utility::InternedString commandBufferName);
 				};
 			}

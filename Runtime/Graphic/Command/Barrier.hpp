@@ -1,5 +1,5 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 #include <vector>
@@ -21,9 +21,9 @@ namespace AirEngine
 				{
 					friend class CommandBuffer;
 				private:
-					std::vector<VkMemoryBarrier2> _memoryBarriers;
-					std::vector<VkBufferMemoryBarrier2> _bufferMemoryBarriers;
-					std::vector<VkImageMemoryBarrier2> _imageMemoryBarriers;
+					std::vector<vk::MemoryBarrier2> _memoryBarriers;
+					std::vector<vk::BufferMemoryBarrier2> _bufferMemoryBarriers;
+					std::vector<vk::ImageMemoryBarrier2> _imageMemoryBarriers;
 				public:
 					Barrier();
 					~Barrier() = default;
@@ -41,13 +41,13 @@ namespace AirEngine
 					}
 					void AddImageMemoryBarrier(
 						const Instance::Image& image, 
-						VkPipelineStageFlags2 srcStageMask,
-						VkAccessFlags2 srcAccessMask,
-						VkPipelineStageFlags2 dstStageMask,
-						VkAccessFlags2 dstAccessMask,
-						VkImageLayout oldLayout,
-						VkImageLayout newLayout,
-						VkImageAspectFlags aspectMask
+						vk::PipelineStageFlags2 srcStageMask,
+						vk::AccessFlags2 srcAccessMask,
+						vk::PipelineStageFlags2 dstStageMask,
+						vk::AccessFlags2 dstAccessMask,
+						vk::ImageLayout oldLayout,
+						vk::ImageLayout newLayout,
+						vk::ImageAspectFlags aspectMask
 					);
 				};
 			}

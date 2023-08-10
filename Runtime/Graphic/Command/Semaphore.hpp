@@ -1,5 +1,5 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 
@@ -14,13 +14,13 @@ namespace AirEngine
 				class AIR_ENGINE_API Semaphore final
 				{
 				private:
-					VkSemaphore _vkSemaphore;
+					vk::Semaphore _vkSemaphore;
 				public:
 					Semaphore();
 					~Semaphore();
 					NO_COPY_MOVE(Semaphore)
 
-					inline VkSemaphore& VkHandle()
+					inline vk::Semaphore& VkHandle()
 					{
 						return _vkSemaphore;
 					}

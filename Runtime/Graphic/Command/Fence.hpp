@@ -1,5 +1,5 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 
@@ -14,20 +14,20 @@ namespace AirEngine
 				class AIR_ENGINE_API Fence final
 				{
 				private:
-					VkFence _vkFence;
+					vk::Fence _vkFence;
 				public:
 					Fence();
 					Fence(bool isSignaled);
 					~Fence();
 					NO_COPY_MOVE(Fence)
 
-					inline VkFence VkHandle() const
+					inline vk::Fence VkHandle() const
 					{
 						return _vkFence;
 					}
 					void Reset() const;
 					void Wait() const;
-					VkResult Status() const;
+					vk::Result Status() const;
 				};
 			}
 		}
