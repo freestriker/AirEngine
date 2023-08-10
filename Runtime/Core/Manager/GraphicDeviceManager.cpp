@@ -36,8 +36,9 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 		{ 0, 0, CreateVulkanInstance },
 		{ 0, 2, CreateDevice },
 		{ 0, 3, SetDefaultDispatcher },
-		{ 0, 4, CreateMemoryAllocator },
-		{ 0, 4, InitializeGraphicManagers }
+		{ 0, 4, PopulateQueue },
+		{ 0, 6, CreateMemoryAllocator },
+		{ 0, 7, InitializeGraphicManagers }
 	};
 }
 
@@ -215,19 +216,6 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateDevice()
 	}
 	_vkbDevice = deviceResult.value();
 	_device = vk::Device(_vkbDevice.device);
-
-	vk::Queue queue{};
-
-	queue = _device.getQueue(graphicQueueFamily, 0);
-	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("GraphicQueue"))));
-	queue = _device.getQueue(graphicQueueFamily, 1);
-	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("TransferQueue"))));
-
-	if (isWindow)
-	{
-		queue = _device.getQueue(graphicQueueFamily, 2);
-		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(queue, graphicQueueFamily, Utility::InternedString("PresentQueue"))));
-	}
 }
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::SetDefaultDispatcher()
@@ -237,6 +225,25 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::SetDefaultDispatch
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(Instance());
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(Device());
+}
+
+void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::PopulateQueue()
+{
+	const bool isWindow{ RenderManager::FrontEnd().IsWindow() };
+
+	vk::Queue queue{};
+
+	queue = _device.getQueue(0, 0);
+	_queueMap.insert(std::make_pair(Utility::InternedString("GraphicQueue"), new Graphic::Instance::Queue(queue, 0, Utility::InternedString("GraphicQueue"))));
+	queue = _device.getQueue(0, 1);
+	_queueMap.insert(std::make_pair(Utility::InternedString("TransferQueue"), new Graphic::Instance::Queue(queue, 0, Utility::InternedString("TransferQueue"))));
+
+	if (isWindow)
+	{
+		queue = _device.getQueue(0, 2);
+		_queueMap.insert(std::make_pair(Utility::InternedString("PresentQueue"), new Graphic::Instance::Queue(queue, 0, Utility::InternedString("PresentQueue"))));
+	}
+
 }
 
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAllocator()

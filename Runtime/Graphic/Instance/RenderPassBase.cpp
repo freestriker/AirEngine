@@ -334,8 +334,7 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::~RenderPassBase()
 {
 	if (_vkRenderPass)
 	{
-		vk::Device device(Core::Manager::GraphicDeviceManager::VkDevice());
-		device.destroyRenderPass(_vkRenderPass);
+		Core::Manager::GraphicDeviceManager::Device().destroyRenderPass(_vkRenderPass);
 	}
 }
 

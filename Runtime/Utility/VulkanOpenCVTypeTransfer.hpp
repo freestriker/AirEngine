@@ -3,7 +3,7 @@
 #include "ExportMacro.hpp"
 #include <unordered_map>
 #include <string>
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include <opencv2/core/hal/interface.h>
 #include <vulkan/vulkan_format_traits.hpp>
 
@@ -60,27 +60,27 @@ namespace AirEngine
 				{
 					return _perChannelBitsIndexAndPerChannelValueTypeIndexToPerChannelValueTypeMap[perChannelBitsIndex][perChannelValueTypeIndex];
 				}
-				inline static VkFormat ParseToVkFormat(const std::string& formatString)
+				inline static vk::Format ParseToVkFormat(const std::string& formatString)
 				{
-					return _vkFormatStringToVkFormatMap.at(formatString);
+					return vk::Format(_vkFormatStringToVkFormatMap.at(formatString));
 				}
-				inline static VkImageUsageFlagBits ParseToVkImageUsageFlagBits(const std::string& usageString)
+				inline static vk::ImageUsageFlagBits ParseToVkImageUsageFlagBits(const std::string& usageString)
 				{
-					return _vkImageUsageFlagBitsStringToVkImageUsageFlagBitsMap.at(usageString);
+					return vk::ImageUsageFlagBits(_vkImageUsageFlagBitsStringToVkImageUsageFlagBitsMap.at(usageString));
 				}
-				inline static VkMemoryPropertyFlagBits ParseToVkMemoryPropertyFlagBits(const std::string& propertyString)
+				inline static vk::MemoryPropertyFlagBits ParseToVkMemoryPropertyFlagBits(const std::string& propertyString)
 				{
-					return _vkMemoryPropertyFlagBitsStringToVkMemoryPropertyFlagBitsMap.at(propertyString);
+					return vk::MemoryPropertyFlagBits(_vkMemoryPropertyFlagBitsStringToVkMemoryPropertyFlagBitsMap.at(propertyString));
 				}
-				inline static VkImageLayout ParseToVkImageLayout(const std::string& propertyString)
+				inline static vk::ImageLayout ParseToVkImageLayout(const std::string& propertyString)
 				{
-					return _vkImageLayoutStringToVkImageLayoutMap.at(propertyString);
+					return vk::ImageLayout(_vkImageLayoutStringToVkImageLayoutMap.at(propertyString));
 				}
-				inline static VkImageAspectFlagBits ParseToVkImageAspectFlagBits(const std::string& propertyString)
+				inline static vk::ImageAspectFlagBits ParseToVkImageAspectFlagBits(const std::string& propertyString)
 				{
-					return _vkImageAspectFlagBitsStringToVkImageAspectFlagBitsMap.at(propertyString);
+					return vk::ImageAspectFlagBits(_vkImageAspectFlagBitsStringToVkImageAspectFlagBitsMap.at(propertyString));
 				}
-				inline static int VkFormatToPerChannelValueType(VkFormat format, std::string& error)
+				inline static int VkFormatToPerChannelValueType(vk::Format format, std::string& error)
 				{
 					vk::Format originalFormat = vk::Format(format);
 
@@ -107,7 +107,7 @@ namespace AirEngine
 
 					return originalCvImagePerChannelValueType;
 				}
-				inline static int VkFormatToValueType(VkFormat format, std::string& error)
+				inline static int VkFormatToValueType(vk::Format format, std::string& error)
 				{
 					vk::Format originalFormat = vk::Format(format);
 

@@ -3,7 +3,7 @@
 #include "../Utility/InternedString.hpp"
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 
 namespace AirEngine
 {
@@ -46,7 +46,7 @@ namespace AirEngine
 				Graphic::Instance::Buffer* _vertexBuffer;
 				Graphic::Instance::Buffer* _indexBuffer;
 				std::vector<SubMeshInfo> _subMeshInfos;
-				VkIndexType _indexType;
+				vk::IndexType _indexType;
 				uint8_t _perIndexByteCount;
 			public:
 				Mesh();
@@ -61,7 +61,7 @@ namespace AirEngine
 				{
 					return *_indexBuffer;
 				}
-				inline VkIndexType IndexType()const
+				inline vk::IndexType IndexType()const
 				{
 					return _indexType;
 				}

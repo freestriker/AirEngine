@@ -33,7 +33,7 @@ namespace AirEngine
 					struct CommandBufferSubmitSemaphoreInfo
 					{
 						Command::Semaphore* semphore;
-						VkPipelineStageFlags2 stageMask;
+						vk::PipelineStageFlags2 stageMask;
 					};
 					struct CommandBufferSubmitInfo
 					{

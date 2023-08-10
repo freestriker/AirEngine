@@ -1,6 +1,6 @@
 ﻿#include "Window.hpp"
 #include "../Manager/GraphicDeviceManager.hpp"
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "../../Graphic/Instance/Image.hpp"
 #include "../../Graphic/Command/Semaphore.hpp"
 #include "../../Graphic/Command/Fence.hpp"
@@ -28,16 +28,14 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
 {    
 	auto&& currentFrame = _frameResources[_curFrameIndex];
 
-	while (currentFrame.acquireFence->Status() == VK_NOT_READY) Utility::ThisFiber::yield();
+	while (currentFrame.acquireFence->Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
 	currentFrame.acquireFence->Reset();
 
-	vkAcquireNextImageKHR(
-		Manager::GraphicDeviceManager::VkDevice(),
+	Manager::GraphicDeviceManager::Device().acquireNextImageKHR(
 		_vkSwapchain,
 		std::numeric_limits<uint64_t>::max(),
 		currentFrame.acquireSemaphore->VkHandle(),
-		currentFrame.acquireFence->VkHandle(),
-		&_curImageIndex
+		currentFrame.acquireFence->VkHandle()
 	);
 
 	static bool isLoaded = false;
@@ -70,37 +68,37 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 	auto&& currentImage = _imageResources[_curImageIndex];
 
 	_commandPool->Reset();
-	_commandBuffer->BeginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	_commandBuffer->BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	Graphic::Command::Barrier barrier{};
 	if (assetLoadHandle.IsCompleted())
 	{
 		barrier.AddImageMemoryBarrier(
 			*currentImage.image,
-			VK_PIPELINE_STAGE_2_NONE,
-			VK_ACCESS_2_NONE,
-			VK_PIPELINE_STAGE_2_BLIT_BIT,
-			VK_ACCESS_2_TRANSFER_WRITE_BIT,
-			VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
-			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
+			vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone,
+			vk::PipelineStageFlagBits2::eBlit,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::ImageAspectFlagBits::eColor
 		);
 		_commandBuffer->AddPipelineBarrier(barrier);
 		_commandBuffer->Blit(
-			assetLoadHandle.Asset<Asset::Texture2D>().Image(), VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			*currentImage.image, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT,
-			VkFilter::VK_FILTER_LINEAR
+			assetLoadHandle.Asset<Asset::Texture2D>().Image(), vk::ImageLayout::eTransferSrcOptimal,
+			*currentImage.image, vk::ImageLayout::eTransferDstOptimal,
+			vk::ImageAspectFlagBits::eColor,
+			vk::Filter::eLinear
 		);
 		barrier.ClearImageMemoryBarriers();
 		barrier.AddImageMemoryBarrier(
 			*currentImage.image,
-			VK_PIPELINE_STAGE_2_BLIT_BIT,
-			VK_ACCESS_2_TRANSFER_WRITE_BIT,
-			VK_PIPELINE_STAGE_2_NONE,
-			VK_ACCESS_2_NONE,
-			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
+			vk::PipelineStageFlagBits2::eBlit,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone,
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::ImageLayout::ePresentSrcKHR,
+			vk::ImageAspectFlagBits::eColor
 		);
 		_commandBuffer->AddPipelineBarrier(barrier);
 	}
@@ -108,26 +106,26 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 	{
 		barrier.AddImageMemoryBarrier(
 			*currentImage.image,
-			VK_PIPELINE_STAGE_2_NONE,
-			VK_ACCESS_2_NONE,
-			VK_PIPELINE_STAGE_2_CLEAR_BIT,
-			VK_ACCESS_2_TRANSFER_WRITE_BIT,
-			VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
-			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
+			vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone,
+			vk::PipelineStageFlagBits2::eClear,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::ImageAspectFlagBits::eColor
 		);
 		_commandBuffer->AddPipelineBarrier(barrier);
-		_commandBuffer->ClearColorImage<float>(*currentImage.image, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, { 1.0f, 1.0f, 1.0f, 1.0f });
+		_commandBuffer->ClearColorImage<float>(*currentImage.image, vk::ImageLayout::eTransferDstOptimal, { 1.0f, 1.0f, 1.0f, 1.0f });
 		barrier.ClearImageMemoryBarriers();
 		barrier.AddImageMemoryBarrier(
 			*currentImage.image,
-			VK_PIPELINE_STAGE_2_CLEAR_BIT,
-			VK_ACCESS_2_TRANSFER_WRITE_BIT,
-			VK_PIPELINE_STAGE_2_NONE,
-			VK_ACCESS_2_NONE,
-			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-			VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT
+			vk::PipelineStageFlagBits2::eClear,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone,
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::ImageLayout::ePresentSrcKHR,
+			vk::ImageAspectFlagBits::eColor
 		);
 		_commandBuffer->AddPipelineBarrier(barrier);
 	}
@@ -135,23 +133,23 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 
 	_commandPool->Queue().ImmediateIndividualSubmit(
 		{
-			{{currentFrame.acquireSemaphore, VK_PIPELINE_STAGE_2_CLEAR_BIT}},
+			{{currentFrame.acquireSemaphore, vk::PipelineStageFlagBits2::eClear}},
 			{_commandBuffer},
-			{{currentImage.transferSemaphore, VK_PIPELINE_STAGE_2_NONE}}
+			{{currentImage.transferSemaphore, vk::PipelineStageFlagBits2::eNone}}
 		},
 		*_transferFence
 	);
 
-	VkPresentInfoKHR vkPresentInfo{};
-	vkPresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	vk::PresentInfoKHR vkPresentInfo{};
 	vkPresentInfo.swapchainCount = 1;
 	vkPresentInfo.pSwapchains = &_vkSwapchain;
 	vkPresentInfo.pImageIndices = &_curImageIndex;
 	vkPresentInfo.waitSemaphoreCount = 1;
 	vkPresentInfo.pWaitSemaphores = &currentImage.transferSemaphore->VkHandle();
-	vkQueuePresentKHR(_commandPool->Queue().VkHandle(), &vkPresentInfo);
 
-	while (_transferFence->Status() == VK_NOT_READY) Utility::ThisFiber::yield();
+	_commandPool->Queue().VkHandle().presentKHR(vkPresentInfo);
+
+	while (_transferFence->Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
 	_transferFence->Reset();
 
 	_curFrameIndex = (_curFrameIndex + 1) % 3;
@@ -159,7 +157,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnSetVulkanHandle()
 {
-	_qVulkanInstance.setVkInstance(Manager::GraphicDeviceManager::VkInstance());
+	_qVulkanInstance.setVkInstance(Manager::GraphicDeviceManager::Instance());
 	bool qResult = _qVulkanInstance.create();
 	if (!qResult) qFatal("Create vulkan instance failed.");
 
@@ -195,15 +193,15 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateVulkanSwapchain()
 		_imageResources.emplace_back(
 			Graphic::Instance::Image::CreateSwapchainImage(
 				vkImage,
-				_vkbSwapchain.image_format,
-				_vkbSwapchain.extent,
-				_vkbSwapchain.image_usage_flags
+				vk::Format(_vkbSwapchain.image_format),
+				vk::Extent2D(_vkbSwapchain.extent),
+				vk::ImageUsageFlags(_vkbSwapchain.image_usage_flags)
 			),
 			new Graphic::Command::Semaphore()
 		);
 	}
 
-	_commandPool = new Graphic::Command::CommandPool(Utility::InternedString("PresentQueue"), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+	_commandPool = new Graphic::Command::CommandPool(Utility::InternedString("PresentQueue"), vk::CommandPoolCreateFlagBits::eTransient);
 	_commandBuffer = &_commandPool->CreateCommandBuffer(Utility::InternedString("PresentCommandBuffer"));
 
 	_transferFence = new Graphic::Command::Fence(false);

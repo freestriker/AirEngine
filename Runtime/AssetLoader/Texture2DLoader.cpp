@@ -43,13 +43,13 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	}
 
 	//Parse descriptor data
-	const VkFormat originalFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.originalFormat);
-	const VkFormat targetFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.format);
+	const vk::Format originalFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.originalFormat);
+	const vk::Format targetFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.format);
 	const bool topDown = descriptor.topDown;
-	VkImageUsageFlags imageUsageFlags = 0;
-	VkMemoryPropertyFlags memoryPropertyFlags = 0;
-	VkImageLayout imageLayout = Utility::VulkanOpenCVTypeTransfer::ParseToVkImageLayout(descriptor.imageLayout);
-	VkImageAspectFlags imageAspectFlags = 0;
+	vk::ImageUsageFlags imageUsageFlags = {};
+	vk::MemoryPropertyFlags memoryPropertyFlags = {};
+	vk::ImageLayout imageLayout = Utility::VulkanOpenCVTypeTransfer::ParseToVkImageLayout(descriptor.imageLayout);
+	vk::ImageAspectFlags imageAspectFlags = {};
 	uint32_t desiredMipmapLevelCount = 0;
 	{
 		for (const auto& imageUsageFlag : descriptor.imageUsageFlags)
@@ -87,7 +87,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	if (descriptor.perMipmapLevelTexturePath.size() == 0) qFatal("No texture path provided.");
 
 	//Load first texture for calculating meta data
-	VkExtent3D imageMaxExtent{};
+	vk::Extent3D imageMaxExtent{};
 	uint32_t maxMipmapLevelCount{};
 	cv::Mat firstCvImage{};
 	int cvImageChannelCount{};
@@ -110,7 +110,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	uint32_t mipmapLevelCount{};
 	bool needSwapRBChannel{};
 	bool needConvertType{};
-	std::vector<VkExtent3D> pmlImageExtent{};
+	std::vector<vk::Extent3D> pmlImageExtent{};
 	const auto isDirectCopy = originalFormat == targetFormat;
 	{
 		int originalCvImagePerChannelValueType = -1;
@@ -230,8 +230,8 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 
 	auto&& stagingBuffer = Graphic::Instance::Buffer(
 		totalByteSize,
-		VkBufferUsageFlagBits::VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
 		VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
 	);
 	auto data = stagingBuffer.Memory()->Map();
@@ -245,7 +245,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	}
 	stagingBuffer.Memory()->Unmap();
 
-	auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+	auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), vk::CommandPoolCreateFlagBits::eTransient);
 	auto&& commandBuffer = commandPool.CreateCommandBuffer(Utility::InternedString("TransferCommandBuffer"));
 	Graphic::Command::Barrier barrier{};
 	auto&& transferFence = Graphic::Command::Fence(false);
@@ -253,46 +253,46 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	auto&& targetImage = new Graphic::Instance::Image(
 		targetFormat,
 		imageMaxExtent,
-		VkImageType::VK_IMAGE_TYPE_2D,
+		vk::ImageType::e2D,
 		1, mipmapLevelCount,
-		VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | imageUsageFlags,
+		vk::ImageUsageFlagBits::eTransferDst | imageUsageFlags,
 		memoryPropertyFlags
 	);
 	auto&& originalImage = std::unique_ptr<Graphic::Instance::Image>(isDirectCopy ? nullptr : new Graphic::Instance::Image(
 		originalFormat,
 		imageMaxExtent,
-		VkImageType::VK_IMAGE_TYPE_2D,
+		vk::ImageType::e2D,
 		1, mipmapLevelCount,
-		VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-		VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
+		vk::MemoryPropertyFlagBits::eDeviceLocal
 	));
 
-	commandBuffer.BeginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	commandBuffer.BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	if (isDirectCopy)
 	{
 		{
 			barrier.AddImageMemoryBarrier(
 				*targetImage,
-				VK_PIPELINE_STAGE_2_NONE,
-				VK_ACCESS_2_NONE,
-				VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-				VK_ACCESS_2_TRANSFER_WRITE_BIT,
-				VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
-				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				vk::PipelineStageFlagBits2::eNone,
+				vk::AccessFlagBits2::eNone,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::ImageLayout::eUndefined,
+				vk::ImageLayout::eTransferDstOptimal,
 				imageAspectFlags
 			);
 		}
 		commandBuffer.AddPipelineBarrier(barrier);
-		commandBuffer.CopyBufferToImage(stagingBuffer, *targetImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageAspectFlags);
+		commandBuffer.CopyBufferToImage(stagingBuffer, *targetImage, vk::ImageLayout::eTransferDstOptimal, imageAspectFlags);
 		{
 			barrier.ClearImageMemoryBarriers();
 			barrier.AddImageMemoryBarrier(
 				*targetImage,
-				VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-				VK_ACCESS_2_TRANSFER_WRITE_BIT,
-				VK_PIPELINE_STAGE_2_NONE,
-				VK_ACCESS_2_NONE,
-				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::PipelineStageFlagBits2::eNone,
+				vk::AccessFlagBits2::eNone,
+				vk::ImageLayout::eTransferDstOptimal,
 				imageLayout,
 				imageAspectFlags
 			);
@@ -304,55 +304,55 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 		{
 			barrier.AddImageMemoryBarrier(
 				*originalImage,
-				VK_PIPELINE_STAGE_2_NONE,
-				VK_ACCESS_2_NONE,
-				VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-				VK_ACCESS_2_TRANSFER_WRITE_BIT,
-				VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
-				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				vk::PipelineStageFlagBits2::eNone,
+				vk::AccessFlagBits2::eNone,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::ImageLayout::eUndefined,
+				vk::ImageLayout::eTransferDstOptimal,
 				imageAspectFlags
 			);
 		}
 		commandBuffer.AddPipelineBarrier(barrier);
-		commandBuffer.CopyBufferToImage(stagingBuffer, *originalImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageAspectFlags);
+		commandBuffer.CopyBufferToImage(stagingBuffer, *originalImage, vk::ImageLayout::eTransferDstOptimal, imageAspectFlags);
 		{
 			barrier.ClearImageMemoryBarriers();
 			barrier.AddImageMemoryBarrier(
 				*originalImage,
-				VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-				VK_ACCESS_2_TRANSFER_WRITE_BIT,
-				VK_PIPELINE_STAGE_2_BLIT_BIT,
-				VK_ACCESS_2_TRANSFER_READ_BIT,
-				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::PipelineStageFlagBits2::eBlit,
+				vk::AccessFlagBits2::eTransferRead,
+				vk::ImageLayout::eTransferDstOptimal,
+				vk::ImageLayout::eTransferSrcOptimal,
 				imageAspectFlags
 			);
 			barrier.AddImageMemoryBarrier(
 				*targetImage,
-				VK_PIPELINE_STAGE_2_NONE,
-				VK_ACCESS_2_NONE,
-				VK_PIPELINE_STAGE_2_BLIT_BIT,
-				VK_ACCESS_2_TRANSFER_WRITE_BIT,
-				VkImageLayout::VK_IMAGE_LAYOUT_UNDEFINED,
-				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eNone,
+				vk::PipelineStageFlagBits2::eBlit,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::ImageLayout::eUndefined,
+				vk::ImageLayout::eTransferDstOptimal,
 				imageAspectFlags
 			);
 		}
 		commandBuffer.AddPipelineBarrier(barrier);
 		commandBuffer.Blit(
-			*originalImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			*targetImage, VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			imageAspectFlags, VkFilter::VK_FILTER_LINEAR
+			*originalImage, vk::ImageLayout::eTransferSrcOptimal,
+			*targetImage, vk::ImageLayout::eTransferDstOptimal,
+			imageAspectFlags, vk::Filter::eLinear
 		);
 		{
 			barrier.ClearImageMemoryBarriers();
 			barrier.AddImageMemoryBarrier(
 				*targetImage,
-				VK_PIPELINE_STAGE_2_BLIT_BIT,
-				VK_ACCESS_2_TRANSFER_WRITE_BIT,
-				VK_PIPELINE_STAGE_2_NONE,
-				VK_ACCESS_2_NONE,
-				VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				vk::PipelineStageFlagBits2::eBlit,
+				vk::AccessFlagBits2::eTransferWrite,
+				vk::PipelineStageFlagBits2::eTransfer,
+				vk::AccessFlagBits2::eNone,
+				vk::ImageLayout::eTransferDstOptimal,
 				imageLayout,
 				imageAspectFlags
 			);
@@ -367,7 +367,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 		transferFence
 	);
 
-	while (transferFence.Status() == VK_NOT_READY) Utility::ThisFiber::yield();
+	while (transferFence.Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
 
 	texture2d->_image = targetImage;
 	*isInLoading = false;

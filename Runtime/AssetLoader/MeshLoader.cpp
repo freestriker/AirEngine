@@ -259,8 +259,8 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 
 	auto&& stagingBuffer = Graphic::Instance::Buffer(
 		sizeof(VertexData) * totalVertexCount + perIndexByteCount * totalIndexCount,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
 		VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
 	);
 	{
@@ -313,23 +313,23 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 
 	auto&& vertexBuffer = new Graphic::Instance::Buffer(
 		sizeof(VertexData) * totalVertexCount,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+		vk::MemoryPropertyFlagBits::eDeviceLocal
 	);
 
 	auto&& indexBuffer = new Graphic::Instance::Buffer(
 		perIndexByteCount * totalIndexCount,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+		vk::MemoryPropertyFlagBits::eDeviceLocal
 	);
 
 	//copy to device
 	{
-		auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+		auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), vk::CommandPoolCreateFlagBits::eTransient);
 		auto&& commandBuffer = commandPool.CreateCommandBuffer(Utility::InternedString("TransferCommandBuffer"));
 		auto&& transferFence = Graphic::Command::Fence(false);
 
-		commandBuffer.BeginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		commandBuffer.BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 		commandBuffer.CopyBuffer(stagingBuffer, *vertexBuffer, { {0, 0, sizeof(VertexData) * totalVertexCount} });
 		commandBuffer.CopyBuffer(stagingBuffer, *indexBuffer, { {sizeof(VertexData) * totalVertexCount, 0, perIndexByteCount * totalIndexCount} });
 		commandBuffer.EndRecord();
@@ -339,7 +339,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 			transferFence
 		);
 
-		while (transferFence.Status() == VK_NOT_READY) Utility::ThisFiber::yield();
+		while (transferFence.Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
 	}
 
 	mesh->_vertexBuffer = vertexBuffer;
@@ -350,17 +350,17 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 	{
 		case 1:
 		{
-			mesh->_indexType = VK_INDEX_TYPE_UINT8_EXT;	
+			mesh->_indexType = vk::IndexType::eUint8EXT;
 			break;
 		}
 		case 2:
 		{
-			mesh->_indexType = VK_INDEX_TYPE_UINT16;
+			mesh->_indexType = vk::IndexType::eUint16;
 			break;
 		}
 		case 4:
 		{
-			mesh->_indexType = VK_INDEX_TYPE_UINT32;
+			mesh->_indexType = vk::IndexType::eUint32;
 			break;
 		}
 		default:
