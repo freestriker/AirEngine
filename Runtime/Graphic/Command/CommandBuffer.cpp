@@ -6,59 +6,49 @@
 #include "../Instance/Buffer.hpp"
 #include <vulkan/vulkan_format_traits.hpp>
 
-AirEngine::Runtime::Graphic::Command::CommandBuffer::CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, VkCommandBufferLevel level)
+AirEngine::Runtime::Graphic::Command::CommandBuffer::CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, vk::CommandBufferLevel level)
 	: _name(commandBufferName)
-	, _vkCommandBuffer(VK_NULL_HANDLE)
+	, _vkCommandBuffer()
 	, _vkCommandBufferLevel(level)
 	, _commandPool(commandPool)
 {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    vk::CommandBufferAllocateInfo allocInfo{};
     allocInfo.commandPool = commandPool->VkHandle();
     allocInfo.level = _vkCommandBufferLevel;
     allocInfo.commandBufferCount = 1;
 
-    auto result = vkAllocateCommandBuffers(Core::Manager::GraphicDeviceManager::VkDevice(), &allocInfo, &_vkCommandBuffer);
-    if (result != VK_SUCCESS)
-    {
-        qFatal("Failed to allocate command buffer.");
-    }
+    _vkCommandBuffer = Core::Manager::GraphicDeviceManager::Device().allocateCommandBuffers(allocInfo).at(0);
 }
 
 AirEngine::Runtime::Graphic::Command::CommandBuffer::~CommandBuffer()
 {
-    vkFreeCommandBuffers(Core::Manager::GraphicDeviceManager::VkDevice(), _commandPool->VkHandle(), 1, &_vkCommandBuffer);
+    Core::Manager::GraphicDeviceManager::Device().freeCommandBuffers(_commandPool->VkHandle(), _vkCommandBuffer);
 }
 
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::Reset()
 {
-    if (_commandPool->VkCreateFlags() & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT)
+    if (_commandPool->VkCreateFlags() & vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
     {
-        vkResetCommandBuffer(_vkCommandBuffer, VkCommandBufferResetFlagBits::VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+        _vkCommandBuffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
     }
 }
 
-void AirEngine::Runtime::Graphic::Command::CommandBuffer::BeginRecord(VkCommandBufferUsageFlags flags)
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::BeginRecord(vk::CommandBufferUsageFlags flags)
 {
-    VkCommandBufferBeginInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    info.pNext = nullptr;
+    vk::CommandBufferBeginInfo info{};
     info.flags = flags;
-    info.pInheritanceInfo = nullptr;
 
-    auto&& result = vkBeginCommandBuffer(_vkCommandBuffer, &info);
+    _vkCommandBuffer.begin(info);
 }
 
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::EndRecord()
 {
-    vkEndCommandBuffer(_vkCommandBuffer);
+    _vkCommandBuffer.end();
 }
 
-void AirEngine::Runtime::Graphic::Command::CommandBuffer::AddPipelineBarrier(const Barrier& barrier, VkDependencyFlags dependencyFlags)
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::AddPipelineBarrier(const Barrier& barrier, vk::DependencyFlags dependencyFlags)
 {
-    VkDependencyInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    info.pNext = nullptr;
+    vk::DependencyInfo info{};
     info.dependencyFlags = dependencyFlags;
     info.memoryBarrierCount = uint32_t(barrier._memoryBarriers.size());
     info.pMemoryBarriers = barrier._memoryBarriers.data();
@@ -67,31 +57,30 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::AddPipelineBarrier(con
     info.imageMemoryBarrierCount = uint32_t(barrier._imageMemoryBarriers.size());
     info.pImageMemoryBarriers = barrier._imageMemoryBarriers.data();
 
-    vkCmdPipelineBarrier2(_vkCommandBuffer, &info);
+    _vkCommandBuffer.pipelineBarrier2(info);
 }
 
-void AirEngine::Runtime::Graphic::Command::CommandBuffer::ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const VkClearColorValue& color)
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::ClearColorImage(const Instance::Image& image, vk::ImageLayout imageLayout, const vk::ClearColorValue& color)
 {
-    VkImageSubresourceRange range{};
-    range.aspectMask = VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT;
+    vk::ImageSubresourceRange range{};
     range.baseMipLevel = 0;
     range.levelCount = image.MipmapLevelCount();
     range.baseArrayLayer = 0;
     range.layerCount = image.LayerCount();
     
-    vkCmdClearColorImage(_vkCommandBuffer, image.VkHandle(), imageLayout, &color, 1, &range);
+    _vkCommandBuffer.clearColorImage(image.VkHandle(), imageLayout, color, range);
 }
 
-void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBufferToImage(const Instance::Buffer& buffer, const Instance::Image& image, VkImageLayout imageLayout, VkImageAspectFlags imageAspectFlags)
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBufferToImage(const Instance::Buffer& buffer, const Instance::Image& image, vk::ImageLayout imageLayout, vk::ImageAspectFlags imageAspectFlags)
 {
     auto&& pmlExtent = image.PerMipmapLevelExtent3D();
     auto blockByteSize = vk::blockSize(vk::Format(image.Format()));
     VkDeviceSize offset = 0;
 
-    std::vector< VkBufferImageCopy> copys(pmlExtent.size(), VkBufferImageCopy{});
+    std::vector< vk::BufferImageCopy> copys(pmlExtent.size(), VkBufferImageCopy{});
     for (uint32_t mipmapLevelIndex = 0; mipmapLevelIndex < copys.size(); mipmapLevelIndex++)
     {
-        VkBufferImageCopy& copy = copys[mipmapLevelIndex];
+        vk::BufferImageCopy& copy = copys[mipmapLevelIndex];
 
         copy.bufferOffset = offset;
         copy.bufferRowLength = 0;
@@ -100,36 +89,36 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBufferToImage(cons
         copy.imageSubresource.baseArrayLayer = 0;
         copy.imageSubresource.layerCount = image.LayerCount();
         copy.imageSubresource.mipLevel = mipmapLevelIndex;
-        copy.imageOffset = { 0, 0, 0 };
+        copy.imageOffset = vk::Offset3D{ 0, 0, 0 };
         copy.imageExtent = pmlExtent[mipmapLevelIndex];
 
         offset += blockByteSize * pmlExtent[mipmapLevelIndex].width * pmlExtent[mipmapLevelIndex].height * pmlExtent[mipmapLevelIndex].depth;
     }
 
-    vkCmdCopyBufferToImage(_vkCommandBuffer, buffer.VkHandle(), image.VkHandle(), imageLayout, uint32_t(copys.size()), copys.data());
+    _vkCommandBuffer.copyBufferToImage(buffer.VkHandle(), image.VkHandle(), imageLayout, copys);
 }
 
-void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBuffer(const Instance::Buffer& srcBuffer, const Instance::Buffer& dstBuffer, const std::vector<std::tuple<VkDeviceSize, VkDeviceSize, VkDeviceSize>> srcOffsetDstOffsetSizes)
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBuffer(const Instance::Buffer& srcBuffer, const Instance::Buffer& dstBuffer, const std::vector<std::tuple<vk::DeviceSize, vk::DeviceSize, vk::DeviceSize>> srcOffsetDstOffsetSizes)
 {
-    std::vector<VkBufferCopy> copys(srcOffsetDstOffsetSizes.size(), VkBufferCopy{});
+    std::vector<vk::BufferCopy> copys(srcOffsetDstOffsetSizes.size(), vk::BufferCopy{});
     for (uint32_t regionIndex = 0; regionIndex < copys.size(); regionIndex++)
     {
-        VkBufferCopy& copy = copys[regionIndex];
+        vk::BufferCopy& copy = copys[regionIndex];
         copy.srcOffset = std::get<0>(srcOffsetDstOffsetSizes[regionIndex]);
         copy.dstOffset = std::get<1>(srcOffsetDstOffsetSizes[regionIndex]);
         copy.size = std::get<2>(srcOffsetDstOffsetSizes[regionIndex]);
     }
-    vkCmdCopyBuffer(_vkCommandBuffer, srcBuffer.VkHandle(), dstBuffer.VkHandle(), uint32_t(copys.size()), copys.data());
+    _vkCommandBuffer.copyBuffer(srcBuffer.VkHandle(), dstBuffer.VkHandle(), copys);
 }
 
-void AirEngine::Runtime::Graphic::Command::CommandBuffer::Blit(const Instance::Image& srcImage, VkImageLayout srcImageLayout, const Instance::Image& dstImage, VkImageLayout dstImageLayout, VkImageAspectFlags imageAspectFlags, VkFilter filter)
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::Blit(const Instance::Image& srcImage, vk::ImageLayout srcImageLayout, const Instance::Image& dstImage, vk::ImageLayout dstImageLayout, vk::ImageAspectFlags imageAspectFlags, vk::Filter filter)
 {
     auto&& layerCount = std::min(srcImage.LayerCount(), dstImage.LayerCount());
     auto&& mipmapLevelCount = std::min(srcImage.MipmapLevelCount(), dstImage.MipmapLevelCount());
     auto&& srcPmlExtent = srcImage.PerMipmapLevelExtent3D();
     auto&& dstPmlExtent = dstImage.PerMipmapLevelExtent3D();
 
-    std::vector<VkImageBlit> blits(mipmapLevelCount);
+    std::vector<vk::ImageBlit> blits(mipmapLevelCount);
     for (uint32_t i = 0; i < mipmapLevelCount; i++)
     {
         auto& blit = blits[i];
@@ -139,15 +128,15 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::Blit(const Instance::I
         blit.srcSubresource.baseArrayLayer = 0;
         blit.srcSubresource.layerCount = layerCount;
         blit.srcSubresource.mipLevel = i;
-        blit.srcOffsets[0] = { 0, 0, 0 };
-        blit.srcOffsets[1] = { static_cast<int>(srcExtent.width), static_cast<int>(srcExtent.height), static_cast<int>(srcExtent.depth) };
+        blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+        blit.srcOffsets[1] = vk::Offset3D{ static_cast<int>(srcExtent.width), static_cast<int>(srcExtent.height), static_cast<int>(srcExtent.depth) };
         blit.dstSubresource.aspectMask = imageAspectFlags;
         blit.dstSubresource.baseArrayLayer = 0;
         blit.dstSubresource.layerCount = layerCount;
         blit.dstSubresource.mipLevel = i;
-        blit.dstOffsets[0] = { 0, 0, 0 };
-        blit.dstOffsets[1] = { static_cast<int>(dstExtent.width), static_cast<int>(dstExtent.height), static_cast<int>(dstExtent.depth) };
+        blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+        blit.dstOffsets[1] = vk::Offset3D{ static_cast<int>(dstExtent.width), static_cast<int>(dstExtent.height), static_cast<int>(dstExtent.depth) };
     }
 
-    vkCmdBlitImage(_vkCommandBuffer, srcImage.VkHandle(), srcImageLayout, dstImage.VkHandle(), dstImageLayout, static_cast<uint32_t>(blits.size()), blits.data(), filter);
+    _vkCommandBuffer.blitImage(srcImage.VkHandle(), srcImageLayout, dstImage.VkHandle(), dstImageLayout, blits, filter);
 }

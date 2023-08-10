@@ -1,5 +1,5 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/InternedString.hpp"
@@ -26,34 +26,34 @@ namespace AirEngine
 					friend class CommandPool;
 				private:
 					Utility::InternedString _name;
-					VkCommandBuffer _vkCommandBuffer;
-					VkCommandBufferLevel _vkCommandBufferLevel;
+					vk::CommandBuffer _vkCommandBuffer;
+					vk::CommandBufferLevel _vkCommandBufferLevel;
 					CommandPool* _commandPool;
 
-					CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, VkCommandBufferLevel level = VkCommandBufferLevel::VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+					CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary);
 					NO_COPY_MOVE(CommandBuffer)
 				public:
 					~CommandBuffer();
 
-					inline VkCommandBuffer VkHandle()
+					inline vk::CommandBuffer VkHandle()
 					{
 						return _vkCommandBuffer;
 					}
 					void Reset();
-					void BeginRecord(VkCommandBufferUsageFlags flags = 0);
+					void BeginRecord(vk::CommandBufferUsageFlags flags = {});
 					void EndRecord();
-					void AddPipelineBarrier(const Barrier& barrier, VkDependencyFlags dependencyFlags = 0);
-					void ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const VkClearColorValue& color);
+					void AddPipelineBarrier(const Barrier& barrier, vk::DependencyFlags dependencyFlags = {});
+					void ClearColorImage(const Instance::Image& image, vk::ImageLayout imageLayout, const vk::ClearColorValue& color);
 					template<typename TColorChannel>
-					void ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color);
-					void CopyBufferToImage(const Instance::Buffer& buffer, const Instance::Image& image, VkImageLayout imageLayout, VkImageAspectFlags imageAspectFlags);
-					void CopyBuffer(const Instance::Buffer& srcBuffer, const Instance::Buffer& dstBuffer, const std::vector<std::tuple<VkDeviceSize, VkDeviceSize, VkDeviceSize>> srcOffsetDstOffsetSizes);
-					void Blit(const Instance::Image& srcImage, VkImageLayout srcImageLayout, const Instance::Image& dstImage, VkImageLayout dstImageLayout, VkImageAspectFlags imageAspectFlags, VkFilter filter);
+					void ClearColorImage(const Instance::Image& image, vk::ImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color);
+					void CopyBufferToImage(const Instance::Buffer& buffer, const Instance::Image& image, vk::ImageLayout imageLayout, vk::ImageAspectFlags imageAspectFlags);
+					void CopyBuffer(const Instance::Buffer& srcBuffer, const Instance::Buffer& dstBuffer, const std::vector<std::tuple<vk::DeviceSize, vk::DeviceSize, vk::DeviceSize>> srcOffsetDstOffsetSizes);
+					void Blit(const Instance::Image& srcImage, vk::ImageLayout srcImageLayout, const Instance::Image& dstImage, vk::ImageLayout dstImageLayout, vk::ImageAspectFlags imageAspectFlags, vk::Filter filter);
 				};
 				template<typename TColorChannel>
-				inline void CommandBuffer::ClearColorImage(const Instance::Image& image, VkImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color)
+				inline void CommandBuffer::ClearColorImage(const Instance::Image& image, vk::ImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color)
 				{
-					VkClearColorValue vkColor{};
+					vk::ClearColorValue vkColor{};
 					auto&& vkColorRef = reinterpret_cast<glm::vec<4, TColorChannel, glm::defaultp>&>(vkColor);
 					vkColorRef = color;
 

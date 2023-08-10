@@ -11,18 +11,16 @@ AirEngine::Runtime::Graphic::Command::Barrier::Barrier()
 
 void AirEngine::Runtime::Graphic::Command::Barrier::AddImageMemoryBarrier(
 	const Instance::Image& image, 
-	VkPipelineStageFlags2 srcStageMask, 
-	VkAccessFlags2 srcAccessMask, 
-	VkPipelineStageFlags2 dstStageMask, 
-	VkAccessFlags2 dstAccessMask, 
-	VkImageLayout oldLayout, 
-	VkImageLayout newLayout, 
-	VkImageAspectFlags aspectMask
+	vk::PipelineStageFlags2 srcStageMask, 
+	vk::AccessFlags2 srcAccessMask, 
+	vk::PipelineStageFlags2 dstStageMask, 
+	vk::AccessFlags2 dstAccessMask, 
+	vk::ImageLayout oldLayout, 
+	vk::ImageLayout newLayout, 
+	vk::ImageAspectFlags aspectMask
 )
 {
-	VkImageMemoryBarrier2 imBarrier{};
-	imBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-	imBarrier.pNext = nullptr;
+	vk::ImageMemoryBarrier2 imBarrier{};
 	imBarrier.srcStageMask = srcStageMask;
 	imBarrier.srcAccessMask = srcAccessMask;
 	imBarrier.dstStageMask = dstStageMask;
