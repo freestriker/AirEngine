@@ -38,6 +38,7 @@ namespace AirEngine
 					static void CreateVulkanInstance();
 					static void CreateDevice();
 					static void SetDefaultDispatcher();
+					static void PopulateQueue();
 					static void CreateMemoryAllocator();
 					static void InitializeGraphicManagers();
 				public:

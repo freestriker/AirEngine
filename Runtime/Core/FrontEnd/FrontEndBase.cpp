@@ -13,7 +13,7 @@ AirEngine::Runtime::Core::FrontEnd::FrontEndBase::FrontEndBase(const bool isWind
 AirEngine::Runtime::Core::FrontEnd::WindowFrontEndBase::WindowFrontEndBase()
 	: FrontEndBase(true)
 	, _vkbSwapchain()
-	, _vkSwapchain(VK_NULL_HANDLE)
-	, _vkSurface(VK_NULL_HANDLE)
+	, _vkSwapchain()
+	, _vkSurface()
 {
 }

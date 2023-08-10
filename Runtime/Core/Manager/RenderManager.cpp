@@ -70,7 +70,7 @@ std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime:
 	return
 	{
         { 0, 1, CreateMainWindow }, 
-        { 0, 3, CreateSwapchain },
+        { 0, 5, CreateSwapchain },
         { 1, 0, AddRenderLoop }
 	};
 }

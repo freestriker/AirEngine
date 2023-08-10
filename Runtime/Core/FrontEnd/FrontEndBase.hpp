@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/ContructorMacro.hpp"
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include <VkBootstrap.h>
 
 namespace AirEngine
@@ -43,8 +43,8 @@ namespace AirEngine
 				private:
 				protected:
 					vkb::Swapchain _vkbSwapchain;
-					VkSwapchainKHR _vkSwapchain;
-					VkSurfaceKHR _vkSurface;
+					vk::SwapchainKHR _vkSwapchain;
+					vk::SurfaceKHR _vkSurface;
 					NO_COPY_MOVE(WindowFrontEndBase)
 					WindowFrontEndBase();
 					virtual ~WindowFrontEndBase() = default;
@@ -56,11 +56,11 @@ namespace AirEngine
 					{
 						return _vkbSwapchain;
 					}
-					inline VkSwapchainKHR VkSwapchain() const
+					inline vk::SwapchainKHR VkSwapchain() const
 					{
 						return _vkSwapchain;
 					}
-					inline VkSurfaceKHR VkSurface() const
+					inline vk::SurfaceKHR VkSurface() const
 					{
 						return _vkSurface;
 					}

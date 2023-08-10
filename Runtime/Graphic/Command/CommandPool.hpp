@@ -1,5 +1,5 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.hpp>
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/InternedString.hpp"

@@ -11,7 +11,7 @@ void AirEngine::Runtime::Graphic::Manager::ShaderManager::Initialize()
 	auto&& physicalDeviceProperties = vk::PhysicalDeviceProperties2();
 	physicalDeviceProperties.pNext = &physicalDeviceDescriptorBufferPropertiesEXT;
 
-	vk::PhysicalDevice(Core::Manager::GraphicDeviceManager::VkPhysicalDevice()).getProperties2(&physicalDeviceProperties);
+	Core::Manager::GraphicDeviceManager::PhysicalDevice().getProperties2(&physicalDeviceProperties);
 
 	_offsetAlignment = physicalDeviceDescriptorBufferPropertiesEXT.descriptorBufferOffsetAlignment;
 

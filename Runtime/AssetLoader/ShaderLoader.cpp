@@ -10,7 +10,6 @@
 #include "../Core/Manager/GraphicDeviceManager.hpp"
 #include "../Graphic/Manager/ShaderManager.hpp"
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
 #include "../Utility/StringToVulkanypeTransfer.hpp"
 
 AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::ShaderLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
@@ -142,8 +141,7 @@ void LoadSpirvData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& s
 			if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Load shader spv reflect failed.");
 
 			vk::ShaderModuleCreateInfo shaderModuleCreateInfo{vk::ShaderModuleCreateFlags(), buffer.size(), reinterpret_cast<const uint32_t*>(buffer.data())};
-			vk::Device device(AirEngine::Runtime::Core::Manager::GraphicDeviceManager::VkDevice());
-			shaderData.second = device.createShaderModule(shaderModuleCreateInfo);
+			shaderData.second = AirEngine::Runtime::Core::Manager::GraphicDeviceManager::Device().createShaderModule(shaderModuleCreateInfo);
 
 			auto stage = vk::ShaderStageFlagBits(shaderData.first.shader_stage);
 			if(subShaderCreateInfo.shaderDatas.contains(stage)) qFatal("Failed to load the same shader stage.");

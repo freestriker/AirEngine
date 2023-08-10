@@ -4,36 +4,36 @@
 #include "../Command/CommandBuffer.hpp"
 #include <qlogging.h>
 
-constexpr VkSemaphoreSubmitInfo EMPTY_VK_SEMAPHORE_SUBMIT_INFO
-{
-	VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-	nullptr,
-	VK_NULL_HANDLE,
-	0,
-	VK_PIPELINE_STAGE_2_NONE,
-	0
-};
-
-constexpr VkCommandBufferSubmitInfo EMPTY_VK_COMMAND_BUFFER_SUBMIT_INFO
-{
-	VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-	nullptr,
-	VK_NULL_HANDLE,
-	0
-};
-
-constexpr VkSubmitInfo2 EMPTY_VK_SUBMIT_INFO
-{
-	VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-	nullptr,
-	0,
-	0,
-	nullptr,
-	0,
-	nullptr,
-	0,
-	nullptr
-};
+//constexpr VkSemaphoreSubmitInfo EMPTY_VK_SEMAPHORE_SUBMIT_INFO
+//{
+//	VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+//	nullptr,
+//	VK_NULL_HANDLE,
+//	0,
+//	VK_PIPELINE_STAGE_2_NONE,
+//	0
+//};
+//
+//constexpr VkCommandBufferSubmitInfo EMPTY_VK_COMMAND_BUFFER_SUBMIT_INFO
+//{
+//	VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+//	nullptr,
+//	VK_NULL_HANDLE,
+//	0
+//};
+//
+//constexpr VkSubmitInfo2 EMPTY_VK_SUBMIT_INFO
+//{
+//	VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+//	nullptr,
+//	0,
+//	0,
+//	nullptr,
+//	0,
+//	nullptr,
+//	0,
+//	nullptr
+//};
 
 void AirEngine::Runtime::Graphic::Instance::Queue::Submit(const std::vector<CommandBufferSubmitInfo>& submitInfos, const Command::Fence* fence)
 {
@@ -46,9 +46,9 @@ void AirEngine::Runtime::Graphic::Instance::Queue::Submit(const std::vector<Comm
 		semaphoreInfoCount += submitInfo.signalInfos.size();
 	}
 
-	std::vector<VkSemaphoreSubmitInfo> vkSemaphoreInfos(semaphoreInfoCount, EMPTY_VK_SEMAPHORE_SUBMIT_INFO);
-	std::vector<VkCommandBufferSubmitInfo> vkCommandBufferInfos(commandBufferInfoCount, EMPTY_VK_COMMAND_BUFFER_SUBMIT_INFO);
-	std::vector<VkSubmitInfo2> vkSubmitInfos(submitInfos.size(), EMPTY_VK_SUBMIT_INFO);
+	std::vector<vk::SemaphoreSubmitInfo> vkSemaphoreInfos(semaphoreInfoCount);
+	std::vector<vk::CommandBufferSubmitInfo> vkCommandBufferInfos(commandBufferInfoCount);
+	std::vector<vk::SubmitInfo2> vkSubmitInfos(submitInfos.size());
 	uint32_t semaphoreInfoIndex = 0;
 	uint32_t commandBufferInfoIndex = 0;
 	uint32_t submitInfoIndex = 0;
@@ -81,9 +81,5 @@ void AirEngine::Runtime::Graphic::Instance::Queue::Submit(const std::vector<Comm
 		}
 	}
 
-	auto result = vkQueueSubmit2(_vkQueue, uint32_t(vkSubmitInfos.size()), vkSubmitInfos.data(), fence != nullptr ? fence->VkHandle() : VK_NULL_HANDLE);
-	if (result != VK_SUCCESS)
-	{
-		qFatal("Failed to submit command buffers.");
-	}
+	_vkQueue.submit2(vkSubmitInfos, fence != nullptr ? fence->VkHandle() : vk::Fence());
 }
