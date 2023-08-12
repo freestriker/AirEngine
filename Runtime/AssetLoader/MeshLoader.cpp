@@ -110,40 +110,82 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) qFatal(importer.GetErrorString());
 
 	using VertexData = Asset::Mesh::VertexData;
+	using MeshInfo = Asset::Mesh::MeshInfo;
 	using SubMeshInfo = Asset::Mesh::SubMeshInfo;
 
+	MeshInfo meshInfo{};
+
 	const auto rootNode = scene->mRootNode;
-	const uint32_t meshCount = scene->mNumMeshes;
 
-	std::vector<SubMeshInfo> subMeshInfos(meshCount, SubMeshInfo{});
-	uint32_t totalVertexCount = 0;
-	std::vector<std::vector<VertexData>> perMeshVertexDatas{meshCount};
-	uint32_t totalIndexCount = 0;
-	std::vector<std::vector<uint32_t>> perMeshIndexs{meshCount};
-	for (uint32_t subMeshIndex = 0; subMeshIndex < meshCount; subMeshIndex++)
+	/// get sub mesh count
 	{
-		auto&& subMesh = scene->mMeshes[subMeshIndex];
-		auto&& subMeshInfo = subMeshInfos[subMeshIndex];
+		meshInfo.meshCount = scene->mNumMeshes;
+		meshInfo.subMeshInfo = std::vector<SubMeshInfo>(meshInfo.meshCount);
+	}
 
-		subMeshInfo.name = Utility::InternedString::InternedString(subMesh->mName.C_Str());
-
-		//vertex
+	/// get vertex index offset and count
+	{
+		for (uint32_t subMeshIndex = 0; subMeshIndex < meshInfo.meshCount; subMeshIndex++)
 		{
-			auto&& vertexDatas = perMeshVertexDatas[subMeshIndex];
-			auto&& vertexCount = subMesh->mNumVertices;
+			const auto& subMesh = scene->mMeshes[subMeshIndex];
+			auto& subMeshInfo = meshInfo.subMeshInfo[subMeshIndex];
 
-			subMeshInfo.vertexOffset = totalVertexCount;
-			subMeshInfo.vertexCount = vertexCount;
-			totalVertexCount += vertexCount;
-			vertexDatas.resize(vertexCount);
+			subMeshInfo.name = Utility::InternedString::InternedString(subMesh->mName.C_Str());
+			
+			subMeshInfo.vertexOffset = meshInfo.vertexCount;
+			subMeshInfo.vertexCount = subMesh->mNumVertices;
+			meshInfo.vertexCount += subMeshInfo.vertexCount;
 
-			for (uint32_t vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++)
+			subMeshInfo.indexOffset = meshInfo.indexCount;
+			subMeshInfo.indexCount = subMesh->mNumFaces * 3;
+			meshInfo.indexCount += subMeshInfo.indexCount;
+		}
+	}
+
+	/// get index type
+	{
+		if (meshInfo.indexCount <= uint32_t(std::numeric_limits<uint8_t>::max()))
+		{
+			meshInfo.indexType = vk::IndexType::eUint8EXT;
+		}
+		else if (meshInfo.indexCount <= uint32_t(std::numeric_limits<uint16_t>::max()))
+		{
+			meshInfo.indexType = vk::IndexType::eUint16;
+		}
+		else
+		{
+			meshInfo.indexType = vk::IndexType::eUint32;
+		}
+	}
+
+	const auto PER_VERTEX_DATA_BYTE_SIZE = sizeof(VertexData);
+	const auto PER_INDEX_DATA_BYTE_SIZE = Asset::Mesh::IndexTypeToByteCount(meshInfo.indexType);
+	const auto VERTEX_DATA_BYTE_SIZE = meshInfo.vertexCount * PER_VERTEX_DATA_BYTE_SIZE;
+	const auto INDEX_DATA_BYTE_SIZE = meshInfo.indexCount * PER_INDEX_DATA_BYTE_SIZE;
+	const auto DATA_BYTE_SIZE = VERTEX_DATA_BYTE_SIZE + INDEX_DATA_BYTE_SIZE;
+	const auto VERTEX_DATA_BYTE_OFFSET = 0;
+	const auto INDEX_DATA_BYTE_OFFSET = VERTEX_DATA_BYTE_OFFSET + VERTEX_DATA_BYTE_SIZE;
+
+	std::vector<uint8_t> dataBytes(DATA_BYTE_SIZE);
+
+	/// populate vertex data
+	{
+		using TYPE = VertexData;
+		TYPE* vertexDataPtr = reinterpret_cast<TYPE*>(dataBytes.data() + VERTEX_DATA_BYTE_OFFSET);
+		for (uint32_t subMeshIndex = 0; subMeshIndex < meshInfo.meshCount; subMeshIndex++)
+		{
+			const auto& subMesh = scene->mMeshes[subMeshIndex];
+			const auto& subMeshInfo = meshInfo.subMeshInfo[subMeshIndex];
+
+			TYPE* subMeshVertexDataPtr = vertexDataPtr + subMeshInfo.vertexOffset;
+
+			for (uint32_t vertexIndex = 0; vertexIndex < subMeshInfo.vertexCount; vertexIndex++)
 			{
-				auto& vertexData = vertexDatas[vertexIndex];
+				TYPE* vertexDataPtr = subMeshVertexDataPtr + vertexIndex;
 
 				// positions
 				{
-					auto& position = vertexData.position;
+					auto& position = vertexDataPtr->position;
 					auto& vertexPosition = subMesh->mVertices[vertexIndex];
 
 					position.x = vertexPosition.x;
@@ -152,7 +194,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 				}
 				// normals
 				{
-					auto& normal = vertexData.normal;
+					auto& normal = vertexDataPtr->normal;
 					auto& vertexNormal = subMesh->mNormals[vertexIndex];
 
 					normal.x = vertexNormal.x;
@@ -162,7 +204,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 				}
 				// tangent
 				{
-					auto& tangent = vertexData.tangent;
+					auto& tangent = vertexDataPtr->tangent;
 					auto& vertexTangent = subMesh->mTangents[vertexIndex];
 
 					tangent.x = vertexTangent.x;
@@ -172,7 +214,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 				}
 				// texture coords
 				{
-					auto& texCoords = vertexData.texCoords;
+					auto& texCoords = vertexDataPtr->texCoords;
 					auto& vertexTexCoords = subMesh->mTextureCoords[0][vertexIndex];
 
 					texCoords.x = vertexTexCoords.x;
@@ -180,158 +222,91 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 				}
 			}
 		}
+	}
 
-		//index
+#define POPULATE_INDEX_DATA(TYPE)\
+{\
+	TYPE* indexDataPtr = reinterpret_cast<TYPE*>(dataBytes.data() + INDEX_DATA_BYTE_OFFSET);\
+	for (uint32_t subMeshIndex = 0; subMeshIndex < meshInfo.meshCount; subMeshIndex++)\
+	{\
+		const auto& subMesh = scene->mMeshes[subMeshIndex];\
+		const auto& subMeshInfo = meshInfo.subMeshInfo[subMeshIndex];\
+\
+		TYPE* subMeshIndexDataPtr = indexDataPtr + subMeshInfo.indexOffset;\
+\
+		for (uint32_t faceIndex = 0; faceIndex < subMesh->mNumFaces; faceIndex++)\
+		{\
+			const auto& face = subMesh->mFaces[faceIndex];\
+\
+			TYPE* faseIndexDataPtr = subMeshIndexDataPtr + faceIndex * 3;\
+\
+			faseIndexDataPtr[0] = subMeshInfo.vertexOffset + face.mIndices[0];\
+			faseIndexDataPtr[1] = subMeshInfo.vertexOffset + face.mIndices[1];\
+			faseIndexDataPtr[2] = subMeshInfo.vertexOffset + face.mIndices[2];\
+		}\
+	}\
+}\
+
+	/// populate index data
+	{
+		switch (meshInfo.indexType)
 		{
-			auto&& indexDatas = perMeshIndexs[subMeshIndex];
-			auto&& faceCount = subMesh->mNumFaces;
-			auto&& indexCount = faceCount * 3;
-
-			subMeshInfo.indexOffset = totalIndexCount;
-			subMeshInfo.indexCount = indexCount;
-			totalIndexCount += indexCount;
-			indexDatas.resize(indexCount);
-
-			for (uint32_t faceIndex = 0, indexIndex = 0; faceIndex < subMesh->mNumFaces; faceIndex++, indexIndex += 3)
+			case vk::IndexType::eUint8EXT:
 			{
-				auto&& face = subMesh->mFaces[faceIndex];
-
-				indexDatas[indexIndex + 0] = subMeshInfo.vertexOffset + face.mIndices[0];
-				indexDatas[indexIndex + 1] = subMeshInfo.vertexOffset + face.mIndices[1];
-				indexDatas[indexIndex + 2] = subMeshInfo.vertexOffset + face.mIndices[2];
+				POPULATE_INDEX_DATA(uint8_t);
+				break;
 			}
-		}
-	}
-
-	uint8_t perIndexByteCount = 0;
-	void* stagingIndexDatas = nullptr;
-	void* stagingIndexDatasPtr = nullptr;
-	if (totalIndexCount <= std::numeric_limits<uint8_t>::max())
-	{
-		perIndexByteCount = 1;
-		std::vector<uint8_t>* indexDatas = new std::vector<uint8_t>(totalIndexCount);
-		stagingIndexDatas = indexDatas;
-		stagingIndexDatasPtr = indexDatas->data();
-
-		for (uint32_t meshIndex = 0; meshIndex < meshCount; meshIndex++)
-		{
-			auto&& subMeshInfo = subMeshInfos[meshIndex];
-			auto&& meshIndexs = perMeshIndexs[meshIndex];
-			auto&& indexCount = subMeshInfo.indexCount;
-			auto&& indexOffset = subMeshInfo.indexOffset;
-			for (uint32_t i = 0; i < indexCount; i++)
+			case vk::IndexType::eUint16:
 			{
-				(*indexDatas)[indexOffset + i] = meshIndexs[i];
+				POPULATE_INDEX_DATA(uint16_t);
+				break;
 			}
-		}
-	}
-	else if (totalIndexCount <= std::numeric_limits<uint16_t>::max())
-	{
-		perIndexByteCount = 2;
-		std::vector<uint16_t>* indexDatas = new std::vector<uint16_t>(totalIndexCount);
-		stagingIndexDatas = indexDatas;
-		stagingIndexDatasPtr = indexDatas->data();
-
-		for (uint32_t meshIndex = 0; meshIndex < meshCount; meshIndex++)
-		{
-			auto&& subMeshInfo = subMeshInfos[meshIndex];
-			auto&& meshIndexs = perMeshIndexs[meshIndex];
-			auto&& indexCount = subMeshInfo.indexCount;
-			auto&& indexOffset = subMeshInfo.indexOffset;
-			for (uint32_t i = 0; i < indexCount; i++)
+			case vk::IndexType::eUint32:
 			{
-				(*indexDatas)[indexOffset + i] = meshIndexs[i];
+				POPULATE_INDEX_DATA(uint32_t);
+				break;
 			}
-		}
-	}
-	else
-	{
-		perIndexByteCount = 4;
-		std::vector<uint32_t>* indexDatas = new std::vector<uint32_t>(totalIndexCount);
-		stagingIndexDatas = indexDatas;
-		stagingIndexDatasPtr = indexDatas->data();
-
-		for (uint32_t meshIndex = 0; meshIndex < meshCount; meshIndex++)
-		{
-			(*indexDatas).insert((*indexDatas).end(), perMeshIndexs[meshIndex].begin(), perMeshIndexs[meshIndex].end());
-		}
-	}
-
-	auto&& stagingBuffer = Graphic::Instance::Buffer(
-		sizeof(VertexData) * totalVertexCount + perIndexByteCount * totalIndexCount,
-		vk::BufferUsageFlagBits::eTransferSrc,
-		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-		VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-	);
-	{
-		auto data = stagingBuffer.Memory()->Map();
-		for (uint32_t meshIndex = 0; meshIndex < meshCount; meshIndex++)
-		{
-			auto&& subMeshInfo = subMeshInfos[meshIndex];
-			auto&& meshVertexDatas = perMeshVertexDatas[meshIndex];
-
-			std::memcpy(
-				static_cast<VertexData*>(data) + subMeshInfo.vertexOffset,
-				meshVertexDatas.data(),
-				subMeshInfo.vertexCount * sizeof(VertexData)
-			);
-		}
-		std::memcpy(
-			static_cast<VertexData*>(data) + totalVertexCount,
-			stagingIndexDatasPtr,
-			perIndexByteCount * totalIndexCount
-		);
-		stagingBuffer.Memory()->Unmap();
-	}
-
-	switch (perIndexByteCount)
-	{
-		case 1:
-		{
-			std::vector<uint8_t>* indexDatas = reinterpret_cast<std::vector<uint8_t>*>(stagingIndexDatas);
-			delete indexDatas;
-			break;
-		}
-		case 2:
-		{
-			std::vector<uint16_t>* indexDatas = reinterpret_cast<std::vector<uint16_t>*>(stagingIndexDatas);
-			delete indexDatas;
-			break;
-		}
-		case 4:
-		{
-			std::vector<uint32_t>* indexDatas = reinterpret_cast<std::vector<uint32_t>*>(stagingIndexDatas);
-			delete indexDatas;
-			break;
-		}
-		default:
-		{
-			qFatal("Failed to delete staging data.");
-			break;
 		}
 	}
 
 	auto&& vertexBuffer = new Graphic::Instance::Buffer(
-		sizeof(VertexData) * totalVertexCount,
+		VERTEX_DATA_BYTE_SIZE,
 		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
 		vk::MemoryPropertyFlagBits::eDeviceLocal
 	);
 
 	auto&& indexBuffer = new Graphic::Instance::Buffer(
-		perIndexByteCount * totalIndexCount,
+		INDEX_DATA_BYTE_SIZE,
 		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
 		vk::MemoryPropertyFlagBits::eDeviceLocal
 	);
 
-	//copy to device
+	auto&& stagingBuffer = Graphic::Instance::Buffer(
+		DATA_BYTE_SIZE,
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+		VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+	);
+
+	/// copy to gpu
+	{
+		std::memcpy(
+			stagingBuffer.Memory()->Map(),
+			dataBytes.data(),
+			DATA_BYTE_SIZE
+		);
+		stagingBuffer.Memory()->Unmap();
+	}
+
+	// copy to device
 	{
 		auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), vk::CommandPoolCreateFlagBits::eTransient);
 		auto&& commandBuffer = commandPool.CreateCommandBuffer(Utility::InternedString("TransferCommandBuffer"));
 		auto&& transferFence = Graphic::Command::Fence(false);
 
 		commandBuffer.BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		commandBuffer.CopyBuffer(stagingBuffer, *vertexBuffer, { {0, 0, sizeof(VertexData) * totalVertexCount} });
-		commandBuffer.CopyBuffer(stagingBuffer, *indexBuffer, { {sizeof(VertexData) * totalVertexCount, 0, perIndexByteCount * totalIndexCount} });
+		commandBuffer.CopyBuffer(stagingBuffer, *vertexBuffer, { {VERTEX_DATA_BYTE_OFFSET, 0, VERTEX_DATA_BYTE_SIZE} });
+		commandBuffer.CopyBuffer(stagingBuffer, *indexBuffer, { {INDEX_DATA_BYTE_OFFSET, 0, INDEX_DATA_BYTE_SIZE} });
 		commandBuffer.EndRecord();
 
 		commandPool.Queue().ImmediateIndividualSubmit(
@@ -344,31 +319,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 
 	mesh->_vertexBuffer = vertexBuffer;
 	mesh->_indexBuffer = indexBuffer;
-	mesh->_subMeshInfos = std::move(subMeshInfos);
-	mesh->_perIndexByteCount = perIndexByteCount;
-	switch (perIndexByteCount)
-	{
-		case 1:
-		{
-			mesh->_indexType = vk::IndexType::eUint8EXT;
-			break;
-		}
-		case 2:
-		{
-			mesh->_indexType = vk::IndexType::eUint16;
-			break;
-		}
-		case 4:
-		{
-			mesh->_indexType = vk::IndexType::eUint32;
-			break;
-		}
-		default:
-		{
-			qFatal("Failed get index type.");
-			break;
-		}
-	}
+	mesh->_meshInfo = std::move(meshInfo);
 
 	*isInLoading = false;
 }

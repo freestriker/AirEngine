@@ -42,12 +42,18 @@ namespace AirEngine
 					uint32_t indexOffset;
 					uint32_t indexCount;
 				};
+				struct MeshInfo
+				{
+					std::vector<SubMeshInfo> subMeshInfo;
+					uint32_t vertexCount;
+					uint32_t indexCount;
+					uint32_t meshCount;
+					vk::IndexType indexType;
+				};
 			private:
 				Graphic::Instance::Buffer* _vertexBuffer;
 				Graphic::Instance::Buffer* _indexBuffer;
-				std::vector<SubMeshInfo> _subMeshInfos;
-				vk::IndexType _indexType;
-				uint8_t _perIndexByteCount;
+				MeshInfo _meshInfo;
 			public:
 				Mesh();
 				~Mesh();
@@ -61,13 +67,23 @@ namespace AirEngine
 				{
 					return *_indexBuffer;
 				}
-				inline vk::IndexType IndexType()const
+				inline const MeshInfo& Info()const
 				{
-					return _indexType;
+					return _meshInfo;
 				}
-				inline uint8_t PerIndexByteCount()const
+				static uint8_t IndexTypeToByteCount(vk::IndexType indexType)
 				{
-					return _perIndexByteCount;
+					switch (indexType)
+					{
+					case vk::IndexType::eUint8EXT:
+						return 1;
+					case vk::IndexType::eUint16:
+						return 2;
+					case vk::IndexType::eUint32:
+						return 4;
+					default:
+						return 0;
+					}
 				}
 			};
 		}

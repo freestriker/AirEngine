@@ -4,8 +4,6 @@ AirEngine::Runtime::Asset::Mesh::Mesh()
 	: AssetBase()
 	, _vertexBuffer(nullptr)
 	, _indexBuffer(nullptr)
-	, _indexType(vk::IndexType::eUint16)
-	, _perIndexByteCount(0)
 {
 }
 
