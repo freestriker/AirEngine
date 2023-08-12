@@ -67,6 +67,7 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::ClearColorImage(const 
     range.levelCount = image.MipmapLevelCount();
     range.baseArrayLayer = 0;
     range.layerCount = image.LayerCount();
+    range.aspectMask = vk::ImageAspectFlagBits::eColor;
     
     _vkCommandBuffer.clearColorImage(image.VkHandle(), imageLayout, color, range);
 }

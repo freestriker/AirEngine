@@ -31,12 +31,14 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
 	while (currentFrame.acquireFence->Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
 	currentFrame.acquireFence->Reset();
 
-	Manager::GraphicDeviceManager::Device().acquireNextImageKHR(
+	auto&& result = Manager::GraphicDeviceManager::Device().acquireNextImageKHR(
 		_vkSwapchain,
 		std::numeric_limits<uint64_t>::max(),
 		currentFrame.acquireSemaphore->VkHandle(),
 		currentFrame.acquireFence->VkHandle()
 	);
+
+	_curImageIndex = result.value;
 
 	static bool isLoaded = false;
 }
