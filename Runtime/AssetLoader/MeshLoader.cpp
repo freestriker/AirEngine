@@ -115,8 +115,6 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 
 	MeshInfo meshInfo{};
 
-	const auto rootNode = scene->mRootNode;
-
 	/// get sub mesh count
 	{
 		meshInfo.meshCount = scene->mNumMeshes;
