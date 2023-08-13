@@ -1,4 +1,5 @@
 ﻿#include "PositionNormalTangentTexcoord_MeshAttributePaser.hpp"
+#include <assimp/postprocess.h>
 
 REGISTRATION
 {
@@ -8,13 +9,16 @@ REGISTRATION
 struct VertexData
 {
 	glm::vec3 position;
-	glm::vec2 texCoords;
+	glm::vec2 texcoords;
 	glm::vec3 normal;
 	glm::vec3 tangent;
 };
 
 void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser::OnEditPostProcessSteps(uint32_t& postProcessSteps) const
 {
+	postProcessSteps |= aiProcess_GenNormals;
+	postProcessSteps |= aiProcess_CalcTangentSpace;
+	postProcessSteps |= aiProcess_GenUVCoords;
 }
 
 uint32_t AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser::OnGetPerVertexByteSize() const
@@ -68,7 +72,7 @@ void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexco
 			}
 			// texture coords
 			{
-				auto& texCoords = vertexDataPtr->texCoords;
+				auto& texCoords = vertexDataPtr->texcoords;
 				auto& vertexTexCoords = subMesh->mTextureCoords[0][vertexIndex];
 
 				texCoords.x = vertexTexCoords.x;

@@ -57,13 +57,9 @@ const static std::unordered_map<std::string, uint32_t> AI_POST_PROCESS_STEPS_MAP
 };
 
 constexpr uint32_t DEFAULT_POST_PROCESS_STEPS =
-	aiProcess_JoinIdenticalVertices |
-	aiProcess_CalcTangentSpace |
 	aiProcess_Triangulate |
-	aiProcess_GenNormals |
 	aiProcess_ImproveCacheLocality |
-	aiProcess_GenBoundingBoxes |
-	aiProcess_GenUVCoords | 0;
+	0;
 constexpr uint32_t INVALID_POST_PROCESS_STEPS =
 	~(aiProcess_PreTransformVertices);
 
@@ -197,58 +193,6 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 	/// populate vertex data
 	{
 		meshAttributePaser->OnPopulateVertexData(dataBytes.data(), VERTEX_DATA_BYTE_SIZE, meshInfo, *scene);
-		//using TYPE = VertexData;
-		//TYPE* vertexDataPtr = reinterpret_cast<TYPE*>(dataBytes.data() + VERTEX_DATA_BYTE_OFFSET);
-		//for (uint32_t subMeshIndex = 0; subMeshIndex < meshInfo.meshCount; subMeshIndex++)
-		//{
-		//	const auto& subMesh = scene->mMeshes[subMeshIndex];
-		//	const auto& subMeshInfo = meshInfo.subMeshInfo[subMeshIndex];
-
-		//	TYPE* subMeshVertexDataPtr = vertexDataPtr + subMeshInfo.vertexOffset;
-
-		//	for (uint32_t vertexIndex = 0; vertexIndex < subMeshInfo.vertexCount; vertexIndex++)
-		//	{
-		//		TYPE* vertexDataPtr = subMeshVertexDataPtr + vertexIndex;
-
-		//		// positions
-		//		{
-		//			auto& position = vertexDataPtr->position;
-		//			auto& vertexPosition = subMesh->mVertices[vertexIndex];
-
-		//			position.x = vertexPosition.x;
-		//			position.y = vertexPosition.y;
-		//			position.z = vertexPosition.z;
-		//		}
-		//		// normals
-		//		{
-		//			auto& normal = vertexDataPtr->normal;
-		//			auto& vertexNormal = subMesh->mNormals[vertexIndex];
-
-		//			normal.x = vertexNormal.x;
-		//			normal.y = vertexNormal.y;
-		//			normal.z = vertexNormal.z;
-
-		//		}
-		//		// tangent
-		//		{
-		//			auto& tangent = vertexDataPtr->tangent;
-		//			auto& vertexTangent = subMesh->mTangents[vertexIndex];
-
-		//			tangent.x = vertexTangent.x;
-		//			tangent.y = vertexTangent.y;
-		//			tangent.z = vertexTangent.z;
-
-		//		}
-		//		// texture coords
-		//		{
-		//			auto& texCoords = vertexDataPtr->texCoords;
-		//			auto& vertexTexCoords = subMesh->mTextureCoords[0][vertexIndex];
-
-		//			texCoords.x = vertexTexCoords.x;
-		//			texCoords.y = vertexTexCoords.y;
-		//		}
-		//	}
-		//}
 	}
 
 #define POPULATE_INDEX_DATA(TYPE)\
