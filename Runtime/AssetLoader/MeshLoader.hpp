@@ -20,11 +20,13 @@ namespace AirEngine
 				{
 					std::string meshPath;
 					std::vector<std::string> postProcessSteps;
+					std::string meshAttributePaser;
 
 					NLOHMANN_DEFINE_TYPE_INTRUSIVE(
 						Descriptor,
 						meshPath,
-						postProcessSteps
+						postProcessSteps,
+						meshAttributePaser
 					)
 				};
 				Asset::AssetBase* OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading) override;

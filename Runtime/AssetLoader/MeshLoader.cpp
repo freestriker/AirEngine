@@ -13,6 +13,8 @@
 #include <assimp/scene.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include "../Graphic/MeshAttributePaser/MeshAttributePaserBase.hpp"
+#include "../Utility/ReflectableObject.hpp"
 
 const static std::unordered_map<std::string, uint32_t> AI_POST_PROCESS_STEPS_MAP
 {
@@ -81,7 +83,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::OnUnloadAsset(AirEngine::Runti
 
 void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtime::Asset::Mesh* mesh, const std::string path, bool* isInLoading)
 {
-	//Load descriptor
+	// Load descriptor
 	Descriptor descriptor{};
 	{
 		std::ifstream descriptorFile(path);
@@ -91,6 +93,31 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 		descriptorFile.close();
 	}
 
+	std::unique_ptr<Graphic::MeshAttributePaser::MeshAttributePaserBase> meshAttributePaser;
+	/// create mesh attribute paser
+	{
+		std::string ptrTypeName(descriptor.meshAttributePaser + "*");
+		int typeId = Utility::MetaType::type(ptrTypeName.c_str());
+		const Utility::MetaObject* metaObj = Utility::MetaType::metaObjectForType(typeId);
+		if (metaObj == nullptr)
+		{
+			qFatal(std::string("Do not have mesh attribute paser type named: " + ptrTypeName + ".").c_str());
+		}
+
+		Utility::ReflectableObject* obj = metaObj->newInstance();
+		if (obj == nullptr)
+		{
+			qFatal(std::string("Can not create mesh attribute paser variant named: " + ptrTypeName + ".").c_str());
+		}
+
+		auto&& ptr = qobject_cast<Graphic::MeshAttributePaser::MeshAttributePaserBase*>(obj);
+		if (ptr == nullptr)
+		{
+			qFatal(std::string(ptrTypeName + " can not cast to mesh attribute paser base.").c_str());
+		}
+
+		meshAttributePaser.reset(ptr);
+	}
 	//Parse descriptor data
 	uint32_t postProcessSteps = DEFAULT_POST_PROCESS_STEPS;
 	{
@@ -98,6 +125,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 		{
 			postProcessSteps |= AI_POST_PROCESS_STEPS_MAP.at(postProcessStep);
 		}
+		meshAttributePaser->OnEditPostProcessSteps(postProcessSteps);
 		postProcessSteps &= INVALID_POST_PROCESS_STEPS;
 	}
 
@@ -109,7 +137,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 	auto&& scene = importer.ReadFile(descriptor.meshPath, postProcessSteps);
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) qFatal(importer.GetErrorString());
 
-	using VertexData = Asset::Mesh::VertexData;
+	//using VertexData = Asset::Mesh::VertexData;
 	using MeshInfo = Asset::Mesh::MeshInfo;
 	using SubMeshInfo = Asset::Mesh::SubMeshInfo;
 
@@ -156,7 +184,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 		}
 	}
 
-	const auto PER_VERTEX_DATA_BYTE_SIZE = sizeof(VertexData);
+	const auto PER_VERTEX_DATA_BYTE_SIZE = meshAttributePaser->OnGetPerVertexByteSize();
 	const auto PER_INDEX_DATA_BYTE_SIZE = Asset::Mesh::IndexTypeToByteCount(meshInfo.indexType);
 	const auto VERTEX_DATA_BYTE_SIZE = meshInfo.vertexCount * PER_VERTEX_DATA_BYTE_SIZE;
 	const auto INDEX_DATA_BYTE_SIZE = meshInfo.indexCount * PER_INDEX_DATA_BYTE_SIZE;
@@ -168,58 +196,59 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 
 	/// populate vertex data
 	{
-		using TYPE = VertexData;
-		TYPE* vertexDataPtr = reinterpret_cast<TYPE*>(dataBytes.data() + VERTEX_DATA_BYTE_OFFSET);
-		for (uint32_t subMeshIndex = 0; subMeshIndex < meshInfo.meshCount; subMeshIndex++)
-		{
-			const auto& subMesh = scene->mMeshes[subMeshIndex];
-			const auto& subMeshInfo = meshInfo.subMeshInfo[subMeshIndex];
+		meshAttributePaser->OnPopulateVertexData(dataBytes.data(), VERTEX_DATA_BYTE_SIZE, meshInfo, *scene);
+		//using TYPE = VertexData;
+		//TYPE* vertexDataPtr = reinterpret_cast<TYPE*>(dataBytes.data() + VERTEX_DATA_BYTE_OFFSET);
+		//for (uint32_t subMeshIndex = 0; subMeshIndex < meshInfo.meshCount; subMeshIndex++)
+		//{
+		//	const auto& subMesh = scene->mMeshes[subMeshIndex];
+		//	const auto& subMeshInfo = meshInfo.subMeshInfo[subMeshIndex];
 
-			TYPE* subMeshVertexDataPtr = vertexDataPtr + subMeshInfo.vertexOffset;
+		//	TYPE* subMeshVertexDataPtr = vertexDataPtr + subMeshInfo.vertexOffset;
 
-			for (uint32_t vertexIndex = 0; vertexIndex < subMeshInfo.vertexCount; vertexIndex++)
-			{
-				TYPE* vertexDataPtr = subMeshVertexDataPtr + vertexIndex;
+		//	for (uint32_t vertexIndex = 0; vertexIndex < subMeshInfo.vertexCount; vertexIndex++)
+		//	{
+		//		TYPE* vertexDataPtr = subMeshVertexDataPtr + vertexIndex;
 
-				// positions
-				{
-					auto& position = vertexDataPtr->position;
-					auto& vertexPosition = subMesh->mVertices[vertexIndex];
+		//		// positions
+		//		{
+		//			auto& position = vertexDataPtr->position;
+		//			auto& vertexPosition = subMesh->mVertices[vertexIndex];
 
-					position.x = vertexPosition.x;
-					position.y = vertexPosition.y;
-					position.z = vertexPosition.z;
-				}
-				// normals
-				{
-					auto& normal = vertexDataPtr->normal;
-					auto& vertexNormal = subMesh->mNormals[vertexIndex];
+		//			position.x = vertexPosition.x;
+		//			position.y = vertexPosition.y;
+		//			position.z = vertexPosition.z;
+		//		}
+		//		// normals
+		//		{
+		//			auto& normal = vertexDataPtr->normal;
+		//			auto& vertexNormal = subMesh->mNormals[vertexIndex];
 
-					normal.x = vertexNormal.x;
-					normal.y = vertexNormal.y;
-					normal.z = vertexNormal.z;
+		//			normal.x = vertexNormal.x;
+		//			normal.y = vertexNormal.y;
+		//			normal.z = vertexNormal.z;
 
-				}
-				// tangent
-				{
-					auto& tangent = vertexDataPtr->tangent;
-					auto& vertexTangent = subMesh->mTangents[vertexIndex];
+		//		}
+		//		// tangent
+		//		{
+		//			auto& tangent = vertexDataPtr->tangent;
+		//			auto& vertexTangent = subMesh->mTangents[vertexIndex];
 
-					tangent.x = vertexTangent.x;
-					tangent.y = vertexTangent.y;
-					tangent.z = vertexTangent.z;
+		//			tangent.x = vertexTangent.x;
+		//			tangent.y = vertexTangent.y;
+		//			tangent.z = vertexTangent.z;
 
-				}
-				// texture coords
-				{
-					auto& texCoords = vertexDataPtr->texCoords;
-					auto& vertexTexCoords = subMesh->mTextureCoords[0][vertexIndex];
+		//		}
+		//		// texture coords
+		//		{
+		//			auto& texCoords = vertexDataPtr->texCoords;
+		//			auto& vertexTexCoords = subMesh->mTextureCoords[0][vertexIndex];
 
-					texCoords.x = vertexTexCoords.x;
-					texCoords.y = vertexTexCoords.y;
-				}
-			}
-		}
+		//			texCoords.x = vertexTexCoords.x;
+		//			texCoords.y = vertexTexCoords.y;
+		//		}
+		//	}
+		//}
 	}
 
 #define POPULATE_INDEX_DATA(TYPE)\

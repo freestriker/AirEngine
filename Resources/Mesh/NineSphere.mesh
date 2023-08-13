@@ -1,4 +1,5 @@
 {
     "meshPath": "../..\\Resources\\Mesh\\NineSphere.obj",
-    "postProcessSteps": []
+    "postProcessSteps": [],
+    "meshAttributePaser": "AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser"
 }

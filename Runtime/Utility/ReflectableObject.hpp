@@ -19,15 +19,15 @@
 static void auto_register_reflection_function_();								\
 namespace                                                                       \
 {                                                                               \
-    struct _auto__register__													\
+    struct auto__register__													\
     {                                                                           \
-        _auto__register__()														\
+        auto__register__()														\
         {                                                                       \
             auto_register_reflection_function_();								\
         }                                                                       \
     };                                                                          \
 }                                                                               \
-static const _auto__register__ CAT(auto_register__, __LINE__);					\
+static const auto__register__ CAT(auto_register__, __LINE__);					\
 static void auto_register_reflection_function_()
 
 #define REFLECTABLE_OBJECT      Q_OBJECT

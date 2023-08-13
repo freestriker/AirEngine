@@ -1,5 +1,10 @@
 ﻿#include "PositionNormalTangentTexcoord_MeshAttributePaser.hpp"
 
+REGISTRATION
+{
+	DECLARE_TYPE(AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser*)
+}
+
 struct VertexData
 {
 	glm::vec3 position;
@@ -72,3 +77,6 @@ void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexco
 		}
 	}
 }
+
+#include "moc_PositionNormalTangentTexcoord_MeshAttributePaser.cpp"
+#include "PositionNormalTangentTexcoord_MeshAttributePaser.moc"

@@ -1,4 +1,5 @@
 {
     "meshPath": "../..\\Resources\\Mesh\\Box.ply",
-    "postProcessSteps": []
+    "postProcessSteps": [],
+    "meshAttributePaser": "AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser"
 }
