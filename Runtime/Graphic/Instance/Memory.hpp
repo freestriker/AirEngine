@@ -48,6 +48,19 @@ namespace AirEngine
 						if (mapResult != VK_SUCCESS) qFatal("Failed to map memory.");
 						return ptr;
 					}
+					inline void Flush(vk::DeviceSize offset, vk::DeviceSize size) const
+					{
+						vmaFlushAllocation(
+							Core::Manager::GraphicDeviceManager::VmaAllocator(),
+							_vmaAllocation,
+							offset,
+							size
+						);
+					}
+					inline void Flush() const
+					{
+						Flush(_offset, _size);
+					}
 					inline void Unmap()const
 					{
 						vmaUnmapMemory(Core::Manager::GraphicDeviceManager::VmaAllocator(), _vmaAllocation);

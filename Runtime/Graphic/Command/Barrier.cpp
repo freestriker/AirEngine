@@ -1,6 +1,7 @@
 ﻿#include "Barrier.hpp"
 #include "../../Core/Manager/GraphicDeviceManager.hpp"
 #include "../Instance/Image.hpp"
+#include "../Instance/Buffer.hpp"
 
 AirEngine::Runtime::Graphic::Command::Barrier::Barrier()
 	: _memoryBarriers()
@@ -37,4 +38,20 @@ void AirEngine::Runtime::Graphic::Command::Barrier::AddImageMemoryBarrier(
 	imBarrier.subresourceRange.layerCount = image.LayerCount();
 
 	_imageMemoryBarriers.emplace_back(imBarrier);
+}
+
+void AirEngine::Runtime::Graphic::Command::Barrier::AddBufferMemoryBarrier(const Instance::Buffer& buffer, vk::PipelineStageFlags2 srcStageMask, vk::AccessFlags2 srcAccessMask, vk::PipelineStageFlags2 dstStageMask, vk::AccessFlags2 dstAccessMask)
+{
+	vk::BufferMemoryBarrier2 bufferMemoryBarrier{};
+	bufferMemoryBarrier.srcStageMask = srcStageMask;
+	bufferMemoryBarrier.srcAccessMask = srcAccessMask;
+	bufferMemoryBarrier.dstStageMask = dstStageMask;
+	bufferMemoryBarrier.dstAccessMask = dstAccessMask;
+	bufferMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	bufferMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	bufferMemoryBarrier.buffer = buffer.VkHandle();
+	bufferMemoryBarrier.offset = buffer.Offset();
+	bufferMemoryBarrier.size = buffer.Size();
+
+	_bufferMemoryBarriers.emplace_back(std::move(bufferMemoryBarrier));
 }

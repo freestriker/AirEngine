@@ -13,6 +13,7 @@ namespace AirEngine
 			namespace Instance
 			{
 				class Image;
+				class Buffer;
 			}
 			namespace Command
 			{
@@ -48,6 +49,13 @@ namespace AirEngine
 						vk::ImageLayout oldLayout,
 						vk::ImageLayout newLayout,
 						vk::ImageAspectFlags aspectMask
+					);
+					void AddBufferMemoryBarrier(
+						const Instance::Buffer& buffer, 
+						vk::PipelineStageFlags2 srcStageMask,
+						vk::AccessFlags2 srcAccessMask,
+						vk::PipelineStageFlags2 dstStageMask,
+						vk::AccessFlags2 dstAccessMask
 					);
 				};
 			}
