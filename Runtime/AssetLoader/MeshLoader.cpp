@@ -188,6 +188,11 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 	const auto VERTEX_DATA_BYTE_OFFSET = 0;
 	const auto INDEX_DATA_BYTE_OFFSET = VERTEX_DATA_BYTE_OFFSET + VERTEX_DATA_BYTE_SIZE;
 
+	/// populate mesh vertex attribute info map
+	{
+		meshAttributePaser->OnPopulateMeshVertexAttributeInfoMap(meshInfo.meshVertexAttributeInfoMap);
+	}
+
 	std::vector<uint8_t> dataBytes(DATA_BYTE_SIZE);
 
 	/// populate vertex data
