@@ -278,28 +278,28 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 
 	// copy to device
 	{
-		Graphic::Command::Barrier barrier{};
-		barrier.AddBufferMemoryBarrier(
-			*vertexBuffer,
-			vk::PipelineStageFlagBits2::eHost,
-			vk::AccessFlagBits2::eHostWrite,
-			vk::PipelineStageFlagBits2::eTransfer,
-			vk::AccessFlagBits2::eTransferWrite
-		);
-		barrier.AddBufferMemoryBarrier(
-			*indexBuffer,
-			vk::PipelineStageFlagBits2::eHost,
-			vk::AccessFlagBits2::eHostWrite,
-			vk::PipelineStageFlagBits2::eTransfer,
-			vk::AccessFlagBits2::eTransferWrite
-		);
+		//Graphic::Command::Barrier barrier{};
+		//barrier.AddBufferMemoryBarrier(
+		//	*vertexBuffer,
+		//	vk::PipelineStageFlagBits2::eHost,
+		//	vk::AccessFlagBits2::eHostWrite,
+		//	vk::PipelineStageFlagBits2::eTransfer,
+		//	vk::AccessFlagBits2::eTransferWrite
+		//);
+		//barrier.AddBufferMemoryBarrier(
+		//	*indexBuffer,
+		//	vk::PipelineStageFlagBits2::eHost,
+		//	vk::AccessFlagBits2::eHostWrite,
+		//	vk::PipelineStageFlagBits2::eTransfer,
+		//	vk::AccessFlagBits2::eTransferWrite
+		//);
 		
 		auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), vk::CommandPoolCreateFlagBits::eTransient);
 		auto&& commandBuffer = commandPool.CreateCommandBuffer(Utility::InternedString("TransferCommandBuffer"));
 		auto&& transferFence = Graphic::Command::Fence(false);
 
 		commandBuffer.BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		commandBuffer.AddPipelineBarrier(barrier);
+		//commandBuffer.AddPipelineBarrier(barrier);
 		commandBuffer.CopyBuffer(stagingBuffer, *vertexBuffer, { {VERTEX_DATA_BYTE_OFFSET, 0, VERTEX_DATA_BYTE_SIZE} });
 		commandBuffer.CopyBuffer(stagingBuffer, *indexBuffer, { {INDEX_DATA_BYTE_OFFSET, 0, INDEX_DATA_BYTE_SIZE} });
 		commandBuffer.EndRecord();
