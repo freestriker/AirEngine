@@ -34,6 +34,12 @@ namespace AirEngine
 					glm::vec3 normal;
 					glm::vec3 tangent;
 				};
+				struct MeshVertexAttributeInfo
+				{
+					Utility::InternedString name;
+					uint16_t offset;
+					uint16_t size;
+				};
 				struct SubMeshInfo
 				{
 					Utility::InternedString name;
@@ -49,6 +55,7 @@ namespace AirEngine
 					uint32_t indexCount;
 					uint32_t meshCount;
 					vk::IndexType indexType;
+					std::map<Utility::InternedString, MeshVertexAttributeInfo> meshVertexAttributeInfoMap;
 				};
 			private:
 				Graphic::Instance::Buffer* _vertexBuffer;

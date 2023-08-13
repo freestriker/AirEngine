@@ -14,9 +14,10 @@ namespace AirEngine
 				{
 					REFLECTABLE_OBJECT
 				protected:
-					virtual void OnEditPostProcessSteps(uint32_t& postProcessSteps) const override;
-					virtual uint32_t OnGetPerVertexByteSize() const override;
-					virtual void OnPopulateVertexData(void* vertexDataPtr, size_t vertexDataByteSize, const Asset::Mesh::MeshInfo& meshInfo, const aiScene& meshScene) const override;
+					void OnEditPostProcessSteps(uint32_t& postProcessSteps) const override;
+					uint32_t OnGetPerVertexByteSize() const override;
+					void OnPopulateMeshVertexAttributeInfoMap(std::map<Utility::InternedString, Asset::Mesh::MeshVertexAttributeInfo>& meshVertexAttributeInfoMap) const override;
+					void OnPopulateVertexData(void* vertexDataPtr, size_t vertexDataByteSize, const Asset::Mesh::MeshInfo& meshInfo, const aiScene& meshScene) const override;
 				public:
 					INVOKABLE PositionNormalTangentTexcoord_MeshAttributePaser() = default;
 					INVOKABLE~PositionNormalTangentTexcoord_MeshAttributePaser() = default;

@@ -8,10 +8,10 @@ REGISTRATION
 
 struct VertexData
 {
-	glm::vec3 position;
-	glm::vec2 texcoords;
-	glm::vec3 normal;
-	glm::vec3 tangent;
+	glm::vec3 vertexPosition;
+	glm::vec2 vertexTexcoords;
+	glm::vec3 vertexNormal;
+	glm::vec3 vertexTangent;
 };
 
 void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser::OnEditPostProcessSteps(uint32_t& postProcessSteps) const
@@ -24,6 +24,18 @@ void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexco
 uint32_t AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser::OnGetPerVertexByteSize() const
 {
 	return sizeof(VertexData);
+}
+
+void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser::OnPopulateMeshVertexAttributeInfoMap(std::map<Utility::InternedString, Asset::Mesh::MeshVertexAttributeInfo>& meshVertexAttributeInfoMap) const
+{
+	auto&& attributeName = Utility::InternedString("vertexPosition");
+	meshVertexAttributeInfoMap[attributeName] = Asset::Mesh::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexPosition), sizeof(VertexData::vertexPosition));
+	attributeName = Utility::InternedString("vertexTexcoords");
+	meshVertexAttributeInfoMap[attributeName] = Asset::Mesh::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexTexcoords), sizeof(VertexData::vertexTexcoords));
+	attributeName = Utility::InternedString("vertexNormal");
+	meshVertexAttributeInfoMap[attributeName] = Asset::Mesh::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexNormal), sizeof(VertexData::vertexNormal));
+	attributeName = Utility::InternedString("vertexTangent");
+	meshVertexAttributeInfoMap[attributeName] = Asset::Mesh::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexTangent), sizeof(VertexData::vertexTangent));
 }
 
 void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser::OnPopulateVertexData(void* vertexDataPtr, size_t vertexDataByteSize, const Asset::Mesh::MeshInfo& meshInfo, const aiScene& meshScene) const
@@ -43,7 +55,7 @@ void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexco
 
 			// positions
 			{
-				auto& position = vertexDataPtr->position;
+				auto& position = vertexDataPtr->vertexPosition;
 				auto& vertexPosition = subMesh->mVertices[vertexIndex];
 
 				position.x = vertexPosition.x;
@@ -52,7 +64,7 @@ void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexco
 			}
 			// normals
 			{
-				auto& normal = vertexDataPtr->normal;
+				auto& normal = vertexDataPtr->vertexNormal;
 				auto& vertexNormal = subMesh->mNormals[vertexIndex];
 
 				normal.x = vertexNormal.x;
@@ -62,7 +74,7 @@ void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexco
 			}
 			// tangent
 			{
-				auto& tangent = vertexDataPtr->tangent;
+				auto& tangent = vertexDataPtr->vertexTangent;
 				auto& vertexTangent = subMesh->mTangents[vertexIndex];
 
 				tangent.x = vertexTangent.x;
@@ -72,7 +84,7 @@ void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexco
 			}
 			// texture coords
 			{
-				auto& texCoords = vertexDataPtr->texcoords;
+				auto& texCoords = vertexDataPtr->vertexTexcoords;
 				auto& vertexTexCoords = subMesh->mTextureCoords[0][vertexIndex];
 
 				texCoords.x = vertexTexCoords.x;
