@@ -63,7 +63,7 @@ namespace AirEngine
 					static void IncreaseHostMemory();
 					static DescriptorMemoryHandle AllocateDescriptorMemory(size_t size);
 					static DescriptorMemoryHandle ReallocateDescriptorMemory(size_t size);
-					static DescriptorMemoryHandle FreeDescriptorMemory(size_t size);
+					static void FreeDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle);
 				private:
 				public:
 					inline static uint16_t DescriptorMemoryAlignment()

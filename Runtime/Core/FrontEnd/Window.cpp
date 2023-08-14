@@ -13,7 +13,9 @@
 #include "../../Asset/Mesh.hpp"
 #include "../../Core/Manager/AssetManager.hpp"
 #include "../../Graphic/Manager/RenderPassManager.hpp"
+#include "../../Graphic/Manager/DescriptorManager.hpp"
 #include "../../Graphic/Instance/RenderPassBase.hpp"
+#include "../../Graphic/Instance/Buffer.hpp"
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 {
@@ -64,6 +66,20 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 			Graphic::Manager::RenderPassManager::UnloadRenderPass("AirEngine::Runtime::Graphic::Instance::DummyRenderPass");
 			Graphic::Manager::RenderPassManager::Collect();
 		}
+
+		auto&& stagingBuffer = Graphic::Instance::Buffer(
+			32 * 1024 * 1024,
+			vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT | vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT | vk::BufferUsageFlagBits::eTransferDst,
+			vk::MemoryPropertyFlagBits::eDeviceLocal
+		);
+
+		auto&& handle0 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
+		auto&& handle1 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(4 * 1024 * 1024);
+		auto&& handle2 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
+
+		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle2);
+		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle0);
+		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
