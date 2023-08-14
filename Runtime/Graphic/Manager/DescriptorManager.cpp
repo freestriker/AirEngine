@@ -81,9 +81,47 @@ AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle 
 	return outHandle;
 }
 
-AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(size_t size)
+AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, size_t size)
 {
-	return DescriptorMemoryHandle();
+	const auto&& alignedSize = ToAligned(size);
+	const auto&& compressedSize = ToCompressed(alignedSize);
+
+	if (descriptorMemoryHandle.size == compressedSize)
+	{
+		return descriptorMemoryHandle;
+	}
+
+	if (compressedSize < descriptorMemoryHandle.size)
+	{
+		DescriptorMemoryHandle freeHandle(descriptorMemoryHandle.offset + compressedSize, descriptorMemoryHandle.size - compressedSize);
+		FreeDescriptorMemory(freeHandle);
+
+		return 	DescriptorMemoryHandle(descriptorMemoryHandle.offset, compressedSize);
+	}
+
+	auto&& rightIter = _freeMemoryMap.upper_bound(descriptorMemoryHandle.offset);
+	if (rightIter != _freeMemoryMap.end())
+	{
+		auto& rightHandle = rightIter->second;
+		if (descriptorMemoryHandle.offset + descriptorMemoryHandle.size == rightHandle.offset)
+		{
+			if (compressedSize - descriptorMemoryHandle.size == rightHandle.size)
+			{
+				_freeMemoryMap.erase(rightIter);
+				return DescriptorMemoryHandle(descriptorMemoryHandle.offset, compressedSize);
+			}
+			else if (compressedSize - descriptorMemoryHandle.size < rightHandle.size)
+			{
+				DescriptorMemoryHandle newHandle(rightHandle.offset + (compressedSize - descriptorMemoryHandle.size), rightHandle.size - (compressedSize - descriptorMemoryHandle.size));
+				_freeMemoryMap.emplace(newHandle.offset, newHandle);
+				_freeMemoryMap.erase(rightIter);
+				return DescriptorMemoryHandle(descriptorMemoryHandle.offset, compressedSize);
+			}
+		}
+	}
+
+	FreeDescriptorMemory(descriptorMemoryHandle);
+	return AllocateDescriptorMemory(size);
 }
 
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle)
