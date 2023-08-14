@@ -59,6 +59,6 @@ find_package(Vulkan REQUIRED)
 target_link_libraries(Runtime PUBLIC Vulkan::Vulkan)
 
 find_package(unofficial-vulkan-memory-allocator CONFIG REQUIRED)
-target_link_libraries(Runtime PUBLIC unofficial::vulkan-memory-allocator::vulkan-memory-allocator)
+target_link_libraries(Runtime PUBLIC unofficial::vulkan-memory-allocator::vulkan-memory-allocator) 
 
 set_property(TARGET Runtime PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

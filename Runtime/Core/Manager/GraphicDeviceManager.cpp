@@ -5,6 +5,7 @@
 #include "../FrontEnd/FrontEndBase.hpp"
 #include <vulkan/vk_enum_string_helper.h>
 #include "../../Graphic/Manager/ShaderManager.hpp"
+#include "../../Graphic/Manager/DescriptorManager.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -265,6 +266,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAlloca
 void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::InitializeGraphicManagers()
 {
 	Graphic::Manager::ShaderManager::Initialize();
+	Graphic::Manager::DescriptorManager::Initialize();
 }
 
 AirEngine::Runtime::Core::Manager::GraphicDeviceManager::GraphicDeviceManager()
