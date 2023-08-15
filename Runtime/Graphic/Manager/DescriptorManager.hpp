@@ -55,15 +55,22 @@ namespace AirEngine
 					{
 						return size >> _descriptorMemoryAlignmentStride;
 					}
+					static inline size_t FromCompressed(size_t size)
+					{
+						return size << _descriptorMemoryAlignmentStride;
+					}
 					static inline size_t ToAlignedCompressed(size_t size)
 					{
 						return ToCompressed(ToAligned(size));
 					}
-					static void CreateHostMemory(size_t size);
+
 					static void IncreaseHostMemory();
+
 					static DescriptorMemoryHandle AllocateDescriptorMemory(size_t size);
 					static DescriptorMemoryHandle ReallocateDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, size_t size);
 					static void FreeDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle);
+
+					static void WriteToHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint8_t* dataPtr, uint32_t offset, uint32_t size);
 				private:
 				public:
 					inline static uint16_t DescriptorMemoryAlignment()

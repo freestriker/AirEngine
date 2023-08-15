@@ -79,6 +79,9 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 		auto&& handle11 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle1, 5 * 1024 * 1024);
 		auto&& handle12 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle11, 7 * 1024 * 1024);
 
+		std::vector<uint8_t> data(10, 5);
+		Graphic::Manager::DescriptorManager::WriteToHostDescriptorMemory(handle0, data.data(), 4, data.size());
+
 		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle2);
 		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle0);
 		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);

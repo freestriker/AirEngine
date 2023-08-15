@@ -10,19 +10,6 @@ AirEngine::Runtime::Graphic::Instance::Buffer* AirEngine::Runtime::Graphic::Mana
 AirEngine::Runtime::Graphic::Instance::Buffer* AirEngine::Runtime::Graphic::Manager::DescriptorManager::_hostCachedBuffer = nullptr;
 uint8_t* AirEngine::Runtime::Graphic::Manager::DescriptorManager::_hostMemory = nullptr;
 
-void AirEngine::Runtime::Graphic::Manager::DescriptorManager::CreateHostMemory(size_t size)
-{
-	std::free(_hostMemory);
-	_hostMemory = nullptr;
-
-	_hostMemory = reinterpret_cast<uint8_t*>(std::malloc(size));
-
-	if (_hostMemory == nullptr)
-	{
-		qFatal("Allocate memory failed.");
-	}
-}
-
 inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHostMemory()
 {
 	DescriptorMemoryHandle newHandle(ToCompressed(_currentSize), ToCompressed(_currentSize));
@@ -45,7 +32,19 @@ inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHos
 	}
 
 	_currentSize *= 2;
-	CreateHostMemory(_currentSize);
+
+	{
+		auto&& newHostMemory = reinterpret_cast<uint8_t*>(std::malloc(_currentSize));
+		if (newHostMemory == nullptr)
+		{
+			qFatal("Allocate memory failed.");
+		}
+
+		std::memcpy(newHostMemory, _hostMemory, _currentSize >> 2);
+
+		std::free(_hostMemory);
+		_hostMemory = newHostMemory;
+	}
 }
 
 AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(size_t size)
@@ -205,6 +204,29 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemo
 	_freeMemoryMap.emplace(descriptorMemoryHandle.offset, descriptorMemoryHandle);
 }
 
+void AirEngine::Runtime::Graphic::Manager::DescriptorManager::WriteToHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint8_t* dataPtr, uint32_t offset, uint32_t size)
+{
+	if ((descriptorMemoryHandle.offset + descriptorMemoryHandle.size) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.size == 0)
+	{
+		qFatal("Memory handle is not valid.");
+	}
+
+	size_t blockOffset = FromCompressed(descriptorMemoryHandle.offset);
+	size_t blockSize = FromCompressed(descriptorMemoryHandle.size);
+	
+	if (size == 0)
+	{
+		qFatal("Can not write zero size data.");
+	}
+
+	if (offset + size >= blockSize)
+	{
+		qFatal("Data size is bigger than block.");
+	}
+
+	std::memcpy(_hostMemory + blockOffset + offset, dataPtr, size);
+}
+
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 {
 	auto&& physicalDeviceDescriptorBufferPropertiesEXT = vk::PhysicalDeviceDescriptorBufferPropertiesEXT();
@@ -218,7 +240,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 	_descriptorMemoryAlignmentStride = std::log2(_descriptorMemoryAlignment);
 
 	_currentSize = 4 * 1024 * 1024;
-	CreateHostMemory(_currentSize);
+	_hostMemory = reinterpret_cast<uint8_t*>(std::malloc(_currentSize));
 	DescriptorMemoryHandle newHandle(0, ToCompressed(_currentSize));
 	_freeMemoryMap.emplace(newHandle.offset, newHandle);
 }
