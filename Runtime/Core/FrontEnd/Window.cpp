@@ -81,6 +81,8 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 
 		std::vector<uint8_t> data(10, 5);
 		Graphic::Manager::DescriptorManager::WriteToHostDescriptorMemory(handle0, data.data(), 4, data.size());
+		auto&& offset = handle0.Offset();
+		auto&& size = handle0.Size();
 
 		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle2);
 		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle0);

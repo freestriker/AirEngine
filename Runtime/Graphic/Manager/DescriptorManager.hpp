@@ -29,13 +29,32 @@ namespace AirEngine
 				public:
 					struct DescriptorMemoryHandle
 					{
+						friend class DescriptorManager;
+					private:
 						uint32_t offset;
 						uint32_t size;
+						DescriptorMemoryHandle(uint32_t offset, uint32_t size)
+							: offset(offset)
+							, size(size)
+						{
+
+						}
+						DescriptorMemoryHandle()
+							: offset(0)
+							, size(0)
+						{
+
+						}
+					public:
+						inline size_t Offset()const;
+						inline size_t Size()const;
 					};
 				private:
 					DescriptorManager() = delete;
 					~DescriptorManager() = delete;
 					NO_COPY_MOVE(DescriptorManager)
+
+					static void Initialize();
 				private:
 					static std::map<uint32_t, DescriptorMemoryHandle> _freeMemoryMap;
 					static size_t _currentSize;
@@ -44,8 +63,6 @@ namespace AirEngine
 					static Instance::Buffer* _deviceBuffer;
 					static Instance::Buffer* _hostCachedBuffer;
 					static uint8_t* _hostMemory;
-
-					static void Initialize();
 				public:
 					static inline size_t ToAligned(size_t size)
 					{
@@ -81,4 +98,14 @@ namespace AirEngine
 			}
 		}
 	}
+}
+
+inline size_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle::Offset() const
+{
+	return AirEngine::Runtime::Graphic::Manager::DescriptorManager::FromCompressed(offset);
+}
+
+inline size_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle::Size() const
+{
+	return AirEngine::Runtime::Graphic::Manager::DescriptorManager::FromCompressed(size);
 }
