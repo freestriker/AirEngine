@@ -3,6 +3,7 @@
 #include "../../Utility/ExportMacro.hpp"
 #include <map>
 #include <vulkan/vulkan.hpp>
+#include "DescriptorManagerData.hpp"
 
 namespace AirEngine
 {
@@ -26,29 +27,6 @@ namespace AirEngine
 				class AIR_ENGINE_API DescriptorManager final
 				{
 					friend class Core::Manager::GraphicDeviceManager;
-				public:
-					struct DescriptorMemoryHandle
-					{
-						friend class DescriptorManager;
-					private:
-						uint32_t offset;
-						uint32_t size;
-						DescriptorMemoryHandle(uint32_t offset, uint32_t size)
-							: offset(offset)
-							, size(size)
-						{
-
-						}
-						DescriptorMemoryHandle()
-							: offset(0)
-							, size(0)
-						{
-
-						}
-					public:
-						inline size_t Offset()const;
-						inline size_t Size()const;
-					};
 				private:
 					DescriptorManager() = delete;
 					~DescriptorManager() = delete;
@@ -98,14 +76,4 @@ namespace AirEngine
 			}
 		}
 	}
-}
-
-inline size_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle::Offset() const
-{
-	return AirEngine::Runtime::Graphic::Manager::DescriptorManager::FromCompressed(offset);
-}
-
-inline size_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle::Size() const
-{
-	return AirEngine::Runtime::Graphic::Manager::DescriptorManager::FromCompressed(size);
 }

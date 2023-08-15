@@ -2,7 +2,7 @@
 #include "../../Core/Manager/GraphicDeviceManager.hpp"
 #include "../Instance/Buffer.hpp"
 
-std::map<uint32_t, AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_freeMemoryMap{};
+std::map<uint32_t, AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_freeMemoryMap{};
 size_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_currentSize{};
 uint16_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_descriptorMemoryAlignment{};
 uint8_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_descriptorMemoryAlignmentStride{};
@@ -48,7 +48,7 @@ inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHos
 	}
 }
 
-AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(size_t size)
+AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(size_t size)
 {
 	if (size == 0)
 	{
@@ -92,7 +92,7 @@ AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle 
 	return outHandle;
 }
 
-AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, size_t size)
+AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, size_t size)
 {
 	if (size == 0)
 	{
