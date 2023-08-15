@@ -13,8 +13,14 @@ uint8_t* AirEngine::Runtime::Graphic::Manager::DescriptorManager::_hostMemory = 
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::CreateHostMemory(size_t size)
 {
 	std::free(_hostMemory);
+	_hostMemory = nullptr;
 
 	_hostMemory = reinterpret_cast<uint8_t*>(std::malloc(size));
+
+	if (_hostMemory == nullptr)
+	{
+		qFatal("Allocate memory failed.");
+	}
 }
 
 inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHostMemory()
@@ -44,6 +50,11 @@ inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHos
 
 AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(size_t size)
 {
+	if (size == 0)
+	{
+		qFatal("Memory size must greater than 0.");
+	}
+
 	const auto&& alignedSize = ToAligned(size);
 	const auto&& compressedSize = ToCompressed(alignedSize);
 
@@ -83,6 +94,16 @@ AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle 
 
 AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, size_t size)
 {
+	if (size == 0)
+	{
+		qFatal("Memory size must greater than 0.");
+	}
+
+	if ((descriptorMemoryHandle.offset + descriptorMemoryHandle.size) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.size == 0)
+	{
+		qFatal("Memory handle is not valid.");
+	}
+
 	const auto&& alignedSize = ToAligned(size);
 	const auto&& compressedSize = ToCompressed(alignedSize);
 
@@ -126,6 +147,11 @@ AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorMemoryHandle 
 
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle)
 {
+	if ((descriptorMemoryHandle.offset + descriptorMemoryHandle.size) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.size == 0)
+	{
+		qFatal("Memory handle is not valid.");
+	}
+
 	auto&& rightIter = _freeMemoryMap.upper_bound(descriptorMemoryHandle.offset);
 	if (rightIter != _freeMemoryMap.end())
 	{

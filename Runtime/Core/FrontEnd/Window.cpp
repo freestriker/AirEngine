@@ -75,11 +75,14 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 
 		auto&& handle0 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
 		auto&& handle1 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(4 * 1024 * 1024);
-		auto&& handle2 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
+		//auto&& handle2 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
+		auto&& handle11 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle1, 5 * 1024 * 1024);
+		auto&& handle12 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle11, 7 * 1024 * 1024);
 
-		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle2);
+		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle2);
 		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle0);
-		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);
+		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);
+		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle12);
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
