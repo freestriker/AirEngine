@@ -41,6 +41,7 @@ inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHos
 		}
 
 		std::memcpy(newHostMemory, _hostMemory, _currentSize >> 2);
+		std::memset(newHostMemory + (_currentSize >> 2), 0, _currentSize >> 2);
 
 		std::free(_hostMemory);
 		_hostMemory = newHostMemory;
@@ -151,6 +152,8 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemo
 		qFatal("Memory handle is not valid.");
 	}
 
+	std::memset(_hostMemory + descriptorMemoryHandle.Offset(), 0, descriptorMemoryHandle.Size());
+
 	auto&& rightIter = _freeMemoryMap.upper_bound(descriptorMemoryHandle.offset);
 	if (rightIter != _freeMemoryMap.end())
 	{
@@ -241,6 +244,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 
 	_currentSize = 4 * 1024 * 1024;
 	_hostMemory = reinterpret_cast<uint8_t*>(std::malloc(_currentSize));
+	std::memset(_hostMemory, 0, _currentSize);
 	DescriptorMemoryHandle newHandle(0, ToCompressed(_currentSize));
 	_freeMemoryMap.emplace(newHandle.offset, newHandle);
 }
