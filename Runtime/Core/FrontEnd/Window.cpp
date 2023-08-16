@@ -16,6 +16,8 @@
 #include "../../Graphic/Manager/DescriptorManager.hpp"
 #include "../../Graphic/Instance/RenderPassBase.hpp"
 #include "../../Graphic/Instance/Buffer.hpp"
+#include "../../Graphic/Rendering/Shader.hpp"
+#include "../../Graphic/Rendering/Material.hpp"
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 {
@@ -56,7 +58,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 		isLoaded = true;
 		assetLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
 		meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NineSphere.mesh");
-		meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
+		shaderLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
 
 		{
 			auto&& renderPass0 = Graphic::Manager::RenderPassManager::LoadRenderPass<Graphic::Instance::DummyRenderPass>();
@@ -73,21 +75,25 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 			vk::MemoryPropertyFlagBits::eDeviceLocal
 		);
 
-		auto&& handle0 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
-		auto&& handle1 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(4 * 1024 * 1024);
-		//auto&& handle2 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
-		auto&& handle11 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle1, 5 * 1024 * 1024);
-		auto&& handle12 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle11, 7 * 1024 * 1024);
+		//auto&& handle0 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
+		//auto&& handle1 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(4 * 1024 * 1024);
+		////auto&& handle2 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
+		//auto&& handle11 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle1, 5 * 1024 * 1024);
+		//auto&& handle12 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle11, 7 * 1024 * 1024);
 
-		std::vector<uint8_t> data(10, 5);
-		Graphic::Manager::DescriptorManager::WriteToHostDescriptorMemory(handle0, data.data(), 4, data.size());
-		auto&& offset = handle0.Offset();
-		auto&& size = handle0.Size();
+		//std::vector<uint8_t> data(10, 5);
+		//Graphic::Manager::DescriptorManager::WriteToHostDescriptorMemory(handle0, data.data(), 4, data.size());
+		//auto&& offset = handle0.Offset();
+		//auto&& size = handle0.Size();
 
-		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle2);
-		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle0);
-		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);
-		Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle12);
+		////Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle2);
+		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle0);
+		////Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);
+		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle12);
+
+		shaderLoadHandle.SharedFuture().wait();
+		auto&& shader = shaderLoadHandle.Asset<Graphic::Rendering::Shader>();
+		auto&& material = Graphic::Rendering::Material(shader);
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
