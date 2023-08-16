@@ -116,7 +116,7 @@ struct ShaderCreateInfo
 	AirEngine::Runtime::Graphic::Instance::RenderPassBase* renderPass;
 };
 
-void LoadSpirvData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void LoadSpirvData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	vk::ShaderStageFlags stages{};
 	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
@@ -160,13 +160,13 @@ void LoadSpirvData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& s
 	}
 }
 
-void LoadRenderPassData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void LoadRenderPassData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	shaderCreateInfo.renderPass = AirEngine::Runtime::Graphic::Manager::RenderPassManager::LoadRenderPass(shaderDescriptor.renderPass);
 	shaderInfo.renderPass = shaderCreateInfo.renderPass;
 }
 
-void CheckGraphicShaderStageInOutData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void CheckGraphicShaderStageInOutData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	constexpr auto GRAPHIC_SHADER_STAGES{ 
 		std::to_array<vk::ShaderStageFlagBits>(
@@ -335,7 +335,7 @@ void CheckGraphicShaderStageInOutData(AirEngine::Runtime::Graphic::Rendering::Sh
 	}
 }
 
-void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	using namespace AirEngine::Runtime::Graphic::Rendering;
 
@@ -349,7 +349,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 		auto&& subPassInfo = shaderCreateInfo.renderPass->Info().SubPassInfo(subPassName);
 
 		std::map<uint8_t, std::map<uint8_t, vk::DescriptorSetLayoutBinding>> setToBindingToDescriptorBindingMap{};
-		std::map<uint8_t, std::pair<Shader::DescriptorSetInfo, std::map<uint8_t, Shader::DescriptorInfo>>> setToDescriptorSetInfoAndBindingToDescriptorInfoMap{};
+		std::map<uint8_t, std::pair<DescriptorSetInfo, std::map<uint8_t, DescriptorInfo>>> setToDescriptorSetInfoAndBindingToDescriptorInfoMap{};
 
 		//parse direct data
 		for (const auto& shaderReflectDataPair : subShaderCreateInfo.shaderDatas)
@@ -441,7 +441,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 							descriptorInfo.type == vk::DescriptorType::eStorageImage
 							)
 						{
-							descriptorInfo.imageInfo = std::make_unique<Shader::DescriptorInfo::ImageInfo>
+							descriptorInfo.imageInfo = std::make_unique<DescriptorInfo::ImageInfo>
 							(
 								reflectDescriptorBinding.image.dim,
 								vk::Format(reflectDescriptorBinding.image.image_format),
@@ -600,7 +600,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 				auto& descriptorInfo = bindingToDescriptorInfoMapPair.second;
 
 				descriptorInfo.index = subShaderInfo.descriptorInfos.size();
-				descriptorInfo.descriptorSetInfo = reinterpret_cast<Shader::DescriptorSetInfo*>(descriptorSetInfo.index);
+				descriptorInfo.descriptorSetInfo = reinterpret_cast<DescriptorSetInfo*>(descriptorSetInfo.index);
 
 				subShaderInfo.descriptorInfos.emplace_back(std::move(descriptorInfo));
 				subShaderInfo.descriptorNameToDescriptorInfoIndexMap.emplace(std::pair{descriptorInfo.name, descriptorInfo.index});
@@ -625,12 +625,12 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo&
 		{
 			auto descriptorSetInfo = subShaderInfo.descriptorSetInfos.data() + reinterpret_cast<size_t>(descriptorInfo.descriptorSetInfo);
 			descriptorSetInfo->descriptorInfoIndexs.emplace_back(descriptorInfo.index);
-			descriptorInfo.descriptorSetInfo = reinterpret_cast<const Shader::DescriptorSetInfo*>(descriptorSetInfo);
+			descriptorInfo.descriptorSetInfo = reinterpret_cast<const DescriptorSetInfo*>(descriptorSetInfo);
 		}
 	}
 }
 
-void LoadVertexInputData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void LoadVertexInputData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	for (auto& subShaderInfoMapPair : shaderInfo.subShaderInfoMap)
 	{
@@ -652,7 +652,7 @@ void LoadVertexInputData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderI
 
 			auto name = AirEngine::Runtime::Utility::InternedString::InternedString(inputVar.name);
 
-			AirEngine::Runtime::Graphic::Rendering::Shader::VertexInputInfo vertexInputInfo{};
+			AirEngine::Runtime::Graphic::Rendering::VertexInputInfo vertexInputInfo{};
 			vertexInputInfo.name = name;
 			vertexInputInfo.location = inputVar.location;
 			vertexInputInfo.format = vk::Format(inputVar.format);
@@ -662,7 +662,7 @@ void LoadVertexInputData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderI
 	}
 }
 
-void CheckGraphicFragmentShaderOutData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void CheckGraphicFragmentShaderOutData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	for (const auto& subShaderDescriptor : shaderDescriptor.subShaders)
 	{
@@ -689,7 +689,7 @@ void CheckGraphicFragmentShaderOutData(AirEngine::Runtime::Graphic::Rendering::S
 		}
 	}
 }
-void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	using namespace AirEngine::Runtime;
 
@@ -854,7 +854,7 @@ void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::Shader::Shade
 		subShaderInfo.pipeline = pipeline;
 	}
 }
-void UnloadSpirvData(AirEngine::Runtime::Graphic::Rendering::Shader::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+void UnloadSpirvData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	for (auto& subShaderCreateInfoPair : shaderCreateInfo.subShaderCreateInfos)
 	{

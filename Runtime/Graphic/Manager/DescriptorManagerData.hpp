@@ -25,13 +25,13 @@ namespace AirEngine
 					{
 
 					}
+				public:
 					DescriptorMemoryHandle()
 						: offset(0)
 						, size(0)
 					{
 
 					}
-				public:
 					size_t Offset()const;
 					size_t Size()const;
 				};
