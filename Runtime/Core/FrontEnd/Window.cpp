@@ -18,6 +18,7 @@
 #include "../../Graphic/Instance/Buffer.hpp"
 #include "../../Graphic/Rendering/Shader.hpp"
 #include "../../Graphic/Rendering/Material.hpp"
+#include "../../Graphic/Instance/UniformBuffer.hpp"
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 {
@@ -72,6 +73,12 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 		auto&& stagingBuffer = Graphic::Instance::Buffer(
 			32 * 1024 * 1024,
 			vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT | vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT | vk::BufferUsageFlagBits::eTransferDst,
+			vk::MemoryPropertyFlagBits::eDeviceLocal
+		);
+
+		auto&& uniformBuffer = Graphic::Instance::UniformBuffer(
+			4 * 1024 * 1024,
+			vk::BufferUsageFlagBits::eUniformBuffer,
 			vk::MemoryPropertyFlagBits::eDeviceLocal
 		);
 

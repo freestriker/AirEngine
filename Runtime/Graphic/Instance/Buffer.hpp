@@ -15,18 +15,19 @@ namespace AirEngine
 			namespace Instance
 			{
 				class Memory;
-				class AIR_ENGINE_API Buffer final
+				class AIR_ENGINE_API Buffer
 				{
-				private:
+				protected:
 					vk::Buffer _vkBuffer;
 					vk::DeviceSize _size;
 					vk::BufferUsageFlags _usage;
 					std::shared_ptr<Memory> _memory;
+					uint64_t _bufferAddress;
 				public:
 					Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, vk::MemoryPropertyFlags property, VmaAllocationCreateFlags flags = 0, VmaMemoryUsage memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_AUTO);
 					Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, std::shared_ptr<Memory> memory);
 					Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage);
-					~Buffer();
+					virtual ~Buffer();
 					inline vk::Buffer VkHandle() const
 					{
 						return _vkBuffer;
@@ -52,6 +53,10 @@ namespace AirEngine
 					void ClearMemory()
 					{
 						_memory.reset();
+					}
+					uint64_t BufferDeviceAddress()const
+					{
+						return _bufferAddress;
 					}
 
 					NO_COPY_MOVE(Buffer)

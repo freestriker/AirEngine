@@ -259,6 +259,7 @@ void AirEngine::Runtime::Core::Manager::GraphicDeviceManager::CreateMemoryAlloca
 	allocatorCreateInfo.device = _vkbDevice.device;
 	allocatorCreateInfo.instance = _vkbInstance.instance;
 	allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
+	allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
 	vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator);
 }
