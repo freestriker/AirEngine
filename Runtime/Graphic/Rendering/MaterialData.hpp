@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "../../Utility/InternedString.hpp"
 #include "../Manager/DescriptorManagerData.hpp"
+#include "MaterialBindableAssetBase.hpp"
 
 namespace AirEngine
 {
@@ -13,7 +14,7 @@ namespace AirEngine
 				struct MaterialBindableAssetInfo
 				{
 					Utility::InternedString name;
-					void* bindable;
+					MaterialBindableAssetBase* bindable;
 					uint16_t index;
 				};
 				struct MaterialDescriptorSetMemoryInfo

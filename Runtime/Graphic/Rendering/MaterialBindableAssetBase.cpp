@@ -1,0 +1,112 @@
+﻿#include "Material.hpp"
+#include "Shader.hpp"
+#include "../Manager/DescriptorManager.hpp"
+
+std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>> AirEngine::Runtime::Graphic::Rendering::Material::PopulateDescriptorSetMemoryInfosMap(const Shader& shader)
+{
+	const auto& shaderInfo = shader.Info();
+
+	std::unordered_map<
+		AirEngine::Runtime::Utility::InternedString, 
+		std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>
+	> descriptorSetMemoryInfosMap{};
+
+	for (const auto& subShaderInfoPair : shaderInfo.subShaderInfoMap)
+	{
+		const auto& subpassName = subShaderInfoPair.first;
+		const auto& subpassShaderInfo = subShaderInfoPair.second;
+
+		auto& descriptorSetMemoryInfos = descriptorSetMemoryInfosMap.emplace(
+			subpassName, 
+			std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>(subpassShaderInfo.descriptorSetInfos.size())
+		).first->second;
+
+		for (uint32_t descriptorSetInfoIndex = 0; descriptorSetInfoIndex < subpassShaderInfo.descriptorSetInfos.size(); ++descriptorSetInfoIndex)
+		{
+			const auto& descriptorSetInfo = subpassShaderInfo.descriptorSetInfos.at(descriptorSetInfoIndex);
+			auto& descriptorSetMemoryInfo = descriptorSetMemoryInfos.at(descriptorSetInfoIndex);
+
+			uint32_t solidByteCapcity = descriptorSetInfo.solidByteSize;
+			uint32_t totalByteCapcity = solidByteCapcity;
+
+			uint32_t dynamicElementCapcity = 0;
+			uint32_t dynamicSingleDescriptorByteSize = 0;
+			if (descriptorSetInfo.isDynamicByteSize)
+			{
+				dynamicElementCapcity = 2;
+				dynamicSingleDescriptorByteSize = subpassShaderInfo.descriptorInfos.at(descriptorSetInfo.descriptorInfoIndexs.back()).singleDescriptorByteSize;
+				totalByteCapcity += dynamicElementCapcity * dynamicSingleDescriptorByteSize;
+			}
+
+			auto&& handle = Manager::DescriptorManager::AllocateDescriptorMemory(totalByteCapcity);
+
+			if (descriptorSetInfo.isDynamicByteSize)
+			{
+				dynamicElementCapcity = (handle.Size() - solidByteCapcity) / dynamicSingleDescriptorByteSize;
+			}
+
+			descriptorSetMemoryInfo.dynamicCapcity = dynamicElementCapcity;
+			descriptorSetMemoryInfo.dynamicCount = 0;
+			descriptorSetMemoryInfo.handle = handle;
+		}
+	}
+
+	return descriptorSetMemoryInfosMap;
+}
+
+void AirEngine::Runtime::Graphic::Rendering::Material::AutoCheckDescriptorSetMemory(MaterialDescriptorSetMemoryInfo& materialDescriptorSetMemoryInfo, const DescriptorInfo& shaderDescriptorInfo, uint32_t desiredIndex)
+{
+	const auto& shaderDescriptorSetInfo = *shaderDescriptorInfo.descriptorSetInfo;
+
+	if (shaderDescriptorSetInfo.isDynamicByteSize)
+	{
+		if (desiredIndex >= materialDescriptorSetMemoryInfo.dynamicCapcity)
+		{
+			uint32_t dynamicElementCapcity = std::pow(2u, uint32_t(std::ceil(std::log2(desiredIndex + 1))));
+			uint32_t totalByteCapcity = shaderDescriptorSetInfo.solidByteSize + dynamicElementCapcity * shaderDescriptorInfo.singleDescriptorByteSize;
+
+			Manager::DescriptorManager::FreeDescriptorMemory(materialDescriptorSetMemoryInfo.handle);
+			auto&& handle = Manager::DescriptorManager::AllocateDescriptorMemory(totalByteCapcity);
+
+			dynamicElementCapcity = (handle.Size() - shaderDescriptorSetInfo.solidByteSize) / shaderDescriptorInfo.singleDescriptorByteSize;
+
+
+			materialDescriptorSetMemoryInfo.dynamicCapcity = dynamicElementCapcity;
+			materialDescriptorSetMemoryInfo.dynamicCount = 0;
+			materialDescriptorSetMemoryInfo.handle = handle;
+		}
+	}
+	else
+	{
+		if (desiredIndex >= shaderDescriptorInfo.descriptorCount)
+		{
+			qFatal("Shader do not have descriptor in this index.");
+		}
+	}
+}
+
+void AirEngine::Runtime::Graphic::Rendering::Material::DestroyAllDescriptorSetMemory(const std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>>& descriptorSetMemoryInfosMap)
+{
+	for (const auto& descriptorSetMemoryInfosPair : descriptorSetMemoryInfosMap)
+	{
+		const auto& descriptorSetMemoryInfos = descriptorSetMemoryInfosPair.second;
+
+		for (const auto& descriptorSetMemoryInfo : descriptorSetMemoryInfos)
+		{
+			Manager::DescriptorManager::FreeDescriptorMemory(descriptorSetMemoryInfo.handle);
+		}
+	}
+}
+
+AirEngine::Runtime::Graphic::Rendering::Material::Material(const Shader& shader)
+	: _shader(&shader)
+	, _bindableAssetInfoMap()
+	, _descriptorSetMemoryInfosMap(PopulateDescriptorSetMemoryInfosMap(shader))
+{
+	//AutoCheckDescriptorSetMemory(_descriptorSetMemoryInfosMap.begin()->second.front(), _shader->Info().subShaderInfoMap.begin()->second.descriptorInfos.back(), 11);
+}
+
+AirEngine::Runtime::Graphic::Rendering::Material::~Material()
+{
+	DestroyAllDescriptorSetMemory(_descriptorSetMemoryInfosMap);
+}
