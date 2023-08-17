@@ -8,7 +8,7 @@ uint16_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_descriptorMem
 uint8_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_descriptorMemoryAlignmentStride{};
 AirEngine::Runtime::Graphic::Instance::Buffer* AirEngine::Runtime::Graphic::Manager::DescriptorManager::_deviceBuffer = nullptr;
 AirEngine::Runtime::Graphic::Instance::Buffer* AirEngine::Runtime::Graphic::Manager::DescriptorManager::_hostCachedBuffer = nullptr;
-uint8_t* AirEngine::Runtime::Graphic::Manager::DescriptorManager::_hostMemory = nullptr;
+std::vector<uint8_t> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_hostMemory{};
 
 inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHostMemory()
 {
@@ -40,11 +40,7 @@ inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHos
 			qFatal("Allocate memory failed.");
 		}
 
-		std::memcpy(newHostMemory, _hostMemory, _currentSize >> 2);
-		std::memset(newHostMemory + (_currentSize >> 2), 0, _currentSize >> 2);
-
-		std::free(_hostMemory);
-		_hostMemory = newHostMemory;
+		_hostMemory.resize(_currentSize, 0);
 	}
 }
 
@@ -152,7 +148,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemo
 		qFatal("Memory handle is not valid.");
 	}
 
-	std::memset(_hostMemory + descriptorMemoryHandle.Offset(), 0, descriptorMemoryHandle.Size());
+	std::memset(_hostMemory.data() + descriptorMemoryHandle.Offset(), 0, descriptorMemoryHandle.Size());
 
 	auto&& rightIter = _freeMemoryMap.upper_bound(descriptorMemoryHandle.offset);
 	if (rightIter != _freeMemoryMap.end())
@@ -227,7 +223,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::WriteToHostDescrip
 		qFatal("Data size is bigger than block.");
 	}
 
-	std::memcpy(_hostMemory + blockOffset + offset, dataPtr, size);
+	std::memcpy(_hostMemory.data() + blockOffset + offset, dataPtr, size);
 }
 
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
@@ -243,8 +239,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 	_descriptorMemoryAlignmentStride = std::log2(_descriptorMemoryAlignment);
 
 	_currentSize = 4 * 1024 * 1024;
-	_hostMemory = reinterpret_cast<uint8_t*>(std::malloc(_currentSize));
-	std::memset(_hostMemory, 0, _currentSize);
+	_hostMemory.resize(_currentSize, 0);
 	DescriptorMemoryHandle newHandle(0, ToCompressed(_currentSize));
 	_freeMemoryMap.emplace(newHandle.offset, newHandle);
 }

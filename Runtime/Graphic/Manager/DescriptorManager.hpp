@@ -40,7 +40,7 @@ namespace AirEngine
 					static uint8_t _descriptorMemoryAlignmentStride;
 					static Instance::Buffer* _deviceBuffer;
 					static Instance::Buffer* _hostCachedBuffer;
-					static uint8_t* _hostMemory;
+					static std::vector<uint8_t> _hostMemory;
 				public:
 					static inline size_t ToAligned(size_t size)
 					{
@@ -57,6 +57,10 @@ namespace AirEngine
 					static inline size_t ToAlignedCompressed(size_t size)
 					{
 						return ToCompressed(ToAligned(size));
+					}
+					static inline const std::vector<uint8_t>& HostMemory()
+					{
+						return _hostMemory;
 					}
 
 					static void IncreaseHostMemory();
