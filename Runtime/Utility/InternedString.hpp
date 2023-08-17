@@ -180,6 +180,17 @@ namespace AirEngine
 #endif // !NDEBUG
 				{
 				}
+				inline InternedString(uint32_t value)
+					: _empty2_isUsed1_StringEntryHandle29(value)
+#ifndef NDEBUG
+					, _debugStringView()
+#endif // !NDEBUG
+				{
+#ifndef NDEBUG
+					const StringEntry* stringEntry = stringEntryMemoryManager.GetStringEntry(StringEntryHandle(_empty2_isUsed1_StringEntryHandle29));
+					_debugStringView = std::string_view(stringEntry->GetData(), stringEntry->GetStringEntryHeader().GetSize());
+#endif // !NDEBUG
+				}
 				inline void operator=(const InternedString& internedString)
 				{
 					_empty2_isUsed1_StringEntryHandle29 = internedString._empty2_isUsed1_StringEntryHandle29;
