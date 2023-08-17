@@ -19,6 +19,7 @@
 #include "../../Graphic/Rendering/Shader.hpp"
 #include "../../Graphic/Rendering/Material.hpp"
 #include "../../Graphic/Instance/UniformBuffer.hpp"
+#include "../../Graphic/Manager/DescriptorManager.hpp"
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 {
@@ -100,7 +101,16 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 
 		shaderLoadHandle.SharedFuture().wait();
 		auto&& shader = shaderLoadHandle.Asset<Graphic::Rendering::Shader>();
+		Graphic::Manager::DescriptorManager::ToAligned(0);
 		auto&& material = Graphic::Rendering::Material(shader);
+		material.SetUniformBuffer(Utility::InternedString("sampler2d"), &uniformBuffer, 0);
+		material.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 0);
+		material.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 1);
+		material.SetUniformBuffer(Utility::InternedString("sampler2dArray"), &uniformBuffer, 0);
+		auto&& ub = material.GetUniformBuffer(Utility::InternedString("sampler2dArray"), 0);
+		material.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 0);
+		material.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 15);
+		material.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 31);
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
