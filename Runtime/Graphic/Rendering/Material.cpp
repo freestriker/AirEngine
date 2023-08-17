@@ -1,6 +1,7 @@
 ﻿#include "Material.hpp"
 #include "Shader.hpp"
 #include "../Manager/DescriptorManager.hpp"
+#include "../Instance/UniformBuffer.hpp"
 
 std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>> AirEngine::Runtime::Graphic::Rendering::Material::PopulateDescriptorSetMemoryInfosMap(const Shader& shader)
 {
@@ -70,7 +71,6 @@ void AirEngine::Runtime::Graphic::Rendering::Material::AutoCheckDescriptorSetMem
 
 			dynamicElementCapcity = (handle.Size() - shaderDescriptorSetInfo.solidByteSize) / shaderDescriptorInfo.singleDescriptorByteSize;
 
-
 			materialDescriptorSetMemoryInfo.dynamicCapcity = dynamicElementCapcity;
 			materialDescriptorSetMemoryInfo.dynamicCount = 0;
 			materialDescriptorSetMemoryInfo.handle = handle;
@@ -98,12 +98,78 @@ void AirEngine::Runtime::Graphic::Rendering::Material::DestroyAllDescriptorSetMe
 	}
 }
 
+void AirEngine::Runtime::Graphic::Rendering::Material::WriteRawDescriptor(const std::vector<uint8_t>& rawDescriptor, const MaterialDescriptorSetMemoryInfo& materialDescriptorSetMemoryInfo, const DescriptorInfo& shaderDescriptorInfo, uint32_t desiredIndex)
+{
+	Manager::DescriptorManager::WriteToHostDescriptorMemory(
+		materialDescriptorSetMemoryInfo.handle, 
+		const_cast<std::vector<uint8_t>&>(rawDescriptor).data(), 
+		shaderDescriptorInfo.startByteOffsetInDescriptorSet + desiredIndex * shaderDescriptorInfo.singleDescriptorByteSize, 
+		shaderDescriptorInfo.singleDescriptorByteSize
+	);
+}
+
+void AirEngine::Runtime::Graphic::Rendering::Material::AddToBindableAssetMap(Utility::InternedString name, uint32_t desiredIndex, MaterialBindableAssetBase* materialBindableAssetBase, std::map<uint64_t, MaterialBindableAssetBase*>& bindableAssetMap)
+{
+	const uint64_t targetValue = (uint64_t(name.Value()) << 32) | desiredIndex;
+
+	bindableAssetMap.try_emplace(targetValue, materialBindableAssetBase);
+}
+
+AirEngine::Runtime::Graphic::Rendering::MaterialBindableAssetBase* AirEngine::Runtime::Graphic::Rendering::Material::GetFromBindableAssetMap(Utility::InternedString name, uint32_t desiredIndex, std::map<uint64_t, MaterialBindableAssetBase*>& bindableAssetMap)
+{
+	const uint64_t targetValue = (uint64_t(name.Value()) << 32) | desiredIndex;
+
+	auto&& iter = bindableAssetMap.find(targetValue);
+	return iter == bindableAssetMap.end() ? nullptr : iter->second;
+}
+
 AirEngine::Runtime::Graphic::Rendering::Material::Material(const Shader& shader)
 	: _shader(&shader)
-	, _bindableAssetInfoMap()
+	, _bindableAssetMap()
 	, _descriptorSetMemoryInfosMap(PopulateDescriptorSetMemoryInfosMap(shader))
 {
-	//AutoCheckDescriptorSetMemory(_descriptorSetMemoryInfosMap.begin()->second.front(), _shader->Info().subShaderInfoMap.begin()->second.descriptorInfos.back(), 11);
+
+}
+
+void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility::InternedString name, Instance::UniformBuffer* uniformBuffer, uint32_t index)
+{
+	uint32_t setCount = 0;
+	for (const auto& subpassShaderInfoPair : _shader->Info().subShaderInfoMap)
+	{
+		const auto& subpassName = subpassShaderInfoPair.first;
+		const auto& subpassShaderInfo = subpassShaderInfoPair.second;
+		auto& descriptorSetMemoryInfos = _descriptorSetMemoryInfosMap.at(subpassName);
+
+		auto&& iter = subpassShaderInfo.descriptorNameToDescriptorInfoIndexMap.find(name);
+		if (iter == subpassShaderInfo.descriptorNameToDescriptorInfoIndexMap.end()) continue;
+
+		const auto& descriptorInfo = subpassShaderInfo.descriptorInfos.at(iter->second);
+
+		if (descriptorInfo.type != vk::DescriptorType::eUniformBuffer)
+		{
+			qFatal("This name is not a uniform buffer.");
+		}
+
+		const auto& descriptorSetInfo = *descriptorInfo.descriptorSetInfo;
+		auto& descriptorSetMemoryInfo = descriptorSetMemoryInfos.at(descriptorSetInfo.index);
+
+		AutoCheckDescriptorSetMemory(descriptorSetMemoryInfo, descriptorInfo, index);
+
+		WriteRawDescriptor(uniformBuffer->RawDescriptor(), descriptorSetMemoryInfo, descriptorInfo, index);
+		++setCount;
+	}
+
+	if (setCount == 0)
+	{
+		qFatal("Do not have asset in shader.");
+	}
+
+	AddToBindableAssetMap(name, index, uniformBuffer, _bindableAssetMap);
+}
+
+AirEngine::Runtime::Graphic::Instance::UniformBuffer* AirEngine::Runtime::Graphic::Rendering::Material::GetUniformBuffer(Utility::InternedString name, uint32_t index)
+{
+	return static_cast<AirEngine::Runtime::Graphic::Instance::UniformBuffer * >(GetFromBindableAssetMap(name, index, _bindableAssetMap));
 }
 
 AirEngine::Runtime::Graphic::Rendering::Material::~Material()
