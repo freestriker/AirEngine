@@ -9,6 +9,7 @@ uint8_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_descriptorMemo
 AirEngine::Runtime::Graphic::Instance::Buffer* AirEngine::Runtime::Graphic::Manager::DescriptorManager::_deviceBuffer = nullptr;
 AirEngine::Runtime::Graphic::Instance::Buffer* AirEngine::Runtime::Graphic::Manager::DescriptorManager::_hostCachedBuffer = nullptr;
 std::vector<uint8_t> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_hostMemory{};
+std::vector<AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_dirtyHandles{};
 
 inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHostMemory()
 {
@@ -32,16 +33,9 @@ inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHos
 	}
 
 	_currentSize *= 2;
+	_hostMemory.resize(_currentSize, 0);
 
-	{
-		auto&& newHostMemory = reinterpret_cast<uint8_t*>(std::malloc(_currentSize));
-		if (newHostMemory == nullptr)
-		{
-			qFatal("Allocate memory failed.");
-		}
-
-		_hostMemory.resize(_currentSize, 0);
-	}
+	_dirtyHandles.emplace_back(newHandle);
 }
 
 AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle AirEngine::Runtime::Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(size_t size)
@@ -184,6 +178,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemo
 				_freeMemoryMap.emplace(newHandle.compressedOffset, newHandle);
 			}
 			_freeMemoryMap.erase(rightIter);
+			_dirtyHandles.emplace_back(descriptorMemoryHandle);
 
 			return;
 		}
@@ -197,6 +192,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemo
 			if (leftHandle.compressedOffset + leftHandle.compressedSize == descriptorMemoryHandle.compressedOffset)
 			{
 				leftHandle.compressedSize += descriptorMemoryHandle.compressedSize;
+				_dirtyHandles.emplace_back(descriptorMemoryHandle);
 
 				return;
 			}
@@ -204,6 +200,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemo
 	}
 
 	_freeMemoryMap.emplace(descriptorMemoryHandle.compressedOffset, descriptorMemoryHandle);
+	_dirtyHandles.emplace_back(descriptorMemoryHandle);
 }
 
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::WriteToHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint8_t* dataPtr, uint32_t offset, uint32_t size)
@@ -227,6 +224,71 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::WriteToHostDescrip
 	}
 
 	std::memcpy(_hostMemory.data() + blockOffset + offset, dataPtr, size);
+	_dirtyHandles.emplace_back(descriptorMemoryHandle);
+}
+
+std::vector<AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle> AirEngine::Runtime::Graphic::Manager::DescriptorManager::MergeAndClearDirtyHandles()
+{
+	if (_dirtyHandles.size() == 0) return {};
+
+	std::sort(
+		_dirtyHandles.begin(), 
+		_dirtyHandles.end(), 
+		[](const DescriptorMemoryHandle& x, const DescriptorMemoryHandle& y)->bool 
+		{
+			return x.CompressedOffset() == y.CompressedOffset() ? x.CompressedSize() > y.CompressedSize() : x.CompressedOffset() < y.CompressedOffset();
+		}
+	);
+
+	std::vector<AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle> mergedResult = { _dirtyHandles.at(0) };
+	for (int i = 1; i < _dirtyHandles.size(); i++) 
+	{
+		const auto& dirtyHandle = _dirtyHandles.at(i);
+		auto& lastMerged = mergedResult.back();
+
+		if (dirtyHandle.CompressedOffset() <= lastMerged.CompressedEndOffset())
+		{
+			lastMerged.compressedSize = std::max(lastMerged.compressedSize, dirtyHandle.CompressedEndOffset() - lastMerged.CompressedOffset());
+		}
+		else 
+		{
+			mergedResult.emplace_back(dirtyHandle);
+		}
+	}
+	_dirtyHandles.clear();
+
+	return mergedResult;
+}
+
+void AirEngine::Runtime::Graphic::Manager::DescriptorManager::CopyHostDirtyDataToCachedBuffer(const std::vector<DescriptorMemoryHandle>& dirtyHandles)
+{
+	uint32_t totalCompressedSize = 0;
+	for (const auto& dirtyHandle : dirtyHandles)
+	{
+		totalCompressedSize += dirtyHandle.CompressedSize();
+	}
+	
+	const size_t totalDirtyDataSize = FromCompressed(totalCompressedSize);
+
+	if (_hostCachedBuffer->Size() < totalDirtyDataSize)
+	{
+		delete _hostCachedBuffer;
+		_hostCachedBuffer = new Graphic::Instance::Buffer(
+			ToAligned(totalDirtyDataSize),
+			vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached,
+			VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+		);
+	}
+
+	uint8_t* hostCachedBufferPtr = reinterpret_cast<uint8_t*>(_hostCachedBuffer->Memory()->Map());
+	size_t hostCachedBufferOffset = 0;
+	for (const auto& dirtyHandle : dirtyHandles)
+	{
+		std::memcpy(hostCachedBufferPtr + hostCachedBufferOffset, _hostMemory.data() + dirtyHandle.Offset(), dirtyHandle.Size());
+		hostCachedBufferOffset += dirtyHandle.Size();
+	}
+	_hostCachedBuffer->Memory()->Unmap();
 }
 
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
@@ -245,4 +307,11 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 	_hostMemory.resize(_currentSize, 0);
 	DescriptorMemoryHandle newHandle(0, ToCompressed(_currentSize));
 	_freeMemoryMap.emplace(newHandle.compressedOffset, newHandle);
+	_dirtyHandles.emplace_back(newHandle);
+	_hostCachedBuffer = new Graphic::Instance::Buffer(
+		1 * 1024 * 1024,
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached,
+		VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+	);
 }

@@ -34,8 +34,19 @@ namespace AirEngine
 					}
 					size_t Offset()const;
 					size_t Size()const;
+					inline uint32_t CompressedOffset()const
+					{
+						return compressedOffset;
+					}
+					inline uint32_t CompressedSize()const
+					{
+						return compressedSize;
+					}
+					inline uint32_t CompressedEndOffset()const
+					{
+						return compressedOffset + compressedSize;
+					}
 				};
-
 			}
 		}
 	}
