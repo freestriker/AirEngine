@@ -15,13 +15,11 @@ namespace AirEngine
 				{
 					Utility::InternedString name;
 					MaterialBindableAssetBase* bindable;
-					uint16_t index;
 				};
 				struct MaterialDescriptorSetMemoryInfo
 				{
 					Manager::DescriptorMemoryHandle handle;
-					uint16_t dynamicCount;
-					uint16_t dynamicCapcity;
+					uint32_t dynamicElementCapcity;
 				};
 			}
 		}

@@ -18,17 +18,17 @@ inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHos
 	if (_freeMemoryMap.size())
 	{
 		auto& lastHandle = _freeMemoryMap.rbegin()->second;
-		if (lastHandle.offset + lastHandle.size == newHandle.offset)
+		if (lastHandle.compressedOffset + lastHandle.compressedSize == newHandle.compressedOffset)
 		{
 			isMerged = true;
 			
-			lastHandle.size = lastHandle.size + newHandle.size;
+			lastHandle.compressedSize = lastHandle.compressedSize + newHandle.compressedSize;
 		}
 	}
 
 	if(!isMerged)
 	{
-		_freeMemoryMap.emplace(newHandle.offset, newHandle);
+		_freeMemoryMap.emplace(newHandle.compressedOffset, newHandle);
 	}
 
 	_currentSize *= 2;
@@ -60,18 +60,18 @@ AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle AirEngine::Runtime:
 		for (auto iter = _freeMemoryMap.cbegin(); iter != _freeMemoryMap.cend(); ++iter)
 		{
 			const auto& freeMemoryHandle = iter->second;
-			if (compressedSize <= freeMemoryHandle.size)
+			if (compressedSize <= freeMemoryHandle.compressedSize)
 			{
 				isLaden = false;
 
-				outHandle.offset = freeMemoryHandle.offset;
-				outHandle.size = compressedSize;
+				outHandle.compressedOffset = freeMemoryHandle.compressedOffset;
+				outHandle.compressedSize = compressedSize;
 
-				DescriptorMemoryHandle newFreeMemoryHandle(freeMemoryHandle.offset + compressedSize, freeMemoryHandle.size - compressedSize);
+				DescriptorMemoryHandle newFreeMemoryHandle(freeMemoryHandle.compressedOffset + compressedSize, freeMemoryHandle.compressedSize - compressedSize);
 				_freeMemoryMap.erase(iter);
-				if (newFreeMemoryHandle.size > 0)
+				if (newFreeMemoryHandle.compressedSize > 0)
 				{
-					_freeMemoryMap.emplace(newFreeMemoryHandle.offset, newFreeMemoryHandle);
+					_freeMemoryMap.emplace(newFreeMemoryHandle.compressedOffset, newFreeMemoryHandle);
 				}
 
 				break;
@@ -95,7 +95,7 @@ AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle AirEngine::Runtime:
 		qFatal("Memory size must greater than 0.");
 	}
 
-	if ((descriptorMemoryHandle.offset + descriptorMemoryHandle.size) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.size == 0)
+	if ((descriptorMemoryHandle.compressedOffset + descriptorMemoryHandle.compressedSize) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.compressedSize == 0)
 	{
 		qFatal("Memory handle is not valid.");
 	}
@@ -103,54 +103,57 @@ AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle AirEngine::Runtime:
 	const auto&& alignedSize = ToAligned(size);
 	const auto&& compressedSize = ToCompressed(alignedSize);
 
-	if (descriptorMemoryHandle.size == compressedSize)
+	if (descriptorMemoryHandle.compressedSize == compressedSize)
 	{
 		return descriptorMemoryHandle;
 	}
 
-	if (compressedSize < descriptorMemoryHandle.size)
+	if (compressedSize < descriptorMemoryHandle.compressedSize)
 	{
-		DescriptorMemoryHandle freeHandle(descriptorMemoryHandle.offset + compressedSize, descriptorMemoryHandle.size - compressedSize);
+		DescriptorMemoryHandle freeHandle(descriptorMemoryHandle.compressedOffset + compressedSize, descriptorMemoryHandle.compressedSize - compressedSize);
 		FreeDescriptorMemory(freeHandle);
 
-		return 	DescriptorMemoryHandle(descriptorMemoryHandle.offset, compressedSize);
+		return 	DescriptorMemoryHandle(descriptorMemoryHandle.compressedOffset, compressedSize);
 	}
 
-	auto&& rightIter = _freeMemoryMap.upper_bound(descriptorMemoryHandle.offset);
+	auto&& rightIter = _freeMemoryMap.upper_bound(descriptorMemoryHandle.compressedOffset);
 	if (rightIter != _freeMemoryMap.end())
 	{
 		auto& rightHandle = rightIter->second;
-		if (descriptorMemoryHandle.offset + descriptorMemoryHandle.size == rightHandle.offset)
+		if (descriptorMemoryHandle.compressedOffset + descriptorMemoryHandle.compressedSize == rightHandle.compressedOffset)
 		{
-			if (compressedSize - descriptorMemoryHandle.size == rightHandle.size)
+			if (compressedSize - descriptorMemoryHandle.compressedSize == rightHandle.compressedSize)
 			{
 				_freeMemoryMap.erase(rightIter);
-				return DescriptorMemoryHandle(descriptorMemoryHandle.offset, compressedSize);
+				return DescriptorMemoryHandle(descriptorMemoryHandle.compressedOffset, compressedSize);
 			}
-			else if (compressedSize - descriptorMemoryHandle.size < rightHandle.size)
+			else if (compressedSize - descriptorMemoryHandle.compressedSize < rightHandle.compressedSize)
 			{
-				DescriptorMemoryHandle newHandle(rightHandle.offset + (compressedSize - descriptorMemoryHandle.size), rightHandle.size - (compressedSize - descriptorMemoryHandle.size));
-				_freeMemoryMap.emplace(newHandle.offset, newHandle);
+				DescriptorMemoryHandle newHandle(rightHandle.compressedOffset + (compressedSize - descriptorMemoryHandle.compressedSize), rightHandle.compressedSize - (compressedSize - descriptorMemoryHandle.compressedSize));
+				_freeMemoryMap.emplace(newHandle.compressedOffset, newHandle);
 				_freeMemoryMap.erase(rightIter);
-				return DescriptorMemoryHandle(descriptorMemoryHandle.offset, compressedSize);
+				return DescriptorMemoryHandle(descriptorMemoryHandle.compressedOffset, compressedSize);
 			}
 		}
 	}
 
+	auto&& newHandle = AllocateDescriptorMemory(size);
+	std::memcpy(_hostMemory.data() + newHandle.Offset(), _hostMemory.data() + descriptorMemoryHandle.Offset(), descriptorMemoryHandle.Size());
 	FreeDescriptorMemory(descriptorMemoryHandle);
-	return AllocateDescriptorMemory(size);
+
+	return newHandle;
 }
 
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle)
 {
-	if ((descriptorMemoryHandle.offset + descriptorMemoryHandle.size) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.size == 0)
+	if ((descriptorMemoryHandle.compressedOffset + descriptorMemoryHandle.compressedSize) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.compressedSize == 0)
 	{
 		qFatal("Memory handle is not valid.");
 	}
 
 	std::memset(_hostMemory.data() + descriptorMemoryHandle.Offset(), 0, descriptorMemoryHandle.Size());
 
-	auto&& rightIter = _freeMemoryMap.upper_bound(descriptorMemoryHandle.offset);
+	auto&& rightIter = _freeMemoryMap.upper_bound(descriptorMemoryHandle.compressedOffset);
 	if (rightIter != _freeMemoryMap.end())
 	{
 		auto leftIter = rightIter;
@@ -159,26 +162,26 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemo
 		if (leftIter != _freeMemoryMap.end())
 		{
 			auto& leftHandle = leftIter->second;
-			if (leftHandle.offset + leftHandle.size == descriptorMemoryHandle.offset)
+			if (leftHandle.compressedOffset + leftHandle.compressedSize == descriptorMemoryHandle.compressedOffset)
 			{
 				isLeftMerged = true;
 
-				leftHandle.size += descriptorMemoryHandle.size;
+				leftHandle.compressedSize += descriptorMemoryHandle.compressedSize;
 			}
 		}
 		
 		auto& rightHandle = rightIter->second;
-		if (descriptorMemoryHandle.offset + descriptorMemoryHandle.size == rightHandle.offset)
+		if (descriptorMemoryHandle.compressedOffset + descriptorMemoryHandle.compressedSize == rightHandle.compressedOffset)
 		{
 			if (isLeftMerged)
 			{
 				auto& leftHandle = leftIter->second;
-				leftHandle.size += rightHandle.size;
+				leftHandle.compressedSize += rightHandle.compressedSize;
 			}
 			else
 			{
-				DescriptorMemoryHandle newHandle(descriptorMemoryHandle.offset, descriptorMemoryHandle.size + rightHandle.size);
-				_freeMemoryMap.emplace(newHandle.offset, newHandle);
+				DescriptorMemoryHandle newHandle(descriptorMemoryHandle.compressedOffset, descriptorMemoryHandle.compressedSize + rightHandle.compressedSize);
+				_freeMemoryMap.emplace(newHandle.compressedOffset, newHandle);
 			}
 			_freeMemoryMap.erase(rightIter);
 
@@ -191,27 +194,27 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::FreeDescriptorMemo
 		if (leftIter != _freeMemoryMap.rend())
 		{
 			auto& leftHandle = leftIter->second;
-			if (leftHandle.offset + leftHandle.size == descriptorMemoryHandle.offset)
+			if (leftHandle.compressedOffset + leftHandle.compressedSize == descriptorMemoryHandle.compressedOffset)
 			{
-				leftHandle.size += descriptorMemoryHandle.size;
+				leftHandle.compressedSize += descriptorMemoryHandle.compressedSize;
 
 				return;
 			}
 		}
 	}
 
-	_freeMemoryMap.emplace(descriptorMemoryHandle.offset, descriptorMemoryHandle);
+	_freeMemoryMap.emplace(descriptorMemoryHandle.compressedOffset, descriptorMemoryHandle);
 }
 
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::WriteToHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint8_t* dataPtr, uint32_t offset, uint32_t size)
 {
-	if ((descriptorMemoryHandle.offset + descriptorMemoryHandle.size) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.size == 0)
+	if ((descriptorMemoryHandle.compressedOffset + descriptorMemoryHandle.compressedSize) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.compressedSize == 0)
 	{
 		qFatal("Memory handle is not valid.");
 	}
 
-	size_t blockOffset = FromCompressed(descriptorMemoryHandle.offset);
-	size_t blockSize = FromCompressed(descriptorMemoryHandle.size);
+	size_t blockOffset = FromCompressed(descriptorMemoryHandle.compressedOffset);
+	size_t blockSize = FromCompressed(descriptorMemoryHandle.compressedSize);
 	
 	if (size == 0)
 	{
@@ -241,5 +244,5 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 	_currentSize = 4 * 1024 * 1024;
 	_hostMemory.resize(_currentSize, 0);
 	DescriptorMemoryHandle newHandle(0, ToCompressed(_currentSize));
-	_freeMemoryMap.emplace(newHandle.offset, newHandle);
+	_freeMemoryMap.emplace(newHandle.compressedOffset, newHandle);
 }

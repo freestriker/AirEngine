@@ -46,8 +46,7 @@ std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirE
 				dynamicElementCapcity = (handle.Size() - solidByteCapcity) / dynamicSingleDescriptorByteSize;
 			}
 
-			descriptorSetMemoryInfo.dynamicCapcity = dynamicElementCapcity;
-			descriptorSetMemoryInfo.dynamicCount = 0;
+			descriptorSetMemoryInfo.dynamicElementCapcity = dynamicElementCapcity;
 			descriptorSetMemoryInfo.handle = handle;
 		}
 	}
@@ -61,18 +60,16 @@ void AirEngine::Runtime::Graphic::Rendering::Material::AutoCheckDescriptorSetMem
 
 	if (shaderDescriptorSetInfo.isDynamicByteSize)
 	{
-		if (desiredIndex >= materialDescriptorSetMemoryInfo.dynamicCapcity)
+		if (desiredIndex >= materialDescriptorSetMemoryInfo.dynamicElementCapcity)
 		{
 			uint32_t dynamicElementCapcity = std::pow(2u, uint32_t(std::ceil(std::log2(desiredIndex + 1))));
 			uint32_t totalByteCapcity = shaderDescriptorSetInfo.solidByteSize + dynamicElementCapcity * shaderDescriptorInfo.singleDescriptorByteSize;
 
-			Manager::DescriptorManager::FreeDescriptorMemory(materialDescriptorSetMemoryInfo.handle);
-			auto&& handle = Manager::DescriptorManager::AllocateDescriptorMemory(totalByteCapcity);
+			auto&& handle = Manager::DescriptorManager::ReallocateDescriptorMemory(materialDescriptorSetMemoryInfo.handle, totalByteCapcity);
 
 			dynamicElementCapcity = (handle.Size() - shaderDescriptorSetInfo.solidByteSize) / shaderDescriptorInfo.singleDescriptorByteSize;
 
-			materialDescriptorSetMemoryInfo.dynamicCapcity = dynamicElementCapcity;
-			materialDescriptorSetMemoryInfo.dynamicCount = 0;
+			materialDescriptorSetMemoryInfo.dynamicElementCapcity = dynamicElementCapcity;
 			materialDescriptorSetMemoryInfo.handle = handle;
 		}
 	}

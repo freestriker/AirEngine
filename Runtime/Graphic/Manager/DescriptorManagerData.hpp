@@ -17,18 +17,18 @@ namespace AirEngine
 				{
 					friend class DescriptorManager;
 				private:
-					uint32_t offset;
-					uint32_t size;
+					uint32_t compressedOffset;
+					uint32_t compressedSize;
 					DescriptorMemoryHandle(uint32_t offset, uint32_t size)
-						: offset(offset)
-						, size(size)
+						: compressedOffset(offset)
+						, compressedSize(size)
 					{
 
 					}
 				public:
 					DescriptorMemoryHandle()
-						: offset(0)
-						, size(0)
+						: compressedOffset(0)
+						, compressedSize(0)
 					{
 
 					}
