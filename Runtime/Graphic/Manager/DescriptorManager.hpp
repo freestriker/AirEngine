@@ -4,6 +4,8 @@
 #include <map>
 #include <vulkan/vulkan.hpp>
 #include "DescriptorManagerData.hpp"
+#include "../../Utility/ThreadInclude.hpp"
+#include "../../Utility/Fiber.hpp"
 
 namespace AirEngine
 {
@@ -34,6 +36,7 @@ namespace AirEngine
 
 					static void Initialize();
 				private:
+					static Utility::Fiber::mutex _mutex;
 					static std::map<uint32_t, DescriptorMemoryHandle> _freeMemoryMap;
 					static size_t _currentSize;
 					static uint16_t _descriptorMemoryAlignment;
@@ -43,6 +46,10 @@ namespace AirEngine
 					static std::vector<uint8_t> _hostMemory;
 					static std::vector<DescriptorMemoryHandle> _dirtyHandles;
 				public:
+					static inline Utility::Fiber::mutex& Mutex()
+					{
+						return _mutex;
+					}
 					static inline size_t ToAligned(size_t size)
 					{
 						return (size + _descriptorMemoryAlignment - 1) & ~(_descriptorMemoryAlignment - 1);
@@ -71,6 +78,7 @@ namespace AirEngine
 					static void FreeDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle);
 
 					static void WriteToHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint8_t* dataPtr, uint32_t offset, uint32_t size);
+					static void ClearHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint32_t offset, uint32_t size);
 
 					static std::vector<DescriptorMemoryHandle> MergeAndClearDirtyHandles();
 					static void CopyHostDirtyDataToCachedBuffer(const std::vector<DescriptorMemoryHandle>& dirtyHandles);

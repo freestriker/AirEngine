@@ -12,6 +12,8 @@ std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirE
 		std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>
 	> descriptorSetMemoryInfosMap{};
 
+	std::unique_lock<Utility::Fiber::mutex> lock(Manager::DescriptorManager::Mutex());
+	
 	for (const auto& subShaderInfoPair : shaderInfo.subShaderInfoMap)
 	{
 		const auto& subpassName = subShaderInfoPair.first;
@@ -53,6 +55,33 @@ std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirE
 
 	return descriptorSetMemoryInfosMap;
 }
+void AirEngine::Runtime::Graphic::Rendering::Material::DestroyAllDescriptorSetMemory(const std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>>& descriptorSetMemoryInfosMap)
+{
+	std::unique_lock<Utility::Fiber::mutex> lock(Manager::DescriptorManager::Mutex());
+
+	for (const auto& descriptorSetMemoryInfosPair : descriptorSetMemoryInfosMap)
+	{
+		const auto& descriptorSetMemoryInfos = descriptorSetMemoryInfosPair.second;
+
+		for (const auto& descriptorSetMemoryInfo : descriptorSetMemoryInfos)
+		{
+			Manager::DescriptorManager::FreeDescriptorMemory(descriptorSetMemoryInfo.handle);
+		}
+	}
+}
+
+AirEngine::Runtime::Graphic::Rendering::Material::Material(const Shader& shader)
+	: _shader(&shader)
+	, _bindableAssetMap()
+	, _descriptorSetMemoryInfosMap(PopulateDescriptorSetMemoryInfosMap(shader))
+{
+
+}
+
+AirEngine::Runtime::Graphic::Rendering::Material::~Material()
+{
+	DestroyAllDescriptorSetMemory(_descriptorSetMemoryInfosMap);
+}
 
 void AirEngine::Runtime::Graphic::Rendering::Material::AutoCheckDescriptorSetMemory(MaterialDescriptorSetMemoryInfo& materialDescriptorSetMemoryInfo, const DescriptorInfo& shaderDescriptorInfo, uint32_t desiredIndex)
 {
@@ -82,29 +111,6 @@ void AirEngine::Runtime::Graphic::Rendering::Material::AutoCheckDescriptorSetMem
 	}
 }
 
-void AirEngine::Runtime::Graphic::Rendering::Material::DestroyAllDescriptorSetMemory(const std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>>& descriptorSetMemoryInfosMap)
-{
-	for (const auto& descriptorSetMemoryInfosPair : descriptorSetMemoryInfosMap)
-	{
-		const auto& descriptorSetMemoryInfos = descriptorSetMemoryInfosPair.second;
-
-		for (const auto& descriptorSetMemoryInfo : descriptorSetMemoryInfos)
-		{
-			Manager::DescriptorManager::FreeDescriptorMemory(descriptorSetMemoryInfo.handle);
-		}
-	}
-}
-
-void AirEngine::Runtime::Graphic::Rendering::Material::WriteRawDescriptor(const std::vector<uint8_t>& rawDescriptor, const MaterialDescriptorSetMemoryInfo& materialDescriptorSetMemoryInfo, const DescriptorInfo& shaderDescriptorInfo, uint32_t desiredIndex)
-{
-	Manager::DescriptorManager::WriteToHostDescriptorMemory(
-		materialDescriptorSetMemoryInfo.handle, 
-		const_cast<std::vector<uint8_t>&>(rawDescriptor).data(), 
-		shaderDescriptorInfo.startByteOffsetInDescriptorSet + desiredIndex * shaderDescriptorInfo.singleDescriptorByteSize, 
-		shaderDescriptorInfo.singleDescriptorByteSize
-	);
-}
-
 void AirEngine::Runtime::Graphic::Rendering::Material::AddToBindableAssetMap(Utility::InternedString name, uint32_t desiredIndex, MaterialBindableAssetBase* materialBindableAssetBase, std::map<uint64_t, MaterialBindableAssetBase*>& bindableAssetMap)
 {
 	const uint64_t targetValue = (uint64_t(name.Value()) << 32) | desiredIndex;
@@ -120,40 +126,52 @@ AirEngine::Runtime::Graphic::Rendering::MaterialBindableAssetBase* AirEngine::Ru
 	return iter == bindableAssetMap.end() ? nullptr : iter->second;
 }
 
-AirEngine::Runtime::Graphic::Rendering::Material::Material(const Shader& shader)
-	: _shader(&shader)
-	, _bindableAssetMap()
-	, _descriptorSetMemoryInfosMap(PopulateDescriptorSetMemoryInfosMap(shader))
-{
-
-}
-
 void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility::InternedString name, Instance::UniformBuffer* uniformBuffer, uint32_t index)
 {
 	uint32_t setCount = 0;
-	for (const auto& subpassShaderInfoPair : _shader->Info().subShaderInfoMap)
 	{
-		const auto& subpassName = subpassShaderInfoPair.first;
-		const auto& subpassShaderInfo = subpassShaderInfoPair.second;
-		auto& descriptorSetMemoryInfos = _descriptorSetMemoryInfosMap.at(subpassName);
+		std::unique_lock<Utility::Fiber::mutex> lock(Manager::DescriptorManager::Mutex());
 
-		auto&& iter = subpassShaderInfo.descriptorNameToDescriptorInfoIndexMap.find(name);
-		if (iter == subpassShaderInfo.descriptorNameToDescriptorInfoIndexMap.end()) continue;
-
-		const auto& descriptorInfo = subpassShaderInfo.descriptorInfos.at(iter->second);
-
-		if (descriptorInfo.type != vk::DescriptorType::eUniformBuffer)
+		for (const auto& subpassShaderInfoPair : _shader->Info().subShaderInfoMap)
 		{
-			qFatal("This name is not a uniform buffer.");
+			const auto& subpassName = subpassShaderInfoPair.first;
+			const auto& subpassShaderInfo = subpassShaderInfoPair.second;
+			auto& descriptorSetMemoryInfos = _descriptorSetMemoryInfosMap.at(subpassName);
+
+			auto&& iter = subpassShaderInfo.descriptorNameToDescriptorInfoIndexMap.find(name);
+			if (iter == subpassShaderInfo.descriptorNameToDescriptorInfoIndexMap.end()) continue;
+
+			const auto& descriptorInfo = subpassShaderInfo.descriptorInfos.at(iter->second);
+
+			if (descriptorInfo.type != vk::DescriptorType::eUniformBuffer)
+			{
+				qFatal("This name is not a uniform buffer.");
+			}
+
+			const auto& descriptorSetInfo = *descriptorInfo.descriptorSetInfo;
+			auto& descriptorSetMemoryInfo = descriptorSetMemoryInfos.at(descriptorSetInfo.index);
+
+			AutoCheckDescriptorSetMemory(descriptorSetMemoryInfo, descriptorInfo, index);
+
+			if (uniformBuffer == nullptr)
+			{
+				Manager::DescriptorManager::ClearHostDescriptorMemory(
+					descriptorSetMemoryInfo.handle,
+					descriptorInfo.startByteOffsetInDescriptorSet + index * descriptorInfo.singleDescriptorByteSize,
+					descriptorInfo.singleDescriptorByteSize
+				);
+			}
+			else
+			{
+				Manager::DescriptorManager::WriteToHostDescriptorMemory(
+					descriptorSetMemoryInfo.handle,
+					uniformBuffer->RawDescriptor().data(),
+					descriptorInfo.startByteOffsetInDescriptorSet + index * descriptorInfo.singleDescriptorByteSize,
+					descriptorInfo.singleDescriptorByteSize
+				);
+			}
+			++setCount;
 		}
-
-		const auto& descriptorSetInfo = *descriptorInfo.descriptorSetInfo;
-		auto& descriptorSetMemoryInfo = descriptorSetMemoryInfos.at(descriptorSetInfo.index);
-
-		AutoCheckDescriptorSetMemory(descriptorSetMemoryInfo, descriptorInfo, index);
-
-		WriteRawDescriptor(uniformBuffer->RawDescriptor(), descriptorSetMemoryInfo, descriptorInfo, index);
-		++setCount;
 	}
 
 	if (setCount == 0)
@@ -167,9 +185,4 @@ void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility:
 AirEngine::Runtime::Graphic::Instance::UniformBuffer* AirEngine::Runtime::Graphic::Rendering::Material::GetUniformBuffer(Utility::InternedString name, uint32_t index)
 {
 	return static_cast<AirEngine::Runtime::Graphic::Instance::UniformBuffer * >(GetFromBindableAssetMap(name, index, _bindableAssetMap));
-}
-
-AirEngine::Runtime::Graphic::Rendering::Material::~Material()
-{
-	DestroyAllDescriptorSetMemory(_descriptorSetMemoryInfosMap);
 }

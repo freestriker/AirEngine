@@ -2,6 +2,7 @@
 #include "../../Core/Manager/GraphicDeviceManager.hpp"
 #include "../Instance/Buffer.hpp"
 
+AirEngine::Runtime::Utility::Fiber::mutex AirEngine::Runtime::Graphic::Manager::DescriptorManager::_mutex{};
 std::map<uint32_t, AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_freeMemoryMap{};
 size_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_currentSize{};
 uint16_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_descriptorMemoryAlignment{};
@@ -224,6 +225,30 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::WriteToHostDescrip
 	}
 
 	std::memcpy(_hostMemory.data() + blockOffset + offset, dataPtr, size);
+	_dirtyHandles.emplace_back(descriptorMemoryHandle);
+}
+
+void AirEngine::Runtime::Graphic::Manager::DescriptorManager::ClearHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint32_t offset, uint32_t size)
+{
+	if ((descriptorMemoryHandle.compressedOffset + descriptorMemoryHandle.compressedSize) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.compressedSize == 0)
+	{
+		qFatal("Memory handle is not valid.");
+	}
+
+	size_t blockOffset = FromCompressed(descriptorMemoryHandle.compressedOffset);
+	size_t blockSize = FromCompressed(descriptorMemoryHandle.compressedSize);
+
+	if (size == 0)
+	{
+		qFatal("Can not write zero size data.");
+	}
+
+	if (offset + size >= blockSize)
+	{
+		qFatal("Data size is bigger than block.");
+	}
+
+	std::memset(_hostMemory.data() + blockOffset + offset, 0, size);
 	_dirtyHandles.emplace_back(descriptorMemoryHandle);
 }
 

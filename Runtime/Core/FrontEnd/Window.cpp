@@ -111,6 +111,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 		material.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 0);
 		material.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 15);
 		material.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 31);
+		material.SetUniformBuffer(Utility::InternedString("cubes"), nullptr, 0);
 
 		auto&& dirtyHandles = Graphic::Manager::DescriptorManager::MergeAndClearDirtyHandles();
 		Graphic::Manager::DescriptorManager::CopyHostDirtyDataToCachedBuffer(dirtyHandles);
