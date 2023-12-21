@@ -4,13 +4,5 @@
         "kind": "git",
         "repository": "https://github.com/microsoft/vcpkg",
         "baseline": "7b30311f0a79d395bf2d933d82fec1853c6a4e77"
-    },
-    "registries": [
-        {
-            "kind": "git",
-            "repository": "https://github.com/freestriker/vcpkg-registry",
-            "baseline": "e7113602a69c98d5b68447e6fe882778f6cd597f",
-            "packages": [ "opencv4" ]
-        }
-    ]
+    }
 }
