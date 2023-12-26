@@ -369,4 +369,4 @@ AirEngine::Runtime::Graphic::Instance::DummyRenderPass::DummyRenderPass()
 }
 
 #include "moc_RenderPassBase.cpp"
-#include "RenderPassBase.moc"
+//#include "RenderPassBase.moc"

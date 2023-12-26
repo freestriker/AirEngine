@@ -5,4 +5,4 @@ REGISTRATION
 }
 
 #include "moc_MeshAttributePaserBase.cpp"
-#include "MeshAttributePaserBase.moc"
+//#include "MeshAttributePaserBase.moc"
