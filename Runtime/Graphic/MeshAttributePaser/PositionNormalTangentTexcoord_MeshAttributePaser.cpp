@@ -95,4 +95,4 @@ void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexco
 }
 
 #include "moc_PositionNormalTangentTexcoord_MeshAttributePaser.cpp"
-#include "PositionNormalTangentTexcoord_MeshAttributePaser.moc"
+//#include "PositionNormalTangentTexcoord_MeshAttributePaser.moc"
