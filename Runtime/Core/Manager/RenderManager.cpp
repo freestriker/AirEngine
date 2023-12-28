@@ -28,7 +28,7 @@ void AirEngine::Runtime::Core::Manager::RenderManager::CreateSwapchain()
 {
 	if (_frontEnd->IsWindow())
 	{
-		dynamic_cast<FrontEnd::WindowFrontEndBase*>(_frontEnd)->OnCreateVulkanSwapchain();
+		dynamic_cast<FrontEnd::WindowFrontEndBase*>(_frontEnd)->OnRecreateVulkanSwapchain();
 	}
 }
 

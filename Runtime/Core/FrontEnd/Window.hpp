@@ -46,7 +46,8 @@ namespace AirEngine
 					void OnAcquireImage() override;
 					void OnPresent() override;
 					void OnSetVulkanHandle() override;
-					void OnCreateVulkanSwapchain() override;
+					void OnRecreateVulkanSwapchain() override;
+					void OnDestroyVulkanSwapchain() override;
 					QVulkanInstance _qVulkanInstance;
 					std::vector<FrameResource> _frameResources;
 					std::vector<ImageResource> _imageResources;
