@@ -23,30 +23,50 @@
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 {
-	setMinimumSize({ 1600, 900 });
-	setMaximumSize({ 1600, 900 });
-	//resize(1600, 900);
+	//setMinimumSize({ 1600, 900 });
+	//setMaximumSize({ 1600, 900 });
+	resize(1600, 900);
 	setSurfaceType(QSurface::VulkanSurface);
 	show();
 }
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
-{    
+{   
+	auto&& realWindowExtent = size() * devicePixelRatio();
+	if (realWindowExtent.width() != _vkbSwapchain.extent.width || realWindowExtent.height() != _vkbSwapchain.extent.height)
+	{
+		OnRecreateVulkanSwapchain();
+	}
+
 	auto&& currentFrame = _frameResources[_curFrameIndex];
 
 	while (currentFrame.acquireFence->Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
+
 	currentFrame.acquireFence->Reset();
-
-	auto&& result = Manager::GraphicDeviceManager::Device().acquireNextImageKHR(
-		_vkSwapchain,
-		std::numeric_limits<uint64_t>::max(),
-		currentFrame.acquireSemaphore->VkHandle(),
-		currentFrame.acquireFence->VkHandle()
-	);
-
-	_curImageIndex = result.value;
-
-	static bool isLoaded = false;
+	vk::ResultValue<uint32_t> acquireResult(vk::Result::eSuccess, 0);
+	try
+	{
+		acquireResult = Manager::GraphicDeviceManager::Device().acquireNextImageKHR(
+			_vkSwapchain,
+			std::numeric_limits<uint64_t>::max(),
+			currentFrame.acquireSemaphore->VkHandle(),
+			currentFrame.acquireFence->VkHandle()
+		);
+	}
+	catch (vk::OutOfDateKHRError e)
+	{
+		OnRecreateVulkanSwapchain();
+		return;
+	}
+	if (acquireResult.result == vk::Result::eSuccess || acquireResult.result == vk::Result::eSuboptimalKHR) 
+	{
+		_curImageIndex = acquireResult.value;
+	}
+	else 
+	{
+		qFatal("Fail to acquire next image.");
+		return;
+	}
 }
 static bool isLoaded = false;
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle assetLoadHandle{};
@@ -184,6 +204,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 	}
 	_commandBuffer->EndRecord();
 
+	_transferFence->Reset();
 	_commandPool->Queue().ImmediateIndividualSubmit(
 		{
 			{{currentFrame.acquireSemaphore, vk::PipelineStageFlagBits2::eClear}},
@@ -200,10 +221,27 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 	vkPresentInfo.waitSemaphoreCount = 1;
 	vkPresentInfo.pWaitSemaphores = &currentImage.transferSemaphore->VkHandle();
 
-	_commandPool->Queue().VkHandle().presentKHR(vkPresentInfo);
-
-	while (_transferFence->Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
-	_transferFence->Reset();
+	_qVulkanInstance.presentAboutToBeQueued(this);
+	vk::Result presentResult{};
+	try
+	{
+		presentResult = _commandPool->Queue().VkHandle().presentKHR(vkPresentInfo);
+	}
+	catch (vk::OutOfDateKHRError e)
+	{
+		OnRecreateVulkanSwapchain();
+		return;
+	}
+	if (presentResult == vk::Result::eSuccess || presentResult == vk::Result::eSuboptimalKHR)
+	{
+		while (_transferFence->Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
+	}
+	else
+	{
+		qFatal("Fail to present.");
+		return;
+	}
+	_qVulkanInstance.presentQueued(this);
 
 	_curFrameIndex = (_curFrameIndex + 1) % 3;
 }
@@ -218,7 +256,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnSetVulkanHandle()
 	_vkSurface = _qVulkanInstance.surfaceForWindow(this);
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateVulkanSwapchain()
+void AirEngine::Runtime::Core::FrontEnd::Window::OnRecreateVulkanSwapchain()
 {
 	vkb::SwapchainBuilder swapchainBuilder(Manager::GraphicDeviceManager::VkbDevice());
 	swapchainBuilder = swapchainBuilder.set_desired_format({ VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
@@ -228,9 +266,14 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateVulkanSwapchain()
 		.set_clipped(false)
 		.set_image_array_layer_count(1)
 		.set_required_min_image_count(3)
-		.set_image_usage_flags(VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+		.set_image_usage_flags(VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+		.set_old_swapchain(_vkbSwapchain);
 	auto swapchainResult = swapchainBuilder.build();
 	
+	if (_vkbSwapchain)
+	{
+		OnDestroyVulkanSwapchain();
+	}
 	_vkbSwapchain = swapchainResult.value();
 	_vkSwapchain = _vkbSwapchain.swapchain;
 	
@@ -257,7 +300,34 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateVulkanSwapchain()
 	_commandPool = new Graphic::Command::CommandPool(Utility::InternedString("PresentQueue"), vk::CommandPoolCreateFlagBits::eTransient);
 	_commandBuffer = &_commandPool->CreateCommandBuffer(Utility::InternedString("PresentCommandBuffer"));
 
-	_transferFence = new Graphic::Command::Fence(false);
+	_transferFence = new Graphic::Command::Fence(true);
+}
+
+void AirEngine::Runtime::Core::FrontEnd::Window::OnDestroyVulkanSwapchain()
+{
+	Core::Manager::GraphicDeviceManager::GraphicDeviceManager().Device().waitIdle();
+
+	_transferFence->Wait();
+	delete _transferFence;
+	delete _commandPool;
+
+	for (auto& frameResource : _frameResources)
+	{
+		frameResource.acquireFence->Wait();
+		delete frameResource.acquireFence;
+		delete frameResource.acquireSemaphore;
+	}
+	_frameResources.clear();
+
+	for (auto& imageResource : _imageResources)
+	{
+		delete imageResource.transferSemaphore;
+		delete imageResource.image;
+	}
+	_imageResources.clear();
+
+	vkb::destroy_swapchain(_vkbSwapchain);
+	_vkSwapchain = vk::SwapchainKHR();
 }
 
 AirEngine::Runtime::Core::FrontEnd::Window::Window()

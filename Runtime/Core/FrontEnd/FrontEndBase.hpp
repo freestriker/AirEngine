@@ -49,7 +49,8 @@ namespace AirEngine
 					WindowFrontEndBase();
 					virtual ~WindowFrontEndBase() = default;
 					virtual void OnSetVulkanHandle() = 0;
-					virtual void OnCreateVulkanSwapchain() = 0;
+					virtual void OnRecreateVulkanSwapchain() = 0;
+					virtual void OnDestroyVulkanSwapchain() = 0;
 
 				public:
 					inline vkb::Swapchain VkbSwapchain() const
