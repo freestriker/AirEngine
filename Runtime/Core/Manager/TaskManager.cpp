@@ -3,7 +3,7 @@
 
 tf::Executor AirEngine::Runtime::Core::Manager::TaskManager::_executor{ std::thread::hardware_concurrency() - 1 };
 
-std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::TaskManager::OnGetInternalInitializers()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::TaskManager::OnGetInternalInitializers()
 {
 	return
 	{

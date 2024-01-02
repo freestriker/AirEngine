@@ -28,7 +28,7 @@ AirEngine::Runtime::Core::Manager::MainManager::MainManager()
 void Core::Manager::MainManager::Initialize()
 {
 	{
-		std::vector<Utility::InitializerWrapper> initializers{};
+		std::vector<Utility::OperationWrapper> initializers{};
 		for (auto& managerPair : _managerTable)
 		{
 			auto&& temp = managerPair.second->OnGetInitializer();
@@ -46,7 +46,7 @@ void Core::Manager::MainManager::Initialize()
 	}
 
 	{
-		std::vector<Utility::InitializerWrapper> internaInitializers{};
+		std::vector<Utility::OperationWrapper> internaInitializers{};
 		for (auto& managerPair : _managerTable)
 		{
 			auto&& temp = managerPair.second->OnGetInternalInitializers();
@@ -67,7 +67,7 @@ void Core::Manager::MainManager::Initialize()
 void AirEngine::Runtime::Core::Manager::MainManager::Finalize()
 {
 	{
-		std::vector<Utility::InitializerWrapper> internaFinalizers{};
+		std::vector<Utility::OperationWrapper> internaFinalizers{};
 		for (auto& managerPair : _managerTable)
 		{
 			auto&& temp = managerPair.second->OnGetInternalFinalizers();
@@ -85,7 +85,7 @@ void AirEngine::Runtime::Core::Manager::MainManager::Finalize()
 	}
 
 	{
-		std::vector<Utility::InitializerWrapper> finalizers{};
+		std::vector<Utility::OperationWrapper> finalizers{};
 		for (auto& managerPair : _managerTable)
 		{
 			auto&& temp = managerPair.second->OnGetFinalizer();

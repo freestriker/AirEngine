@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/ContructorMacro.hpp"
-#include "../../Utility/Initializer.hpp"
+#include "../../Utility/OperationWrapper.hpp"
 #include "ManagerBase.hpp"
 #include <vector>
 #include <map>

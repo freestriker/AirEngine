@@ -30,7 +30,7 @@ void AirEngine::Runtime::Core::Manager::LogicManager::LogicLoop()
     }
 }
 
-std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::LogicManager::OnGetInternalInitializers()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::LogicManager::OnGetInternalInitializers()
 {
 	return
 	{

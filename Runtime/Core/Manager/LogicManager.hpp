@@ -1,7 +1,7 @@
 #pragma once
 #include "ManagerBase.hpp"
 #include <memory>
-#include "../../Utility/Initializer.hpp"
+#include "../../Utility/OperationWrapper.hpp"
 #include "../../Utility/Fiber.hpp"
 
 namespace AirEngine
@@ -21,7 +21,7 @@ namespace AirEngine
 					static void LogicLoop();
 					static Utility::Fiber::fiber _logicLoopFiber;
 				protected:
-					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
 				public:
 					LogicManager();
 					virtual ~LogicManager();

@@ -2,7 +2,7 @@
 #include "../../Utility/ThreadInclude.hpp"
 #include "ManagerBase.hpp"
 #include <memory>
-#include "../../Utility/Initializer.hpp"
+#include "../../Utility/OperationWrapper.hpp"
 #include "../../Utility/Fiber.hpp"
 #include <unordered_map>
 #include "../../AssetLoader/AssetLoadHandle.hpp"
@@ -26,7 +26,7 @@ namespace AirEngine
 				protected:
 					static std::unordered_map<std::string, AssetLoader::AssetLoaderBase*> _nameToAssetLoaderMap;
 					static std::unordered_map<std::string, AssetLoader::AssetLoaderBase*> _suffixNameToAssetLoaderMap;
-					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
 				public:
 					AssetManager();
 					virtual ~AssetManager();

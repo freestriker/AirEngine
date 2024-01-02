@@ -1,6 +1,6 @@
 #pragma once
 #include "ManagerBase.hpp"
-#include "../../Utility/Initializer.hpp"
+#include "../../Utility/OperationWrapper.hpp"
 #include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
 #include <unordered_map>
@@ -34,7 +34,7 @@ namespace AirEngine
 
 					static std::unordered_map<Utility::InternedString, std::unique_ptr<Graphic::Instance::Queue>> _queueMap;
 
-					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
 					static void CreateVulkanInstance();
 					static void CreateDevice();
 					static void SetDefaultDispatcher();

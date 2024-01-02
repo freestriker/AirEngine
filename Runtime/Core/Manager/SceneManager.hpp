@@ -3,7 +3,7 @@
 #include "ManagerBase.hpp"
 #include <memory>
 #include <rttr/type.h>
-#include "../../Utility/Initializer.hpp"
+#include "../../Utility/OperationWrapper.hpp"
 
 namespace AirEngine
 {
@@ -23,7 +23,7 @@ namespace AirEngine
 				private:
 					NO_COPY_MOVE(SceneManager)
 				protected:
-					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
 				public:
 					SceneManager();
 					virtual ~SceneManager();

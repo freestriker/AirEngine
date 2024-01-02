@@ -29,7 +29,7 @@ void AirEngine::Runtime::Core::Manager::AssetManager::Collect()
 	}
 }
 
-std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::AssetManager::OnGetInternalInitializers()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::AssetManager::OnGetInternalInitializers()
 {
 	return
 	{
