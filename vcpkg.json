@@ -35,6 +35,9 @@
             "name": "spirv-reflect"
         },
         {
+            "name": "taskflow"
+        },
+        {
             "name": "vk-bootstrap"
         },
         {
