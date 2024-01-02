@@ -4,7 +4,7 @@
 #include "../../Utility/ContructorMacro.hpp"
 #include <string>
 #include <vector>
-#include "../../Utility/Initializer.hpp"
+#include "../../Utility/OperationWrapper.hpp"
 #include <iostream>
 
 namespace AirEngine
@@ -26,7 +26,7 @@ namespace AirEngine
 					virtual ~ManagerBase() = default;
 					NO_COPY_MOVE(ManagerBase)
 
-					virtual Utility::InitializerWrapper OnGetInitializer()
+					virtual Utility::OperationWrapper OnGetInitializer()
 					{
 						return {
 							0, 0,
@@ -35,7 +35,7 @@ namespace AirEngine
 							}
 						};
 					}
-					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers()
+					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers()
 					{
 						return {
 							{
@@ -46,7 +46,7 @@ namespace AirEngine
 							}
 						};
 					}
-					virtual std::vector<Utility::InitializerWrapper> OnGetInternalFinalizers()
+					virtual std::vector<Utility::OperationWrapper> OnGetInternalFinalizers()
 					{
 						return {
 							{
@@ -57,7 +57,7 @@ namespace AirEngine
 							}
 						};
 					}
-					virtual Utility::InitializerWrapper OnGetFinalizer()
+					virtual Utility::OperationWrapper OnGetFinalizer()
 					{
 						return {
 							0, 0,

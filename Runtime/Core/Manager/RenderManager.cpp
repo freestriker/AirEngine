@@ -65,7 +65,7 @@ void AirEngine::Runtime::Core::Manager::RenderManager::RenderLoop()
     }
 }
 
-std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::RenderManager::OnGetInternalInitializers()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::RenderManager::OnGetInternalInitializers()
 {
 	return
 	{

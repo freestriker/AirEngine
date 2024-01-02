@@ -21,7 +21,7 @@ namespace AirEngine
 					NO_COPY_MOVE(TaskManager)
 				protected:
 					static tf::Executor _executor;
-					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
 				public:
 					inline static tf::Executor& Executor()
 					{

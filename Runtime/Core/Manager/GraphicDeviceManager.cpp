@@ -31,7 +31,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
 }
 #endif // !NDEBUG
 
-std::vector<AirEngine::Runtime::Utility::InitializerWrapper> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::OnGetInternalInitializers()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::OnGetInternalInitializers()
 {
 	return {
 		{ 0, 0, CreateVulkanInstance },

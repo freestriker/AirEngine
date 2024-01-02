@@ -9,7 +9,7 @@ namespace AirEngine
 		{
 			using Operation = std::function<void()>;
 
-			struct InitializerWrapper
+			struct OperationWrapper
 			{
 				uint32_t layer;
 				uint32_t index;

@@ -2,7 +2,7 @@
 #include "../../Utility/ThreadInclude.hpp"
 #include "ManagerBase.hpp"
 #include <memory>
-#include "../../Utility/Initializer.hpp"
+#include "../../Utility/OperationWrapper.hpp"
 #include "../../Utility/Fiber.hpp"
 
 namespace AirEngine
@@ -19,7 +19,7 @@ namespace AirEngine
 				private:
 					NO_COPY_MOVE(FiberManager)
 				protected:
-					virtual std::vector<Utility::InitializerWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
 					static void BootThread();
 				public:
 					FiberManager();
