@@ -51,6 +51,9 @@ function(ADD_RUNTIME_PACKAGES EXECUTABLE_NAME)
     find_package(unofficial-spirv-reflect CONFIG REQUIRED)
     target_link_libraries("${EXECUTABLE_NAME}" PUBLIC unofficial::spirv-reflect::spirv-reflect)
 
+    find_package(Taskflow CONFIG REQUIRED)
+    target_link_libraries("${EXECUTABLE_NAME}" PUBLIC Taskflow::Taskflow)
+
     find_package(vk-bootstrap CONFIG REQUIRED)
     target_link_libraries("${EXECUTABLE_NAME}" PUBLIC vk-bootstrap::vk-bootstrap)
 

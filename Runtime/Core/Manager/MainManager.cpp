@@ -7,6 +7,7 @@
 #include "RenderManager.hpp"
 #include "LogicManager.hpp"
 #include "AssetManager.hpp"
+#include "TaskManager.hpp"
 
 using namespace AirEngine::Runtime;
 
@@ -21,6 +22,7 @@ AirEngine::Runtime::Core::Manager::MainManager::MainManager()
 	ResetManager(std::make_shared<Manager::RenderManager>());
 	ResetManager(std::make_shared<Manager::LogicManager>());
 	ResetManager(std::make_shared<Manager::AssetManager>());
+	ResetManager(std::make_shared<Manager::TaskManager>());
 }
 
 void Core::Manager::MainManager::Initialize()
