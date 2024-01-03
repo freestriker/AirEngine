@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "../../Asset/AssetBase.hpp"
-#include "../../Utility/InternedString.hpp"
+#include "AirEngine/Runtime/Asset/AssetBase.hpp"
+#include "AirEngine/Runtime/Utility/InternedString.hpp"
 #include <vulkan/vulkan.hpp>
 #include <spirv_reflect.h>
 #include "ShaderData.hpp"

@@ -1,6 +1,6 @@
 ﻿#include "DescriptorManager.hpp"
-#include "../../Core/Manager/GraphicDeviceManager.hpp"
-#include "../Instance/Buffer.hpp"
+#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
 
 std::mutex AirEngine::Runtime::Graphic::Manager::DescriptorManager::_mutex{};
 std::map<uint32_t, AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_freeMemoryMap{};

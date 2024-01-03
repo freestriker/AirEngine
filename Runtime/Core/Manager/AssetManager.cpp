@@ -1,8 +1,8 @@
 ﻿#include "AssetManager.hpp"
-#include "../../AssetLoader/Texture2DLoader.hpp"
-#include "../../AssetLoader/MeshLoader.hpp"
-#include "../../AssetLoader/ShaderLoader.hpp"
-#include "../../AssetLoader/AssetLoaderBase.hpp"
+#include "AirEngine/Runtime/AssetLoader/Texture2DLoader.hpp"
+#include "AirEngine/Runtime/AssetLoader/MeshLoader.hpp"
+#include "AirEngine/Runtime/AssetLoader/ShaderLoader.hpp"
+#include "AirEngine/Runtime/AssetLoader/AssetLoaderBase.hpp"
 
 std::unordered_map<std::string, AirEngine::Runtime::AssetLoader::AssetLoaderBase*> AirEngine::Runtime::Core::Manager::AssetManager::_nameToAssetLoaderMap{ };
 std::unordered_map<std::string, AirEngine::Runtime::AssetLoader::AssetLoaderBase*> AirEngine::Runtime::Core::Manager::AssetManager::_suffixNameToAssetLoaderMap{ };

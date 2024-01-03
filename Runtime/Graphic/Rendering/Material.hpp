@@ -1,8 +1,8 @@
 ﻿#pragma once
-#include "../../Utility/InternedString.hpp"
-#include "../Manager/DescriptorManagerData.hpp"
-#include "../../Utility/ExportMacro.hpp"
-#include "../../Utility/ContructorMacro.hpp"
+#include "AirEngine/Runtime/Utility/InternedString.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DescriptorManagerData.hpp"
+#include "AirEngine/Runtime/Utility/ExportMacro.hpp"
+#include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
 #include <unordered_map>
 #include "MaterialData.hpp"
 #include "ShaderData.hpp"

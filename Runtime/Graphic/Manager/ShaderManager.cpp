@@ -1,5 +1,5 @@
 ﻿#include "ShaderManager.hpp"
-#include "../../Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
 
 std::unordered_map<vk::DescriptorType, uint8_t> AirEngine::Runtime::Graphic::Manager::ShaderManager::_descriptorTypeToSizeMap{};
 uint8_t AirEngine::Runtime::Graphic::Manager::ShaderManager::_offsetAlignment{};

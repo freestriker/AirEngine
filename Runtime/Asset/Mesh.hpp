@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "AssetBase.hpp"
-#include "../Utility/InternedString.hpp"
+#include "AirEngine/Runtime/Utility/InternedString.hpp"
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <vulkan/vulkan.hpp>

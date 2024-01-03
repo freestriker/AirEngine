@@ -3,8 +3,8 @@
 #include <array>
 #include "RenderManager.hpp"
 #include "GraphicDeviceManager.hpp"
-#include "../FrontEnd/Window.hpp"
-#include "../FrontEnd/DummyWindow.hpp"
+#include "AirEngine/Runtime/Core/FrontEnd/Window.hpp"
+#include "AirEngine/Runtime/Core/FrontEnd/DummyWindow.hpp"
 
 AirEngine::Runtime::Core::FrontEnd::FrontEndBase* AirEngine::Runtime::Core::Manager::RenderManager::_frontEnd{nullptr};
 //AirEngine::Runtime::Core::Manager::RenderManager::Status AirEngine::Runtime::Core::Manager::RenderManager::_status{ AirEngine::Runtime::Core::Manager::RenderManager::Status::NONE};

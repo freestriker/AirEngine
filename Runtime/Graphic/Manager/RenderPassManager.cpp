@@ -1,5 +1,5 @@
 ﻿#include "RenderPassManager.hpp"
-#include "../Instance/RenderPassBase.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/RenderPassBase.hpp"
 
 std::mutex AirEngine::Runtime::Graphic::Manager::RenderPassManager::_managerMutex{};
 std::unordered_map< AirEngine::Runtime::Utility::InternedString, AirEngine::Runtime::Graphic::Manager::RenderPassManager::ReferenceInfo> AirEngine::Runtime::Graphic::Manager::RenderPassManager::_referenceMap{};

@@ -1,5 +1,5 @@
 ﻿#include "ThirdPartyLibraryManager.hpp"
-#include "../../Utility/InternedString.hpp"
+#include "AirEngine/Runtime/Utility/InternedString.hpp"
 #include <opencv2/core/utils/logger.hpp>
 #include <opencv2/core/utility.hpp>
 

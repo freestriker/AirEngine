@@ -1,5 +1,5 @@
 ﻿#include "Fence.hpp"
-#include "../../Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
 
 AirEngine::Runtime::Graphic::Command::Fence::Fence()
 	: Fence(false)

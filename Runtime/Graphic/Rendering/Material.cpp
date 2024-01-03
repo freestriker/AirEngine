@@ -1,7 +1,7 @@
 ﻿#include "Material.hpp"
 #include "Shader.hpp"
-#include "../Manager/DescriptorManager.hpp"
-#include "../Instance/UniformBuffer.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/UniformBuffer.hpp"
 
 std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>> AirEngine::Runtime::Graphic::Rendering::Material::PopulateDescriptorSetMemoryInfosMap(const Shader& shader)
 {

@@ -3,12 +3,12 @@
 #include <string>
 #include <rttr/type>
 #include <rttr/registration>
-#include "../../Utility/ContructorMacro.hpp"
-#include "../../Utility/ExportMacro.hpp"
-#include "../Object.hpp"
+#include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
+#include "AirEngine/Runtime/Utility/ExportMacro.hpp"
+#include "AirEngine/Runtime/Core/Object.hpp"
 #include <boost/intrusive/list.hpp>
 
-#include "../../Utility/BitOperationMacro.hpp"
+#include "AirEngine/Runtime/Utility/BitOperationMacro.hpp"
 
 namespace AirEngine
 {

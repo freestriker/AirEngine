@@ -1,7 +1,7 @@
 ﻿#include "Queue.hpp"
-#include "../Command/Semaphore.hpp"
-#include "../Command/Fence.hpp"
-#include "../Command/CommandBuffer.hpp"
+#include "AirEngine/Runtime/Graphic/Command/Semaphore.hpp"
+#include "AirEngine/Runtime/Graphic/Command/Fence.hpp"
+#include "AirEngine/Runtime/Graphic/Command/CommandBuffer.hpp"
 #include <qlogging.h>
 
 //constexpr VkSemaphoreSubmitInfo EMPTY_VK_SEMAPHORE_SUBMIT_INFO

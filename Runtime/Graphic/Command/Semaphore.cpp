@@ -1,5 +1,5 @@
 ﻿#include "Semaphore.hpp"
-#include "../../Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
 
 AirEngine::Runtime::Graphic::Command::Semaphore::Semaphore()
 	: _vkSemaphore(Core::Manager::GraphicDeviceManager::Device().createSemaphore(vk::SemaphoreCreateInfo{}))
