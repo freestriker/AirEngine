@@ -1,5 +1,4 @@
 ﻿#include "AssetManager.hpp"
-#include "FiberManager.hpp"
 #include "../../AssetLoader/Texture2DLoader.hpp"
 #include "../../AssetLoader/MeshLoader.hpp"
 #include "../../AssetLoader/ShaderLoader.hpp"
@@ -7,33 +6,18 @@
 
 std::unordered_map<std::string, AirEngine::Runtime::AssetLoader::AssetLoaderBase*> AirEngine::Runtime::Core::Manager::AssetManager::_nameToAssetLoaderMap{ };
 std::unordered_map<std::string, AirEngine::Runtime::AssetLoader::AssetLoaderBase*> AirEngine::Runtime::Core::Manager::AssetManager::_suffixNameToAssetLoaderMap{ };
-AirEngine::Runtime::Utility::Fiber::fiber AirEngine::Runtime::Core::Manager::AssetManager::_collectFiber{ };
 
-void AirEngine::Runtime::Core::Manager::AssetManager::AddCollectFiber()
+void AirEngine::Runtime::Core::Manager::AssetManager::CollectUpdate()
 {
-	FiberManager::AddFiberInitializers({
-		[]()->void
-		{
-			_collectFiber = std::move(Utility::Fiber::fiber(Collect));
-		}
-	});
+	std::cout << "Asset Collect.\n";
+	CollectAll();
 }
 
-void AirEngine::Runtime::Core::Manager::AssetManager::Collect()
-{
-	while (true)
-	{
-		Utility::ThisFiber::sleep_for(std::chrono::milliseconds(2000));
-		CollectAll();
-		std::cout << "Collect.\n";
-	}
-}
-
-std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::AssetManager::OnGetInitializeOperations()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::AssetManager::OnGetUpdateOperations()
 {
 	return
 	{
-		{ 1, 0, AddCollectFiber }
+		{ 0, 2, CollectUpdate }
 	};
 }
 

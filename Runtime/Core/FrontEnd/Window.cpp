@@ -40,7 +40,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
 
-	while (currentFrame.acquireFence->Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
+	while (currentFrame.acquireFence->Status() == vk::Result::eNotReady) std::this_thread::yield();
 
 	currentFrame.acquireFence->Reset();
 	vk::ResultValue<uint32_t> acquireResult(vk::Result::eSuccess, 0);
@@ -234,7 +234,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 	}
 	if (presentResult == vk::Result::eSuccess || presentResult == vk::Result::eSuboptimalKHR)
 	{
-		while (_transferFence->Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
+		while (_transferFence->Status() == vk::Result::eNotReady) std::this_thread::yield();
 	}
 	else
 	{

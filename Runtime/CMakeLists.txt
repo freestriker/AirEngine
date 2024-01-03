@@ -16,12 +16,12 @@ function(ADD_RUNTIME_PACKAGES EXECUTABLE_NAME)
     find_package(assimp CONFIG REQUIRED)
     target_link_libraries("${EXECUTABLE_NAME}" PUBLIC assimp::assimp)
 
-    find_package(BDWgc CONFIG REQUIRED)
-    target_link_libraries("${EXECUTABLE_NAME}" PUBLIC BDWgc::gc BDWgc::cord BDWgc::gccpp BDWgc::gctba)
+    # find_package(BDWgc CONFIG REQUIRED)
+    # target_link_libraries("${EXECUTABLE_NAME}" PUBLIC BDWgc::gc BDWgc::cord BDWgc::gccpp BDWgc::gctba)
 
-    target_include_directories("${EXECUTABLE_NAME}" PUBLIC ${Boost_INCLUDE_DIRS})
-    find_package(Boost COMPONENTS fiber REQUIRED)
-    target_link_libraries("${EXECUTABLE_NAME}" PUBLIC Boost::boost Boost::fiber)
+    # target_include_directories("${EXECUTABLE_NAME}" PUBLIC ${Boost_INCLUDE_DIRS})
+    # find_package(Boost COMPONENTS fiber REQUIRED)
+    # target_link_libraries("${EXECUTABLE_NAME}" PUBLIC Boost::boost Boost::fiber)
 
     find_package(cityhash CONFIG REQUIRED)
     target_link_libraries("${EXECUTABLE_NAME}" PUBLIC cityhash)

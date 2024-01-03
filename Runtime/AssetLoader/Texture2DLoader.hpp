@@ -41,7 +41,7 @@ namespace AirEngine
 						topDown
 					)
 				};
-				Asset::AssetBase* OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading) override;
+				Asset::AssetBase* OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading) override;
 				void OnUnloadAsset(Asset::AssetBase* asset) override;
 				static void PopulateTexture2D(AirEngine::Runtime::Asset::Texture2D* texture2d, const std::string path, bool* isInLoading);
 			public:

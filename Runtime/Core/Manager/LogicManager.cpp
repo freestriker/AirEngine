@@ -1,40 +1,18 @@
 ﻿#include <iostream>
 #include "LogicManager.hpp"
 #include "RenderManager.hpp"
-#include "FiberManager.hpp"
 
-AirEngine::Runtime::Utility::Fiber::fiber AirEngine::Runtime::Core::Manager::LogicManager::_logicLoopFiber{ };
-
-void AirEngine::Runtime::Core::Manager::LogicManager::AddLogicLoop()
+void AirEngine::Runtime::Core::Manager::LogicManager::LogicUpdate()
 {
-    FiberManager::AddFiberInitializers({
-        []()->void
-        {
-			_logicLoopFiber = std::move(Utility::Fiber::fiber(LogicLoop));
-		}
-	});
+	std::cout << "Logic loop.\n";
+	std::this_thread::sleep_for(std::chrono::milliseconds(5));
 }
 
-void AirEngine::Runtime::Core::Manager::LogicManager::LogicLoop()
-{
-	while (true)
-	{
-		//logic
-		std::cout << "Logic loop.\n";
-		Utility::ThisFiber::sleep_for(std::chrono::milliseconds(5));
-		
-		if (RenderManager::TryBeginRender())
-		{
-			RenderManager::EndRender();
-		}
-    }
-}
-
-std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::LogicManager::OnGetInitializeOperations()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::LogicManager::OnGetUpdateOperations()
 {
 	return
 	{
-        { 1, 0, AddLogicLoop }
+        { 0, 0, LogicUpdate }
 	};
 }
 

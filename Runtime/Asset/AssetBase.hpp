@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "../Utility/ExportMacro.hpp"
 #include "../Utility/ContructorMacro.hpp"
-#include "../Utility/CollectableObject.hpp"
 
 namespace AirEngine
 {
@@ -14,7 +13,6 @@ namespace AirEngine
 		namespace Asset
 		{
 			class AIR_ENGINE_API AssetBase
-				: public Utility::CollectableObject
 			{
 			private:
 				AssetLoader::AssetLoadContext* assetLoadContext;

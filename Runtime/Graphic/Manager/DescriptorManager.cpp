@@ -2,7 +2,7 @@
 #include "../../Core/Manager/GraphicDeviceManager.hpp"
 #include "../Instance/Buffer.hpp"
 
-AirEngine::Runtime::Utility::Fiber::mutex AirEngine::Runtime::Graphic::Manager::DescriptorManager::_mutex{};
+std::mutex AirEngine::Runtime::Graphic::Manager::DescriptorManager::_mutex{};
 std::map<uint32_t, AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_freeMemoryMap{};
 size_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_currentSize{};
 uint16_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_descriptorMemoryAlignment{};

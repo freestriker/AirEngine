@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "../Utility/GarbageCollectInclude.hpp"
 #include <typeinfo>
 #include <string>
 #include <rttr/type>
@@ -24,7 +23,6 @@ namespace AirEngine
 		namespace Core
 		{
 			class AIR_ENGINE_API Object
-				: public gc
 			{
 			public:
 				Object();

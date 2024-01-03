@@ -1,8 +1,5 @@
 #pragma once
 #include "ManagerBase.hpp"
-#include <memory>
-#include "../../Utility/OperationWrapper.hpp"
-#include "../../Utility/Fiber.hpp"
 
 namespace AirEngine
 {
@@ -17,11 +14,9 @@ namespace AirEngine
 				{
 				private:
 					NO_COPY_MOVE(LogicManager)
-					static void AddLogicLoop();
-					static void LogicLoop();
-					static Utility::Fiber::fiber _logicLoopFiber;
+					static void LogicUpdate();
 				protected:
-					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetUpdateOperations() override;
 				public:
 					LogicManager();
 					virtual ~LogicManager();

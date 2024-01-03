@@ -1,7 +1,5 @@
 #pragma once
 #include "ManagerBase.hpp"
-#include <memory>
-#include <rttr/type.h>
 
 namespace AirEngine
 {
@@ -21,7 +19,7 @@ namespace AirEngine
 				private:
 					NO_COPY_MOVE(ThirdPartyLibraryManager)
 				protected:
-					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
+					virtual Utility::OperationWrapper OnGetPreInitializeOperation() override;
 				public:
 					ThirdPartyLibraryManager();
 					virtual ~ThirdPartyLibraryManager();

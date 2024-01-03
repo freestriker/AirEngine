@@ -12,7 +12,7 @@ std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirE
 		std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>
 	> descriptorSetMemoryInfosMap{};
 
-	std::unique_lock<Utility::Fiber::mutex> lock(Manager::DescriptorManager::Mutex());
+	std::unique_lock<std::mutex> lock(Manager::DescriptorManager::Mutex());
 	
 	for (const auto& subShaderInfoPair : shaderInfo.subShaderInfoMap)
 	{
@@ -57,7 +57,7 @@ std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirE
 }
 void AirEngine::Runtime::Graphic::Rendering::Material::DestroyAllDescriptorSetMemory(const std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>>& descriptorSetMemoryInfosMap)
 {
-	std::unique_lock<Utility::Fiber::mutex> lock(Manager::DescriptorManager::Mutex());
+	std::unique_lock<std::mutex> lock(Manager::DescriptorManager::Mutex());
 
 	for (const auto& descriptorSetMemoryInfosPair : descriptorSetMemoryInfosMap)
 	{
@@ -130,7 +130,7 @@ void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility:
 {
 	uint32_t setCount = 0;
 	{
-		std::unique_lock<Utility::Fiber::mutex> lock(Manager::DescriptorManager::Mutex());
+		std::unique_lock<std::mutex> lock(Manager::DescriptorManager::Mutex());
 
 		for (const auto& subpassShaderInfoPair : _shader->Info().subShaderInfoMap)
 		{

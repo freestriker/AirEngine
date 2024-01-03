@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include <cstdint>
 #include <array>
-#include <boost/fiber/mutex.hpp>
 #include "ContructorMacro.hpp"
 #include "ExportMacro.hpp"
+#include <mutex>
 #ifndef NDEBUG
 #include <string_view>
 #endif // !NDEBUG
@@ -123,7 +123,7 @@ namespace AirEngine
 					uint32_t capcity;
 					uint32_t size;
 					Slot* slotArray;
-					boost::fibers::mutex mutex;
+					std::mutex mutex;
 				public:
 					inline Slot& FindUnusedOrTargetSlot(const HashInfo& hashInfo);
 					inline Slot& FindUnusedSlot(const HashInfo& hashInfo);
@@ -139,7 +139,7 @@ namespace AirEngine
 					uint16_t currentMemoryBlockIndex;
 					uint16_t currentMemoryBlockAlignedCursor;
 					char* memoryBlockArray[MAX_MEMORY_BLOCK_ARRAY_SIZE];
-					boost::fibers::mutex mutex;
+					std::mutex mutex;
 				public:
 					inline StringEntry* GetStringEntry(const StringEntryHandle& stringEntryHandle) const;
 					inline const StringEntryHandle AllocateStringEntry(const StringEntryHeader& stringEntryHeader, const char* data);

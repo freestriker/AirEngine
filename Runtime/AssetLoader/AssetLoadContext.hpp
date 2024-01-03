@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "../Utility/ExportMacro.hpp"
 #include <string>
-#include "../Utility/Fiber.hpp"
+#include <future>
 
 namespace AirEngine
 {
@@ -19,7 +19,7 @@ namespace AirEngine
 				std::string path;
 				using PathHashValue = size_t;
 				PathHashValue pathHash;
-				Utility::Fiber::shared_future<void> loadOperationFuture;
+				std::shared_future<void> loadOperationFuture;
 				bool isInLoading;
 				Asset::AssetBase* asset;
 				uint32_t referenceCount;

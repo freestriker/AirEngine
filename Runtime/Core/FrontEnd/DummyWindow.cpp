@@ -8,7 +8,7 @@ void AirEngine::Runtime::Core::FrontEnd::DummyWindow::OnCreate()
 
 void AirEngine::Runtime::Core::FrontEnd::DummyWindow::OnAcquireImage()
 {
-	Utility::ThisFiber::sleep_for(std::chrono::seconds(1));
+	std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 void AirEngine::Runtime::Core::FrontEnd::DummyWindow::OnPresent()

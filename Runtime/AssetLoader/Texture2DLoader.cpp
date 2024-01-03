@@ -12,16 +12,27 @@
 #include "../Graphic/Command/Fence.hpp"
 #include "../Graphic/Command/Barrier.hpp"
 #include "../Asset/Texture2D.hpp"
-#include "../Utility/Fiber.hpp"
 #include <boost/ref.hpp>
 #include <opencv2/imgproc.hpp>
+#include <Core/Manager/TaskManager.hpp>
 
-AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::Texture2DLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
+AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::Texture2DLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
-	auto&& texture2d = NEW_COLLECTABLE_PURE_OBJECT Asset::Texture2D();
-	Utility::Fiber::packaged_task<void(AirEngine::Runtime::Asset::Texture2D*, const std::string, bool*)> packagedTask(PopulateTexture2D);
-	loadOperationFuture = std::move(Utility::Fiber::shared_future<void>(std::move(packagedTask.get_future())));
-	Utility::Fiber::fiber(std::move(packagedTask), texture2d, path, &isInLoading).detach();
+	auto&& texture2d = new Asset::Texture2D();
+	bool* isLoadingPtr = &isInLoading;
+
+	loadOperationFuture = std::move(
+		std::shared_future<void>(
+			std::move(
+				Core::Manager::TaskManager::Executor().async(
+					[texture2d, path, isLoadingPtr]()->void
+					{
+						PopulateTexture2D(texture2d, path, isLoadingPtr);
+					}
+				)
+			)
+		)
+	);
 	return texture2d;
 }
 
@@ -367,7 +378,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 		transferFence
 	);
 
-	while (transferFence.Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
+	while (transferFence.Status() == vk::Result::eNotReady) std::this_thread::yield();
 
 	texture2d->_image = targetImage;
 	*isInLoading = false;

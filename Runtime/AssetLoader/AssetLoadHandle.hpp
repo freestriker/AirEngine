@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <future>
 #include "AssetLoadContext.hpp"
 
 namespace AirEngine
@@ -21,7 +22,7 @@ namespace AirEngine
 				{
 					return assetLoadContext != nullptr;
 				}
-				inline Utility::Fiber::shared_future<void>& SharedFuture()
+				inline std::shared_future<void>& SharedFuture()
 				{
 					return assetLoadContext->loadOperationFuture;
 				}

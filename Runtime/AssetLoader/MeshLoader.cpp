@@ -7,7 +7,6 @@
 #include "../Graphic/Command/Fence.hpp"
 #include "../Graphic/Command/Barrier.hpp"
 #include "../Asset/Mesh.hpp"
-#include "../Utility/Fiber.hpp"
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -16,6 +15,7 @@
 #include "../Graphic/MeshAttributePaser/MeshAttributePaserBase.hpp"
 #include "../Utility/ReflectableObject.hpp"
 #include "../Graphic/Command/Barrier.hpp"
+#include "Core/Manager/TaskManager.hpp"
 
 const static std::unordered_map<std::string, uint32_t> AI_POST_PROCESS_STEPS_MAP
 {
@@ -64,12 +64,24 @@ constexpr uint32_t DEFAULT_POST_PROCESS_STEPS =
 constexpr uint32_t INVALID_POST_PROCESS_STEPS =
 	~(aiProcess_PreTransformVertices);
 
-AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::MeshLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
+AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::MeshLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
-	auto&& Mesh = NEW_COLLECTABLE_PURE_OBJECT Asset::Mesh();
-	Utility::Fiber::packaged_task<void(AirEngine::Runtime::Asset::Mesh*, const std::string, bool*)> packagedTask(PopulateMesh);
-	loadOperationFuture = std::move(Utility::Fiber::shared_future<void>(std::move(packagedTask.get_future())));
-	Utility::Fiber::fiber(std::move(packagedTask), Mesh, path, &isInLoading).detach();
+	auto&& Mesh = new Asset::Mesh();
+	bool* isLoadingPtr = &isInLoading;
+
+	loadOperationFuture = std::move(
+		std::shared_future<void>(
+			std::move(
+				Core::Manager::TaskManager::Executor().async(
+					[Mesh, path, isLoadingPtr]()->void
+					{
+						PopulateMesh(Mesh, path, isLoadingPtr);
+					}
+				)
+			)
+		)
+	);
+
 	return Mesh;
 }
 
@@ -309,7 +321,7 @@ void AirEngine::Runtime::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtim
 			transferFence
 		);
 
-		while (transferFence.Status() == vk::Result::eNotReady) Utility::ThisFiber::yield();
+		while (transferFence.Status() == vk::Result::eNotReady) std::this_thread::yield();
 	}
 
 	mesh->_vertexBuffer = vertexBuffer;
