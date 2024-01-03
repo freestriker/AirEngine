@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include <string>
 #include <rttr/registration>
-#include "../../Utility/ContructorMacro.hpp"
-#include "../../Utility/ExportMacro.hpp"
-#include "../Object.hpp"
+#include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
+#include "AirEngine/Runtime/Utility/ExportMacro.hpp"
+#include "AirEngine/Runtime/Core/Object.hpp"
 #include <unordered_map>
 #include <memory>
 #include <string_view>

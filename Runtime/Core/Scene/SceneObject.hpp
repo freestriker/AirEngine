@@ -1,19 +1,19 @@
 ﻿#pragma once
 #include <string>
 #include <rttr/registration>
-#include "../../Utility/ContructorMacro.hpp"
-#include "../../Utility/ExportMacro.hpp"
-#include "../Object.hpp"
+#include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
+#include "AirEngine/Runtime/Utility/ExportMacro.hpp"
+#include "AirEngine/Runtime/Core/Object.hpp"
 #include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <unordered_map>
 #include <memory>
 #include <string_view>
 #include <boost/intrusive/list.hpp>
-#include "../../Utility/ChildBrotherTreeNode.hpp"
+#include "AirEngine/Runtime/Utility/ChildBrotherTreeNode.hpp"
 #include "Component.hpp"
 
-#include "../../Utility/BitOperationMacro.hpp"
+#include "AirEngine/Runtime/Utility/BitOperationMacro.hpp"
 
 namespace AirEngine
 {

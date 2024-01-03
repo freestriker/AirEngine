@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../../Utility/InternedString.hpp"
+#include "AirEngine/Runtime/Utility/InternedString.hpp"
 #include <vulkan/vulkan.hpp>
 #include <spirv_reflect.h>
 #include <unordered_map>

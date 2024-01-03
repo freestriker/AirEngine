@@ -1,9 +1,9 @@
 #pragma once
-#include "../../Utility/ThreadInclude.hpp"
+#include "AirEngine/Runtime/Utility/ThreadInclude.hpp"
 #include "ManagerBase.hpp"
 #include <memory>
 #include <unordered_map>
-#include "../../AssetLoader/AssetLoadHandle.hpp"
+#include "AirEngine/Runtime/AssetLoader/AssetLoadHandle.hpp"
 
 namespace AirEngine
 {

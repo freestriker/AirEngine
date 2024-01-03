@@ -1,7 +1,7 @@
 ﻿#include "Barrier.hpp"
-#include "../../Core/Manager/GraphicDeviceManager.hpp"
-#include "../Instance/Image.hpp"
-#include "../Instance/Buffer.hpp"
+#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/Image.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
 
 AirEngine::Runtime::Graphic::Command::Barrier::Barrier()
 	: _memoryBarriers()

@@ -1,5 +1,5 @@
 ﻿#include "DummyWindow.hpp"
-#include "../Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
 
 
 void AirEngine::Runtime::Core::FrontEnd::DummyWindow::OnCreate()

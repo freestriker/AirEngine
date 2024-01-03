@@ -1,8 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
-#include "../../Utility/ContructorMacro.hpp"
-#include "../../Utility/ExportMacro.hpp"
-#include "../../Utility/InternedString.hpp"
+#include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
+#include "AirEngine/Runtime/Utility/ExportMacro.hpp"
+#include "AirEngine/Runtime/Utility/InternedString.hpp"
 #include <glm/vec4.hpp>
 
 namespace AirEngine

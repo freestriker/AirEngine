@@ -3,8 +3,8 @@
 #include <string>
 #include <rttr/type>
 #include <rttr/registration>
-#include "../Utility/ContructorMacro.hpp"
-#include "../Utility/ExportMacro.hpp"
+#include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
+#include "AirEngine/Runtime/Utility/ExportMacro.hpp"
 
 #ifndef AIR_ENGINE_NEW
 

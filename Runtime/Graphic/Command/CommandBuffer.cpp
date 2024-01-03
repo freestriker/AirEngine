@@ -1,9 +1,9 @@
 ﻿#include "CommandBuffer.hpp"
-#include "../../Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
 #include "CommandPool.hpp"
 #include "Barrier.hpp"
-#include "../Instance/Image.hpp"
-#include "../Instance/Buffer.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/Image.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
 #include <vulkan/vulkan_format_traits.hpp>
 
 AirEngine::Runtime::Graphic::Command::CommandBuffer::CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, vk::CommandBufferLevel level)

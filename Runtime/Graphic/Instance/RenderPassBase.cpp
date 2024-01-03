@@ -1,5 +1,5 @@
 ﻿#include "RenderPassBase.hpp"
-#include "../../Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
 
 REGISTRATION
 {

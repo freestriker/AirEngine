@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "../../Utility/InternedString.hpp"
-#include "../Manager/DescriptorManagerData.hpp"
+#include "AirEngine/Runtime/Utility/InternedString.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DescriptorManagerData.hpp"
 #include "MaterialBindableAssetBase.hpp"
 
 namespace AirEngine

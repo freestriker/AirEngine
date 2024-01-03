@@ -1,5 +1,5 @@
 ﻿#include "Buffer.hpp"
-#include "../../Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
 
 AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, vk::MemoryPropertyFlags property, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage)
 	: _vkBuffer(VK_NULL_HANDLE)

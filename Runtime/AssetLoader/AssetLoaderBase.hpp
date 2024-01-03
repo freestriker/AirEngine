@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "../Utility/ExportMacro.hpp"
-#include "../Utility/ContructorMacro.hpp"
+#include "AirEngine/Runtime/Utility/ExportMacro.hpp"
+#include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
 #include "AssetLoadContext.hpp"
 #include <unordered_set>
 #include "AssetLoadContext.hpp"
@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
-#include "../Asset/AssetBase.hpp"
+#include "AirEngine/Runtime/Asset/AssetBase.hpp"
 
 namespace AirEngine
 {
