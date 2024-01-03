@@ -26,7 +26,7 @@ namespace AirEngine
 				protected:
 					static std::unordered_map<std::string, AssetLoader::AssetLoaderBase*> _nameToAssetLoaderMap;
 					static std::unordered_map<std::string, AssetLoader::AssetLoaderBase*> _suffixNameToAssetLoaderMap;
-					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
 				public:
 					AssetManager();
 					virtual ~AssetManager();

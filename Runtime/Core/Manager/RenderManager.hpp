@@ -39,7 +39,7 @@ namespace AirEngine
 					static Utility::Condition<Utility::Fiber::mutex, Utility::Fiber::condition_variable> _beginRenderCondition;
 					static Utility::Condition<Utility::Fiber::mutex, Utility::Fiber::condition_variable> _endPresentCondition;
 				protected:
-					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
 				public:
 					RenderManager();
 					virtual ~RenderManager();
