@@ -34,7 +34,7 @@ namespace AirEngine
 
 					static std::unordered_map<Utility::InternedString, std::unique_ptr<Graphic::Instance::Queue>> _queueMap;
 
-					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
 					static void CreateVulkanInstance();
 					static void CreateDevice();
 					static void SetDefaultDispatcher();

@@ -7,7 +7,7 @@
 #include <opencv2/core/utils/logger.hpp>
 #include <opencv2/core/utility.hpp>
 
-std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnGetInternalInitializers()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnGetInitializeOperations()
 {
 	return
 	{

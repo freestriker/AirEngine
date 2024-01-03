@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <taskflow/taskflow.hpp>
 
 namespace AirEngine
 {
@@ -21,9 +22,9 @@ namespace AirEngine
 				{
 				private:
 					std::map<std::string, std::shared_ptr<ManagerBase>> _managerTable;
-
+					tf::Future<void> _mainLoopFuture;
 					NO_COPY_MOVE(MainManager)
-
+				
 				public:
 					MainManager();
 					~MainManager() = default;

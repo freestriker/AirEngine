@@ -37,7 +37,7 @@ void AirEngine::Runtime::Core::Manager::FiberManager::BootThread()
 	}
 }
 
-std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::FiberManager::OnGetInternalInitializers()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::FiberManager::OnGetInitializeOperations()
 {
 	return
 	{

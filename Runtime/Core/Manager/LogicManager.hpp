@@ -21,7 +21,7 @@ namespace AirEngine
 					static void LogicLoop();
 					static Utility::Fiber::fiber _logicLoopFiber;
 				protected:
-					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
 				public:
 					LogicManager();
 					virtual ~LogicManager();

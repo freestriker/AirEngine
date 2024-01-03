@@ -4,7 +4,7 @@
 
 std::unordered_map<std::string, AirEngine::Runtime::Core::Scene::Scene*, std::hash<std::string>, std::equal_to<std::string>, gc_allocator<std::pair<const std::string, AirEngine::Runtime::Core::Scene::Scene*> > > AirEngine::Runtime::Core::Manager::SceneManager::_sceneMap{};
 
-std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::SceneManager::OnGetInternalInitializers()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::SceneManager::OnGetInitializeOperations()
 {
 	return
 	{

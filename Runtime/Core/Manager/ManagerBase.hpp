@@ -26,27 +26,58 @@ namespace AirEngine
 					virtual ~ManagerBase() = default;
 					NO_COPY_MOVE(ManagerBase)
 
-					virtual Utility::OperationWrapper OnGetInitializer()
+					virtual Utility::OperationWrapper OnGetPreInitializeOperation()
 					{
 						return {
 							0, 0,
 							[this]()->void {
-								std::cout << _name << "'s initializer.\n";
+								std::cout << _name << "'s pre-initializer.\n";
 							}
 						};
 					}
-					virtual std::vector<Utility::OperationWrapper> OnGetInternalInitializers()
+					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations()
 					{
 						return {
 							{
 								0, 0,
 								[this]()->void {
-									std::cout << _name << "'s internal initializer.\n";
+									std::cout << _name << "'s initializer.\n";
 								}
 							}
 						};
 					}
-					virtual std::vector<Utility::OperationWrapper> OnGetInternalFinalizers()
+					virtual Utility::OperationWrapper OnGetPostInitializeOperation()
+					{
+						return {
+							0, 0,
+							[this]()->void {
+								std::cout << _name << "'s post-initializer.\n";
+							}
+						};
+					}
+
+					virtual std::vector<Utility::OperationWrapper> OnGetUpdateOperations()
+					{
+						return {
+							//{
+							//	0, 0,
+							//	[this]()->void {
+							//		std::cout << _name << "'s updater.\n";
+							//	}
+							//}
+						};
+					}
+
+					virtual Utility::OperationWrapper OnGetPreFinalizeOperation()
+					{
+						return {
+							0, 0,
+							[this]()->void {
+								std::cout << _name << "'s pre-finalizer.\n";
+							}
+						};
+					}
+					virtual std::vector<Utility::OperationWrapper> OnGetFinalizeOperations()
 					{
 						return {
 							{
@@ -57,12 +88,12 @@ namespace AirEngine
 							}
 						};
 					}
-					virtual Utility::OperationWrapper OnGetFinalizer()
+					virtual Utility::OperationWrapper OnGetPostFinalizeOperation()
 					{
 						return {
 							0, 0,
 							[this]()->void {
-								std::cout << _name << "'s finalizer.\n";
+								std::cout << _name << "'s post-finalizer.\n";
 							}
 						};
 					}
