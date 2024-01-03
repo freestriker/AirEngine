@@ -5,7 +5,6 @@
 #include <vulkan/vulkan.hpp>
 #include "DescriptorManagerData.hpp"
 #include "../../Utility/ThreadInclude.hpp"
-#include "../../Utility/Fiber.hpp"
 
 namespace AirEngine
 {
@@ -36,7 +35,7 @@ namespace AirEngine
 
 					static void Initialize();
 				private:
-					static Utility::Fiber::mutex _mutex;
+					static std::mutex _mutex;
 					static std::map<uint32_t, DescriptorMemoryHandle> _freeMemoryMap;
 					static size_t _currentSize;
 					static uint16_t _descriptorMemoryAlignment;
@@ -46,7 +45,7 @@ namespace AirEngine
 					static std::vector<uint8_t> _hostMemory;
 					static std::vector<DescriptorMemoryHandle> _dirtyHandles;
 				public:
-					static inline Utility::Fiber::mutex& Mutex()
+					static inline std::mutex& Mutex()
 					{
 						return _mutex;
 					}

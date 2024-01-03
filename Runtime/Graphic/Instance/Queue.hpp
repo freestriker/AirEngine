@@ -2,7 +2,6 @@
 #include <vulkan/vulkan.hpp>
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
-#include "../../Utility/Fiber.hpp"
 #include "../../Utility/InternedString.hpp"
 
 namespace AirEngine
@@ -43,7 +42,7 @@ namespace AirEngine
 					};
 				private:
 					vk::Queue _vkQueue;
-					Utility::Fiber::mutex _mutex;
+					std::mutex _mutex;
 					Utility::InternedString _name;
 					uint32_t _familyIndex;
 					std::vector<CommandBufferSubmitInfo> _submitInfos;
@@ -60,7 +59,7 @@ namespace AirEngine
 					void Submit(const std::vector<CommandBufferSubmitInfo>& submitInfos, const Command::Fence* fence);
 				public:
 					~Queue() = default;
-					inline Utility::Fiber::mutex& Mutex()
+					inline std::mutex& Mutex()
 					{
 						return _mutex;
 					}
@@ -79,20 +78,20 @@ namespace AirEngine
 
 					void ImmediateIndividualSubmit(const CommandBufferSubmitInfo& submitInfo, const Command::Fence& fence = *static_cast<Command::Fence*>(nullptr))
 					{
-						std::unique_lock< Utility::Fiber::mutex> lock(_mutex);
+						std::unique_lock< std::mutex> lock(_mutex);
 
 						Submit({ submitInfo }, &fence);
 					}
 					void ImmediateConcentrateSubmit(const Command::Fence& fence = *static_cast<Command::Fence*>(nullptr))
 					{
-						std::unique_lock< Utility::Fiber::mutex> lock(_mutex);
+						std::unique_lock< std::mutex> lock(_mutex);
 
 						Submit(_submitInfos, &fence);
 						_submitInfos.clear();
 					}
 					void ImmediateConcentrateSubmit(const CommandBufferSubmitInfo& submitInfo, const Command::Fence& fence = *static_cast<Command::Fence*>(nullptr))
 					{
-						std::unique_lock< Utility::Fiber::mutex> lock(_mutex);
+						std::unique_lock< std::mutex> lock(_mutex);
 
 						_submitInfos.emplace_back(submitInfo);
 						Submit(_submitInfos, &fence);
@@ -100,7 +99,7 @@ namespace AirEngine
 					}
 					inline void DelayedConcentrateSubmit(const CommandBufferSubmitInfo& submitInfo, const Command::Fence& fence = *static_cast<Command::Fence*>(nullptr))
 					{
-						std::unique_lock< Utility::Fiber::mutex> lock(_mutex);
+						std::unique_lock< std::mutex> lock(_mutex);
 
 						_submitInfos.emplace_back(submitInfo);
 					}

@@ -35,7 +35,7 @@ namespace AirEngine
 					static constexpr SceneObjectMetaDataType IS_ACTIVE_BITS = 1u;
 					std::string _name;
 					Scene* _scene;
-					std::vector<Component*, gc_allocator<Component*>> _components;
+					std::vector<Component*> _components;
 					glm::vec3 _translation;
 					glm::quat _quaternion;
 					glm::vec3 _scale;

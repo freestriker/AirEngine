@@ -1,12 +1,12 @@
 ﻿#include "RenderPassManager.hpp"
 #include "../Instance/RenderPassBase.hpp"
 
-AirEngine::Runtime::Utility::Fiber::mutex AirEngine::Runtime::Graphic::Manager::RenderPassManager::_managerMutex{};
+std::mutex AirEngine::Runtime::Graphic::Manager::RenderPassManager::_managerMutex{};
 std::unordered_map< AirEngine::Runtime::Utility::InternedString, AirEngine::Runtime::Graphic::Manager::RenderPassManager::ReferenceInfo> AirEngine::Runtime::Graphic::Manager::RenderPassManager::_referenceMap{};
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase* AirEngine::Runtime::Graphic::Manager::RenderPassManager::LoadRenderPassImpl(const Utility::InternedString renderPassTypeName, int typeId)
 {
-    std::unique_lock<Utility::Fiber::mutex> locker(_managerMutex);
+    std::unique_lock<std::mutex> locker(_managerMutex);
 
     auto&& iterator = _referenceMap.find(renderPassTypeName);
     if (iterator == std::end(_referenceMap))
@@ -43,7 +43,7 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase* AirEngine::Runtime::Graph
 
 void AirEngine::Runtime::Graphic::Manager::RenderPassManager::UnloadRenderPassImpl(const Utility::InternedString renderPassTypeName)
 {
-    std::unique_lock<Utility::Fiber::mutex> locker(_managerMutex);
+    std::unique_lock<std::mutex> locker(_managerMutex);
 
     auto&& iterator = _referenceMap.find(renderPassTypeName);
     if (iterator == std::end(_referenceMap))
@@ -61,7 +61,7 @@ void AirEngine::Runtime::Graphic::Manager::RenderPassManager::UnloadRenderPassIm
 
 void AirEngine::Runtime::Graphic::Manager::RenderPassManager::Collect()
 {
-    std::unique_lock<Utility::Fiber::mutex> locker(_managerMutex);
+    std::unique_lock<std::mutex> locker(_managerMutex);
 
     for (auto iterator = _referenceMap.begin(); iterator != _referenceMap.end(); )
     {

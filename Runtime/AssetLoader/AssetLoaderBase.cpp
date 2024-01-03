@@ -11,7 +11,7 @@ AirEngine::Runtime::AssetLoader::AssetLoadHandle AirEngine::Runtime::AssetLoader
 	fsPath = std::filesystem::absolute(fsPath);
 	AssetLoadContext::PathHashValue pathHash = std::filesystem::hash_value(fsPath);
 
-	std::unique_lock< Utility::Fiber::mutex> loaderLock(_loaderMutex);
+	std::unique_lock< std::mutex> loaderLock(_loaderMutex);
 
 	AssetLoadContext* assetLoadContext = nullptr;
 	auto iter = _assetLoadContextMap.find(pathHash);
@@ -47,7 +47,7 @@ void AirEngine::Runtime::AssetLoader::AssetLoaderBase::UnloadAsset(const std::st
 	auto&& fsPath = std::filesystem::absolute(std::filesystem::path(path));
 	AssetLoadContext::PathHashValue pathHash = std::filesystem::hash_value(fsPath);
 
-	std::unique_lock< Utility::Fiber::mutex> loaderLock(_loaderMutex);
+	std::unique_lock< std::mutex> loaderLock(_loaderMutex);
 
 	auto iter = _assetLoadContextMap.find(pathHash);
 	if (iter != _assetLoadContextMap.end())
@@ -62,7 +62,7 @@ void AirEngine::Runtime::AssetLoader::AssetLoaderBase::CollectUnloadableAssets()
 {
 	if (_assetLoadContextMap.size() == 0) return;
 
-	std::unique_lock<Utility::Fiber::mutex> loaderLock(_loaderMutex);
+	std::unique_lock<std::mutex> loaderLock(_loaderMutex);
 
 	for (auto iter = _assetLoadContextMap.begin(); iter != _assetLoadContextMap.end(); )
 	{

@@ -3,7 +3,6 @@
 #include "GraphicDeviceManager.hpp"
 #include "SceneManager.hpp"
 #include "ThirdPartyLibraryManager.hpp"
-#include "FiberManager.hpp"
 #include "RenderManager.hpp"
 #include "LogicManager.hpp"
 #include "AssetManager.hpp"
@@ -18,7 +17,6 @@ AirEngine::Runtime::Core::Manager::MainManager::MainManager()
 	, _managerTable{}
 	, _mainLoopFuture()
 {
-	ResetManager(std::make_shared<Manager::FiberManager>());
 	ResetManager(std::make_shared<Manager::ThirdPartyLibraryManager>());
 	ResetManager(std::make_shared<Manager::SceneManager>());
 	ResetManager(std::make_shared<Manager::GraphicDeviceManager>());

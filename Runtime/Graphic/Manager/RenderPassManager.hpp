@@ -1,7 +1,6 @@
 #pragma once
 #include "../../Utility/ContructorMacro.hpp"
 #include "../../Utility/ExportMacro.hpp"
-#include "../../Utility/Fiber.hpp"
 #include "../../Utility/InternedString.hpp"
 #include <unordered_map>
 #include "../../Utility/ReflectableObject.hpp"
@@ -35,7 +34,7 @@ namespace AirEngine
 						Utility::InternedString typeName;
 						Instance::RenderPassBase* renderPass;
 					};
-					static Utility::Fiber::mutex _managerMutex;
+					static std::mutex _managerMutex;
 					static std::unordered_map<Utility::InternedString, ReferenceInfo> _referenceMap;
 					static Instance::RenderPassBase* LoadRenderPassImpl(const Utility::InternedString renderPassTypeName, int typeId);
 					static void UnloadRenderPassImpl(const Utility::InternedString renderPassTypeName);

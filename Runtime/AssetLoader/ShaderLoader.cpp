@@ -11,13 +11,26 @@
 #include "../Graphic/Manager/ShaderManager.hpp"
 #include <vulkan/vulkan.hpp>
 #include "../Utility/StringToVulkanypeTransfer.hpp"
+#include <Core/Manager/TaskManager.hpp>
 
-AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::ShaderLoader::OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading)
+AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::ShaderLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
-	auto&& shader = NEW_COLLECTABLE_PURE_OBJECT Graphic::Rendering::Shader();
-	Utility::Fiber::packaged_task<void(AirEngine::Runtime::Graphic::Rendering::Shader*, const std::string, bool*)> packagedTask(PopulateShader);
-	loadOperationFuture = std::move(Utility::Fiber::shared_future<void>(std::move(packagedTask.get_future())));
-	Utility::Fiber::fiber(std::move(packagedTask), shader, path, &isInLoading).detach();
+	auto&& shader = new Graphic::Rendering::Shader();
+	bool* isLoadingPtr = &isInLoading;
+
+	loadOperationFuture = std::move(
+		std::shared_future<void>(
+			std::move(
+				Core::Manager::TaskManager::Executor().async(
+					[shader, path, isLoadingPtr]()->void
+					{
+						PopulateShader(shader, path, isLoadingPtr);
+					}
+				)
+			)
+		)
+	);
+
 	return shader;
 }
 

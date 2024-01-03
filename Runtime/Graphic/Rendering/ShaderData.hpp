@@ -2,6 +2,7 @@
 #include "../../Utility/InternedString.hpp"
 #include <vulkan/vulkan.hpp>
 #include <spirv_reflect.h>
+#include <unordered_map>
 
 namespace AirEngine
 {

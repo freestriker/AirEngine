@@ -29,7 +29,7 @@ namespace AirEngine
 						meshAttributePaser
 					)
 				};
-				Asset::AssetBase* OnLoadAsset(const std::string& path, Utility::Fiber::shared_future<void>& loadOperationFuture, bool& isInLoading) override;
+				Asset::AssetBase* OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading) override;
 				void OnUnloadAsset(Asset::AssetBase* asset) override;
 				static void PopulateMesh(AirEngine::Runtime::Asset::Mesh* mesh, const std::string path, bool* isInLoading);
 			public:

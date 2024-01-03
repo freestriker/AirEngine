@@ -1,5 +1,4 @@
 #pragma once
-
 #include "../../Utility/ExportMacro.hpp"
 #include "../../Utility/ContructorMacro.hpp"
 #include <string>
