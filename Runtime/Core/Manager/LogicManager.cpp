@@ -1,6 +1,7 @@
-﻿#include <iostream>
-#include "LogicManager.hpp"
+﻿#include "LogicManager.hpp"
+#include <iostream>
 #include "RenderManager.hpp"
+#include <thread>
 
 void AirEngine::Runtime::Core::Manager::LogicManager::LogicUpdate()
 {

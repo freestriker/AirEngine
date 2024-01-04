@@ -22,18 +22,42 @@ namespace AirEngine
 				public:
 				private:
 					const bool _isWindow;
+					bool _isReadyToRender;
 				protected:
 					NO_COPY_MOVE(FrontEndBase)
 					FrontEndBase();
 					FrontEndBase(const bool isWindow);
 					virtual ~FrontEndBase() = default;
 					virtual void OnCreate() = 0;
-					virtual void OnAcquireImage() = 0;
-					virtual void OnPresent() = 0;
+					virtual void OnFinishRender()
+					{
+
+					}
+					virtual void OnStartRender()
+					{
+
+					}
 				public:
 					inline bool IsWindow() const
 					{
 						return _isWindow;
+					}
+					inline bool IsReadyToRender() const
+					{
+						return _isReadyToRender;
+					}
+					void ReadyToRender()
+					{
+						_isReadyToRender = true;
+					}
+					void StartRender()
+					{
+						OnStartRender();
+					}
+					void FinishRender()
+					{
+						_isReadyToRender = false;
+						OnFinishRender();
 					}
 				};
 				class AIR_ENGINE_API WindowFrontEndBase
@@ -48,9 +72,7 @@ namespace AirEngine
 					NO_COPY_MOVE(WindowFrontEndBase)
 					WindowFrontEndBase();
 					virtual ~WindowFrontEndBase() = default;
-					virtual void OnSetVulkanHandle() = 0;
-					virtual void OnRecreateVulkanSwapchain() = 0;
-					virtual void OnDestroyVulkanSwapchain() = 0;
+					virtual void OnCreateVulkanSwapchain() = 0;
 
 				public:
 					inline vkb::Swapchain VkbSwapchain() const
