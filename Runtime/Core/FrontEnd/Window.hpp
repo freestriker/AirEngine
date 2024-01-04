@@ -4,6 +4,9 @@
 #include <qwindow.h>
 #include "FrontEndBase.hpp"
 #include <qvulkaninstance.h>
+#include "AirEngine/Runtime/Utility/Condition.hpp"
+#include <mutex>
+#include <condition_variable>
 
 namespace AirEngine
 {
@@ -43,11 +46,13 @@ namespace AirEngine
 
 				private:
 					void OnCreate() override;
-					void OnAcquireImage() override;
-					void OnPresent() override;
-					void OnSetVulkanHandle() override;
-					void OnRecreateVulkanSwapchain() override;
-					void OnDestroyVulkanSwapchain() override;
+					void OnCreateVulkanSwapchain() override;
+					bool AcquireImage();
+					bool Present();
+					void RecreateVulkanSwapchain();
+					void DestroyVulkanSwapchain();
+					Utility::Condition<std::mutex, std::condition_variable> _beginPresentCondition;
+					Utility::Condition<std::mutex, std::condition_variable> _endPresentCondition;
 					QVulkanInstance _qVulkanInstance;
 					std::vector<FrameResource> _frameResources;
 					std::vector<ImageResource> _imageResources;
@@ -56,6 +61,12 @@ namespace AirEngine
 					Graphic::Command::CommandPool* _commandPool;
 					Graphic::Command::CommandBuffer* _commandBuffer;
 					Graphic::Command::Fence* _transferFence;
+					void OnFinishRender()override;
+					void OnStartRender()override;
+				protected:
+					void exposeEvent(QExposeEvent*) override;
+					void resizeEvent(QResizeEvent*) override;
+					bool event(QEvent*) override;
 				public:
 					NO_COPY_MOVE(Window)
 					Window();

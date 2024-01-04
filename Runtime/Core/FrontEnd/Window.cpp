@@ -20,6 +20,7 @@
 #include "AirEngine/Runtime/Graphic/Rendering/Material.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/UniformBuffer.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
+#include <QPlatformSurfaceEvent>
 
 void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 {
@@ -28,14 +29,26 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 	resize(1600, 900);
 	setSurfaceType(QSurface::VulkanSurface);
 	show();
+
+	_qVulkanInstance.setVkInstance(Manager::GraphicDeviceManager::Instance());
+	bool qResult = _qVulkanInstance.create();
+	if (!qResult) qFatal("Create vulkan instance failed.");
+
+	setVulkanInstance(&_qVulkanInstance);
+	_vkSurface = _qVulkanInstance.surfaceForWindow(this);
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
-{   
+void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateVulkanSwapchain()
+{
+	RecreateVulkanSwapchain();
+}
+
+bool AirEngine::Runtime::Core::FrontEnd::Window::AcquireImage()
+{
 	auto&& realWindowExtent = size() * devicePixelRatio();
 	if (realWindowExtent.width() != _vkbSwapchain.extent.width || realWindowExtent.height() != _vkbSwapchain.extent.height)
 	{
-		OnRecreateVulkanSwapchain();
+		RecreateVulkanSwapchain();
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
@@ -55,25 +68,27 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnAcquireImage()
 	}
 	catch (vk::OutOfDateKHRError e)
 	{
-		OnRecreateVulkanSwapchain();
-		return;
+		RecreateVulkanSwapchain();
+		return false;
 	}
-	if (acquireResult.result == vk::Result::eSuccess || acquireResult.result == vk::Result::eSuboptimalKHR) 
+	if (acquireResult.result == vk::Result::eSuccess || acquireResult.result == vk::Result::eSuboptimalKHR)
 	{
 		_curImageIndex = acquireResult.value;
+		return true;
 	}
-	else 
+	else
 	{
 		qFatal("Fail to acquire next image.");
-		return;
+		return false;
 	}
 }
+
 static bool isLoaded = false;
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle assetLoadHandle{};
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle meshLoadHandle{};
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle shaderLoadHandle{};
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
+bool AirEngine::Runtime::Core::FrontEnd::Window::Present()
 {
 	if (!isLoaded)
 	{
@@ -229,8 +244,8 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 	}
 	catch (vk::OutOfDateKHRError e)
 	{
-		OnRecreateVulkanSwapchain();
-		return;
+		RecreateVulkanSwapchain();
+		return false;
 	}
 	if (presentResult == vk::Result::eSuccess || presentResult == vk::Result::eSuboptimalKHR)
 	{
@@ -239,24 +254,16 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnPresent()
 	else
 	{
 		qFatal("Fail to present.");
-		return;
+		return false;
 	}
 	_qVulkanInstance.presentQueued(this);
 
 	_curFrameIndex = (_curFrameIndex + 1) % 3;
+
+	return true;
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnSetVulkanHandle()
-{
-	_qVulkanInstance.setVkInstance(Manager::GraphicDeviceManager::Instance());
-	bool qResult = _qVulkanInstance.create();
-	if (!qResult) qFatal("Create vulkan instance failed.");
-
-	setVulkanInstance(&_qVulkanInstance);
-	_vkSurface = _qVulkanInstance.surfaceForWindow(this);
-}
-
-void AirEngine::Runtime::Core::FrontEnd::Window::OnRecreateVulkanSwapchain()
+void AirEngine::Runtime::Core::FrontEnd::Window::RecreateVulkanSwapchain()
 {
 	vkb::SwapchainBuilder swapchainBuilder(Manager::GraphicDeviceManager::VkbDevice());
 	swapchainBuilder = swapchainBuilder.set_desired_format({ VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
@@ -270,9 +277,9 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnRecreateVulkanSwapchain()
 		.set_old_swapchain(_vkbSwapchain);
 	auto swapchainResult = swapchainBuilder.build();
 	
-	if (_vkbSwapchain)
+	if (_vkSwapchain)
 	{
-		OnDestroyVulkanSwapchain();
+		DestroyVulkanSwapchain();
 	}
 	_vkbSwapchain = swapchainResult.value();
 	_vkSwapchain = _vkbSwapchain.swapchain;
@@ -303,8 +310,10 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnRecreateVulkanSwapchain()
 	_transferFence = new Graphic::Command::Fence(true);
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnDestroyVulkanSwapchain()
+void AirEngine::Runtime::Core::FrontEnd::Window::DestroyVulkanSwapchain()
 {
+	if (!_vkSwapchain) return;
+
 	Core::Manager::GraphicDeviceManager::GraphicDeviceManager().Device().waitIdle();
 
 	_transferFence->Wait();
@@ -326,13 +335,105 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnDestroyVulkanSwapchain()
 	}
 	_imageResources.clear();
 
-	vkb::destroy_swapchain(_vkbSwapchain);
+	vkb::destroy_swapchain(_vkbSwapchain); 
 	_vkSwapchain = vk::SwapchainKHR();
+	_vkbSwapchain.swapchain = _vkSwapchain;
+}
+
+void AirEngine::Runtime::Core::FrontEnd::Window::OnFinishRender()
+{
+	_beginPresentCondition.Awake();
+
+	//Present in qt thread
+
+	_endPresentCondition.Wait();
+	_endPresentCondition.Reset();
+}
+
+void AirEngine::Runtime::Core::FrontEnd::Window::OnStartRender()
+{
+}
+
+void AirEngine::Runtime::Core::FrontEnd::Window::exposeEvent(QExposeEvent* e)
+{
+	if (isExposed()) 
+	{
+		if (_vkSwapchain) return;
+
+		RecreateVulkanSwapchain();
+		requestUpdate();
+	}
+	else 
+	{
+		DestroyVulkanSwapchain();
+	}
+}
+
+void AirEngine::Runtime::Core::FrontEnd::Window::resizeEvent(QResizeEvent*)
+{
+	// Nothing to do here - recreating the swapchain is handled when building the next frame.
+}
+
+bool AirEngine::Runtime::Core::FrontEnd::Window::event(QEvent* e)
+{
+	switch (e->type()) 
+	{
+		case QEvent::UpdateRequest:
+		{
+			if (!_vkSwapchain) break;
+
+			const bool isAcquireSuccessed = AcquireImage();
+			if (!isAcquireSuccessed)
+			{
+				requestUpdate();
+				break;
+			}
+
+			ReadyToRender();
+
+			//Render in main loop
+
+			_beginPresentCondition.Wait();
+			_beginPresentCondition.Reset();
+
+			const bool isPresentSuccessed = Present();
+
+			_endPresentCondition.Awake();
+
+			if (!isPresentSuccessed)
+			{
+				requestUpdate();
+				break;
+			}
+
+			requestUpdate();
+
+			break;
+		}
+			// The swapchain must be destroyed before the surface as per spec. This is
+			// not ideal for us because the surface is managed by the QPlatformWindow
+			// which may be gone already when the unexpose comes, making the validation
+			// layer scream. The solution is to listen to the PlatformSurface events.
+		case QEvent::PlatformSurface:
+		{
+			if (static_cast<QPlatformSurfaceEvent*>(e)->surfaceEventType() == QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed)
+			{
+				DestroyVulkanSwapchain();
+			}
+			break;
+		}
+		default:
+			break;
+	}
+
+	return QWindow::event(e);
 }
 
 AirEngine::Runtime::Core::FrontEnd::Window::Window()
 	: QWindow()
 	, WindowFrontEndBase()
+	, _endPresentCondition()
+	, _beginPresentCondition()
 	, _qVulkanInstance()
 	, _frameResources()
 	, _imageResources()
