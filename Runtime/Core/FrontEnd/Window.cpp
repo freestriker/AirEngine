@@ -358,9 +358,11 @@ void AirEngine::Runtime::Core::FrontEnd::Window::exposeEvent(QExposeEvent* e)
 {
 	if (isExposed()) 
 	{
-		if (_vkSwapchain) return;
+		if (!_vkSwapchain)
+		{
+			RecreateVulkanSwapchain();
+		}
 
-		RecreateVulkanSwapchain();
 		requestUpdate();
 	}
 	else 
