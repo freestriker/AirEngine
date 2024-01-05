@@ -37,11 +37,11 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
 std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::RenderManager::OnGetInitializeOperations()
 {
 	return {
-		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_INSTANCE_INDEX, CreateVulkanInstance },
-		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_WINDOW_SURFACE_INDEX, CreateSurface },
-		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_DEVICE_INDEX, []()->void { CreateDevice(); SetDefaultDispatcher(); PopulateQueue(); }},
-		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_SWAPCHAIN_INDEX, CreateSwapchain },
-		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_ORTHER_INDEX, []()->void { CreateMemoryAllocator(); InitializeGraphicManagers(); }},
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_INSTANCE_INDEX, "Create vulkan instance.", CreateVulkanInstance},
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_WINDOW_SURFACE_INDEX, "Create window's surface.", CreateSurface},
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_DEVICE_INDEX, "Create vulkan device.", []()->void { CreateDevice(); SetDefaultDispatcher(); PopulateQueue(); }},
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_SWAPCHAIN_INDEX, "Create window's swapchain.", CreateSwapchain},
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_ORTHER_INDEX, "Initialize orther thing.", []()->void { CreateMemoryAllocator(); InitializeGraphicManagers(); }},
 	};
 }
 
@@ -288,7 +288,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 {
 	return
 	{
-		{ RENDER_UPDATE_LAYER, 0, RenderUpdate }
+		{ RENDER_UPDATE_LAYER, 0, "Update render loop.", RenderUpdate}
 	};
 }
 
@@ -302,7 +302,6 @@ void AirEngine::Runtime::Core::Manager::RenderManager::RenderUpdate()
 	_frontEnd->StartRender();
 
 	//render
-	std::cout << "Render loop.\n";
 	std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
 	_frontEnd->FinishRender();

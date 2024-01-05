@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <string>
 
 namespace AirEngine
 {
@@ -13,6 +14,7 @@ namespace AirEngine
 			{
 				uint32_t layer;
 				uint32_t index;
+				std::string description;
 				Operation operation;
 			};
 		}

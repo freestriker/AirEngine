@@ -4,7 +4,6 @@
 
 void AirEngine::Runtime::Core::Manager::LogicManager::LogicUpdate()
 {
-	std::cout << "Logic loop.\n";
 	std::this_thread::sleep_for(std::chrono::milliseconds(5));
 }
 
@@ -12,7 +11,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 {
 	return
 	{
-        { LOGIC_UPDATE_LAYER, 0, LogicUpdate }
+        { LOGIC_UPDATE_LAYER, 0, "Logic update.", LogicUpdate}
 	};
 }
 
