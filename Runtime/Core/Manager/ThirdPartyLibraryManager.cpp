@@ -6,7 +6,7 @@
 AirEngine::Runtime::Utility::OperationWrapper AirEngine::Runtime::Core::Manager::ThirdPartyLibraryManager::OnGetPreInitializeOperation()
 {
 	return {
-		0, 0,
+		PRE_INITIALIZE_LAYER, 0,
 		[]()->void
 		{
 			Utility::InternedString::Initialize();

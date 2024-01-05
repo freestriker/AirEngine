@@ -12,15 +12,12 @@ void AirEngine::Runtime::Core::Manager::RenderManager::CreateMainWindow()
 {
 	//_frontEnd = new FrontEnd::DummyWindow();
 	_frontEnd = new FrontEnd::Window();
-    _frontEnd->OnCreate();
+    _frontEnd->OnCreateSurface();
 }
 
 void AirEngine::Runtime::Core::Manager::RenderManager::CreateSwapchain()
 {
-	if (_frontEnd->IsWindow())
-	{
-		dynamic_cast<FrontEnd::WindowFrontEndBase*>(_frontEnd)->OnCreateVulkanSwapchain();
-	}
+	_frontEnd->OnCreateSwapchain();
 }
 
 void AirEngine::Runtime::Core::Manager::RenderManager::RenderUpdate()
@@ -43,8 +40,8 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 {
 	return
 	{
-        { 0, 1, CreateMainWindow }, 
-        { 0, 5, CreateSwapchain },
+        { GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_WINDOW_SURFACE_INDEX, CreateMainWindow },
+        { GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_SWAPCHAIN_INDEX, CreateSwapchain },
 	};
 }
 
@@ -52,7 +49,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 {
 	return
 	{
-		{ 0, 1, RenderUpdate }
+		{ RENDER_UPDATE_LAYER, 0, RenderUpdate }
 	};
 }
 

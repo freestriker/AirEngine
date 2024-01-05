@@ -101,6 +101,24 @@ namespace AirEngine
 					{
 						return _name;
 					}
+
+					//Initialize
+					static constexpr uint32_t PRE_INITIALIZE_LAYER = 100;
+
+					static constexpr uint32_t GRAPHIC_INITIALIZE_LAYER = 100;
+					static constexpr uint32_t GRAPHIC_INITIALIZE_INSTANCE_INDEX = 0;
+					static constexpr uint32_t GRAPHIC_INITIALIZE_WINDOW_SURFACE_INDEX = 100;
+					static constexpr uint32_t GRAPHIC_INITIALIZE_DEVICE_INDEX = 200;
+					static constexpr uint32_t GRAPHIC_INITIALIZE_SWAPCHAIN_INDEX = 300;
+					static constexpr uint32_t GRAPHIC_INITIALIZE_ORTHER_INDEX = 400;
+
+					static constexpr uint32_t POST_INITIALIZE_LAYER = 100;
+
+					//Update
+					static constexpr uint32_t LOGIC_UPDATE_LAYER = 0;
+					static constexpr uint32_t RENDER_UPDATE_LAYER = 100;
+					static constexpr uint32_t COLLECT_UPDATE_LAYER = 1000;
+
 				};
 			}
 		}

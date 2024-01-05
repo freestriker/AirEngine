@@ -22,7 +22,7 @@
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include <QPlatformSurfaceEvent>
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
+void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateSurface()
 {
 	//setMinimumSize({ 1600, 900 });
 	//setMaximumSize({ 1600, 900 });
@@ -38,7 +38,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnCreate()
 	_vkSurface = _qVulkanInstance.surfaceForWindow(this);
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateVulkanSwapchain()
+void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateSwapchain()
 {
 	RecreateVulkanSwapchain();
 }

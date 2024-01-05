@@ -34,12 +34,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
 std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::GraphicDeviceManager::OnGetInitializeOperations()
 {
 	return {
-		{ 0, 0, CreateVulkanInstance },
-		{ 0, 2, CreateDevice },
-		{ 0, 3, SetDefaultDispatcher },
-		{ 0, 4, PopulateQueue },
-		{ 0, 6, CreateMemoryAllocator },
-		{ 0, 7, InitializeGraphicManagers }
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_INSTANCE_INDEX, CreateVulkanInstance },
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_DEVICE_INDEX, []()->void { CreateDevice(); SetDefaultDispatcher(); PopulateQueue(); }},
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_ORTHER_INDEX, []()->void { CreateMemoryAllocator(); InitializeGraphicManagers(); }},
 	};
 }
 

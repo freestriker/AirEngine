@@ -28,7 +28,8 @@ namespace AirEngine
 					FrontEndBase();
 					FrontEndBase(const bool isWindow);
 					virtual ~FrontEndBase() = default;
-					virtual void OnCreate() = 0;
+					virtual void OnCreateSurface() = 0;
+					virtual void OnCreateSwapchain() = 0;
 					virtual void OnFinishRender()
 					{
 
@@ -72,7 +73,6 @@ namespace AirEngine
 					NO_COPY_MOVE(WindowFrontEndBase)
 					WindowFrontEndBase();
 					virtual ~WindowFrontEndBase() = default;
-					virtual void OnCreateVulkanSwapchain() = 0;
 
 				public:
 					inline vkb::Swapchain VkbSwapchain() const

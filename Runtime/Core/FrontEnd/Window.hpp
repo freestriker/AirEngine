@@ -45,8 +45,8 @@ namespace AirEngine
 					};
 
 				private:
-					void OnCreate() override;
-					void OnCreateVulkanSwapchain() override;
+					void OnCreateSurface() override;
+					void OnCreateSwapchain() override;
 					bool AcquireImage();
 					bool Present();
 					void RecreateVulkanSwapchain();
