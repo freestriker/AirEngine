@@ -1,5 +1,5 @@
 ﻿#include "Window.hpp"
-#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
 #include <vulkan/vulkan.hpp>
 #include "AirEngine/Runtime/Graphic/Instance/Image.hpp"
 #include "AirEngine/Runtime/Graphic/Command/Semaphore.hpp"
@@ -30,7 +30,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateSurface()
 	setSurfaceType(QSurface::VulkanSurface);
 	show();
 
-	_qVulkanInstance.setVkInstance(Manager::GraphicDeviceManager::Instance());
+	_qVulkanInstance.setVkInstance(Manager::RenderManager::Instance());
 	bool qResult = _qVulkanInstance.create();
 	if (!qResult) qFatal("Create vulkan instance failed.");
 
@@ -59,7 +59,7 @@ bool AirEngine::Runtime::Core::FrontEnd::Window::AcquireImage()
 	vk::ResultValue<uint32_t> acquireResult(vk::Result::eSuccess, 0);
 	try
 	{
-		acquireResult = Manager::GraphicDeviceManager::Device().acquireNextImageKHR(
+		acquireResult = Manager::RenderManager::Device().acquireNextImageKHR(
 			_vkSwapchain,
 			std::numeric_limits<uint64_t>::max(),
 			currentFrame.acquireSemaphore->VkHandle(),
@@ -265,7 +265,7 @@ bool AirEngine::Runtime::Core::FrontEnd::Window::Present()
 
 void AirEngine::Runtime::Core::FrontEnd::Window::RecreateVulkanSwapchain()
 {
-	vkb::SwapchainBuilder swapchainBuilder(Manager::GraphicDeviceManager::VkbDevice());
+	vkb::SwapchainBuilder swapchainBuilder(Manager::RenderManager::VkbDevice());
 	swapchainBuilder = swapchainBuilder.set_desired_format({ VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
 		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
 		.set_pre_transform_flags(VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
@@ -314,7 +314,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::DestroyVulkanSwapchain()
 {
 	if (!_vkSwapchain) return;
 
-	Core::Manager::GraphicDeviceManager::GraphicDeviceManager().Device().waitIdle();
+	Core::Manager::RenderManager::RenderManager().Device().waitIdle();
 
 	_transferFence->Wait();
 	delete _transferFence;

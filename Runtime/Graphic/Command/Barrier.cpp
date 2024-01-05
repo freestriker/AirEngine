@@ -1,5 +1,5 @@
 ﻿#include "Barrier.hpp"
-#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Image.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
 

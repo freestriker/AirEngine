@@ -1,5 +1,5 @@
 ﻿#include "ShaderManager.hpp"
-#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
 
 std::unordered_map<vk::DescriptorType, uint8_t> AirEngine::Runtime::Graphic::Manager::ShaderManager::_descriptorTypeToSizeMap{};
 uint8_t AirEngine::Runtime::Graphic::Manager::ShaderManager::_offsetAlignment{};
@@ -11,7 +11,7 @@ void AirEngine::Runtime::Graphic::Manager::ShaderManager::Initialize()
 	auto&& physicalDeviceProperties = vk::PhysicalDeviceProperties2();
 	physicalDeviceProperties.pNext = &physicalDeviceDescriptorBufferPropertiesEXT;
 
-	Core::Manager::GraphicDeviceManager::PhysicalDevice().getProperties2(&physicalDeviceProperties);
+	Core::Manager::RenderManager::PhysicalDevice().getProperties2(&physicalDeviceProperties);
 
 	_offsetAlignment = physicalDeviceDescriptorBufferPropertiesEXT.descriptorBufferOffsetAlignment;
 
