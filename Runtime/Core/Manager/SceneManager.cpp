@@ -9,7 +9,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 	return
 	{
 		{
-			1, 0,
+			POST_INITIALIZE_LAYER, 0,
 			[this]()->void
 			{
 				_sceneMap["MainScene"] = new Scene::Scene("MainScene");

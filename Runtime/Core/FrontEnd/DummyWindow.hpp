@@ -16,7 +16,8 @@ namespace AirEngine
 					: public FrontEndBase
 				{
 				private:
-					void OnCreate() override;
+					void OnCreateSurface() override;
+					void OnCreateSwapchain() override;
 					void OnFinishRender()override;
 					void OnStartRender()override;
 				public:

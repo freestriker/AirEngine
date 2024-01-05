@@ -17,7 +17,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 {
 	return
 	{
-		{ 0, 2, CollectUpdate }
+		{ COLLECT_UPDATE_LAYER, 0, CollectUpdate }
 	};
 }
 

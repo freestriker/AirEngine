@@ -2,7 +2,11 @@
 #include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
 
 
-void AirEngine::Runtime::Core::FrontEnd::DummyWindow::OnCreate()
+void AirEngine::Runtime::Core::FrontEnd::DummyWindow::OnCreateSurface()
+{
+}
+
+void AirEngine::Runtime::Core::FrontEnd::DummyWindow::OnCreateSwapchain()
 {
 }
 

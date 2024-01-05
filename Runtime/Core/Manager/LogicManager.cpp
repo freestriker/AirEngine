@@ -13,7 +13,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 {
 	return
 	{
-        { 0, 0, LogicUpdate }
+        { LOGIC_UPDATE_LAYER, 0, LogicUpdate }
 	};
 }
 
