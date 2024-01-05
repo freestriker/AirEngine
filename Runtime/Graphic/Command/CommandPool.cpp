@@ -1,24 +1,24 @@
 ﻿#include "CommandPool.hpp"
-#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
 #include "CommandBuffer.hpp"
 
 AirEngine::Runtime::Graphic::Command::CommandPool::CommandPool(const Utility::InternedString queueName, vk::CommandPoolCreateFlags flags)
 	: _vkCommandPool()
-	, _queue(&Core::Manager::GraphicDeviceManager::Queue(queueName))
+	, _queue(&Core::Manager::RenderManager::Queue(queueName))
 	, _flags(flags)
 {
-	_vkCommandPool = Core::Manager::GraphicDeviceManager::Device().createCommandPool(vk::CommandPoolCreateInfo(flags, _queue->FamilyIndex()));
+	_vkCommandPool = Core::Manager::RenderManager::Device().createCommandPool(vk::CommandPoolCreateInfo(flags, _queue->FamilyIndex()));
 }
 
 AirEngine::Runtime::Graphic::Command::CommandPool::~CommandPool()
 {
 	_commandBufferMap.clear();
-	Core::Manager::GraphicDeviceManager::Device().destroyCommandPool(_vkCommandPool);
+	Core::Manager::RenderManager::Device().destroyCommandPool(_vkCommandPool);
 }
 
 void AirEngine::Runtime::Graphic::Command::CommandPool::Reset()
 {
-	Core::Manager::GraphicDeviceManager::Device().resetCommandPool(_vkCommandPool, vk::CommandPoolResetFlagBits::eReleaseResources);
+	Core::Manager::RenderManager::Device().resetCommandPool(_vkCommandPool, vk::CommandPoolResetFlagBits::eReleaseResources);
 }
 
 AirEngine::Runtime::Graphic::Command::CommandBuffer& AirEngine::Runtime::Graphic::Command::CommandPool::CreateCommandBuffer(Utility::InternedString commandBufferName, vk::CommandBufferLevel level)

@@ -13,7 +13,7 @@ namespace AirEngine
 		{
 			namespace Manager
 			{
-				class GraphicDeviceManager;
+				class RenderManager;
 			}
 		}
 		namespace Graphic
@@ -26,7 +26,7 @@ namespace AirEngine
 			{
 				class AIR_ENGINE_API RenderPassManager final
 				{
-					friend class Core::Manager::GraphicDeviceManager;
+					friend class Core::Manager::RenderManager;
 				private:
 					struct ReferenceInfo
 					{

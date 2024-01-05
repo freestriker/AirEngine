@@ -13,5 +13,5 @@ AirEngine::Runtime::Graphic::Instance::Memory::Memory(VmaAllocation vmaAllocatio
 
 AirEngine::Runtime::Graphic::Instance::Memory::~Memory()
 {
-	vmaFreeMemory(Core::Manager::GraphicDeviceManager::VmaAllocator(), _vmaAllocation);
+	vmaFreeMemory(Core::Manager::RenderManager::VmaAllocator(), _vmaAllocation);
 }

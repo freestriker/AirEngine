@@ -3,7 +3,7 @@
 #include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
 #include "AirEngine/Runtime/Utility/ExportMacro.hpp"
 #include <vk_mem_alloc.h>
-#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
 
 namespace AirEngine
 {
@@ -44,14 +44,14 @@ namespace AirEngine
 					inline void* Map()const
 					{
 						void* ptr = nullptr;
-						auto mapResult = vmaMapMemory(Core::Manager::GraphicDeviceManager::VmaAllocator(), _vmaAllocation, &ptr);
+						auto mapResult = vmaMapMemory(Core::Manager::RenderManager::VmaAllocator(), _vmaAllocation, &ptr);
 						if (mapResult != VK_SUCCESS) qFatal("Failed to map memory.");
 						return ptr;
 					}
 					inline void Flush(vk::DeviceSize offset, vk::DeviceSize size) const
 					{
 						vmaFlushAllocation(
-							Core::Manager::GraphicDeviceManager::VmaAllocator(),
+							Core::Manager::RenderManager::VmaAllocator(),
 							_vmaAllocation,
 							offset,
 							size
@@ -63,7 +63,7 @@ namespace AirEngine
 					}
 					inline void Unmap()const
 					{
-						vmaUnmapMemory(Core::Manager::GraphicDeviceManager::VmaAllocator(), _vmaAllocation);
+						vmaUnmapMemory(Core::Manager::RenderManager::VmaAllocator(), _vmaAllocation);
 					}
 					inline VmaAllocation Allocation()const
 					{

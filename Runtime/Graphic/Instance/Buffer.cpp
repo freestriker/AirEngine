@@ -1,5 +1,5 @@
 ﻿#include "Buffer.hpp"
-#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
 
 AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, vk::MemoryPropertyFlags property, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage)
 	: _vkBuffer(VK_NULL_HANDLE)
@@ -21,7 +21,7 @@ AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::B
 	VmaAllocationInfo vmaInfo{};
 	VmaAllocation vmaAllocation;
 	VkBuffer vkBuffer{};
-	auto result = vmaCreateBuffer(Core::Manager::GraphicDeviceManager::VmaAllocator(), &bufferCreateInfo, &vmaCreateInfo, &vkBuffer, &vmaAllocation, &vmaInfo);
+	auto result = vmaCreateBuffer(Core::Manager::RenderManager::VmaAllocator(), &bufferCreateInfo, &vmaCreateInfo, &vkBuffer, &vmaAllocation, &vmaInfo);
 
 	if (VK_SUCCESS != result) qFatal("Failed to create buffer.");
 
@@ -32,7 +32,7 @@ AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::B
 		vk::BufferDeviceAddressInfoKHR bufferDeviceAddressInfo{};
 		bufferDeviceAddressInfo.buffer = _vkBuffer;
 
-		_bufferAddress = Core::Manager::GraphicDeviceManager::Device().getBufferAddress(bufferDeviceAddressInfo);
+		_bufferAddress = Core::Manager::RenderManager::Device().getBufferAddress(bufferDeviceAddressInfo);
 	}
 }
 
@@ -47,16 +47,16 @@ AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::B
 	bufferCreateInfo.usage = bufferUsage | vk::BufferUsageFlagBits::eShaderDeviceAddress;
 	bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
-	_vkBuffer = Core::Manager::GraphicDeviceManager::Device().createBuffer(bufferCreateInfo);
+	_vkBuffer = Core::Manager::RenderManager::Device().createBuffer(bufferCreateInfo);
 
-	auto bindResult = vmaBindBufferMemory(Core::Manager::GraphicDeviceManager::VmaAllocator(), _memory->Allocation(), _vkBuffer);
+	auto bindResult = vmaBindBufferMemory(Core::Manager::RenderManager::VmaAllocator(), _memory->Allocation(), _vkBuffer);
 
 	if (VK_SUCCESS != bindResult) qFatal("Failed to bind buffer.");
 	{
 		vk::BufferDeviceAddressInfoKHR bufferDeviceAddressInfo{};
 		bufferDeviceAddressInfo.buffer = _vkBuffer;
 
-		_bufferAddress = Core::Manager::GraphicDeviceManager::Device().getBufferAddress(bufferDeviceAddressInfo);
+		_bufferAddress = Core::Manager::RenderManager::Device().getBufferAddress(bufferDeviceAddressInfo);
 	}
 }
 
@@ -71,17 +71,17 @@ AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::B
 	bufferCreateInfo.usage = bufferUsage | vk::BufferUsageFlagBits::eShaderDeviceAddress;
 	bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
-	_vkBuffer = Core::Manager::GraphicDeviceManager::Device().createBuffer(bufferCreateInfo);
+	_vkBuffer = Core::Manager::RenderManager::Device().createBuffer(bufferCreateInfo);
 
 	{
 		vk::BufferDeviceAddressInfoKHR bufferDeviceAddressInfo{};
 		bufferDeviceAddressInfo.buffer = _vkBuffer;
 
-		_bufferAddress = Core::Manager::GraphicDeviceManager::Device().getBufferAddress(bufferDeviceAddressInfo);
+		_bufferAddress = Core::Manager::RenderManager::Device().getBufferAddress(bufferDeviceAddressInfo);
 	}
 }
 
 AirEngine::Runtime::Graphic::Instance::Buffer::~Buffer()
 {
-	Core::Manager::GraphicDeviceManager::Device().destroyBuffer(_vkBuffer);
+	Core::Manager::RenderManager::Device().destroyBuffer(_vkBuffer);
 }

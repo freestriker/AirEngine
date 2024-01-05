@@ -1,5 +1,5 @@
 ﻿#include "DescriptorManager.hpp"
-#include "AirEngine/Runtime/Core/Manager/GraphicDeviceManager.hpp"
+#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
 
 std::mutex AirEngine::Runtime::Graphic::Manager::DescriptorManager::_mutex{};
@@ -323,7 +323,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 	auto&& physicalDeviceProperties = vk::PhysicalDeviceProperties2();
 	physicalDeviceProperties.pNext = &physicalDeviceDescriptorBufferPropertiesEXT;
 
-	Core::Manager::GraphicDeviceManager::PhysicalDevice().getProperties2(&physicalDeviceProperties);
+	Core::Manager::RenderManager::PhysicalDevice().getProperties2(&physicalDeviceProperties);
 
 	_descriptorMemoryAlignment = physicalDeviceDescriptorBufferPropertiesEXT.descriptorBufferOffsetAlignment;
 	_descriptorMemoryAlignmentStride = std::log2(_descriptorMemoryAlignment);
