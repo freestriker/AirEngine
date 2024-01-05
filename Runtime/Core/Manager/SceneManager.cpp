@@ -10,6 +10,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 	{
 		{
 			POST_INITIALIZE_LAYER, 0,
+			"Create root scene object.",
 			[this]()->void
 			{
 				_sceneMap["MainScene"] = new Scene::Scene("MainScene");

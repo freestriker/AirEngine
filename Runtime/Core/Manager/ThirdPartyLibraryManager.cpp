@@ -7,6 +7,7 @@ AirEngine::Runtime::Utility::OperationWrapper AirEngine::Runtime::Core::Manager:
 {
 	return {
 		PRE_INITIALIZE_LAYER, 0,
+		"Initialize third party library.",
 		[]()->void
 		{
 			Utility::InternedString::Initialize();

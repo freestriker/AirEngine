@@ -9,7 +9,6 @@ std::unordered_map<std::string, AirEngine::Runtime::AssetLoader::AssetLoaderBase
 
 void AirEngine::Runtime::Core::Manager::AssetManager::CollectUpdate()
 {
-	std::cout << "Asset Collect.\n";
 	CollectAll();
 }
 
@@ -17,7 +16,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 {
 	return
 	{
-		{ COLLECT_UPDATE_LAYER, 0, CollectUpdate }
+		{ COLLECT_UPDATE_LAYER, 0, "Collect asset manager's garbage.", CollectUpdate}
 	};
 }
 

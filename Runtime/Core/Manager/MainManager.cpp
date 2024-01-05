@@ -28,98 +28,121 @@ void Core::Manager::MainManager::Initialize()
 {
 	std::cout << "----------Pre Initialize----------" << std::endl;
 	{
-		std::vector<Utility::OperationWrapper> preInitializers{};
+		std::vector<std::pair<Utility::OperationWrapper, std::string>> preInitializers{};
 		for (auto& managerPair : _managerTable)
 		{
 			auto&& temp = managerPair.second->OnGetPreInitializeOperation();
-			preInitializers.emplace_back(std::move(temp));
+			if (!temp.operation) continue;
+			preInitializers.emplace_back(std::pair<Utility::OperationWrapper, std::string>(std::move(temp), managerPair.second->Name()));
 		}
 
 		std::sort(preInitializers.begin(), preInitializers.end(), [](const auto& x, const auto& y)->bool {
-			return x.layer == y.layer ? x.index < y.index : x.layer < y.layer;
+			return x.first.layer == y.first.layer ? x.first.index < y.first.index : x.first.layer < y.first.layer;
 		});
 
 		for (auto& initializer : preInitializers)
 		{
-			initializer.operation();
+			initializer.first.operation();
+			std::cout << "Layer: " << initializer.first.layer << "\tIndex: " << initializer.first.index << "\tManager: " << initializer.second << "\tDescription: " << initializer.first.description << std::endl;
 		}
+
 	}
 	std::cout << "------------------------------" << std::endl;
 
 	std::cout << "----------Initialize----------" << std::endl;
 	{
-		std::vector<Utility::OperationWrapper> initializers{};
+		std::vector<std::pair<Utility::OperationWrapper, std::string>> initializers{};
 		for (auto& managerPair : _managerTable)
 		{
 			auto&& temp = managerPair.second->OnGetInitializeOperations();
-			initializers.insert(initializers.end(), temp.begin(), temp.end());
+
+			if (temp.size() == 0) continue;
+
+			std::string managerName = managerPair.second->Name();
+			for (auto& operationWrapper : temp)
+			{
+				initializers.emplace_back(std::pair<Utility::OperationWrapper, std::string>(std::move(operationWrapper), managerName));
+			}
 		}
 
 		std::sort(initializers.begin(), initializers.end(), [](const auto& x, const auto& y)->bool {
-			return x.layer == y.layer ? x.index < y.index : x.layer < y.layer;
+			return x.first.layer == y.first.layer ? x.first.index < y.first.index : x.first.layer < y.first.layer;
 		});
 
 		for (auto& initializer : initializers)
 		{
-			initializer.operation();
+			initializer.first.operation();
+			std::cout << "Layer: " << initializer.first.layer << "\tIndex: " << initializer.first.index << "\tManager: " << initializer.second << "\tDescription: " << initializer.first.description << std::endl;
 		}
 	}
 	std::cout << "------------------------------" << std::endl;
 
 	std::cout << "----------Post Initialize----------" << std::endl;
 	{
-		std::vector<Utility::OperationWrapper> postInitializers{};
+		std::vector<std::pair<Utility::OperationWrapper, std::string>> postInitializers{};
 		for (auto& managerPair : _managerTable)
 		{
 			auto&& temp = managerPair.second->OnGetPostInitializeOperation();
-			postInitializers.emplace_back(std::move(temp));
+			if (!temp.operation) continue;
+			postInitializers.emplace_back(std::pair<Utility::OperationWrapper, std::string>(std::move(temp), managerPair.second->Name()));
 		}
 
 		std::sort(postInitializers.begin(), postInitializers.end(), [](const auto& x, const auto& y)->bool {
-			return x.layer == y.layer ? x.index < y.index : x.layer < y.layer;
-			});
+			return x.first.layer == y.first.layer ? x.first.index < y.first.index : x.first.layer < y.first.layer;
+		});
 
 		for (auto& initializer : postInitializers)
 		{
-			initializer.operation();
+			initializer.first.operation();
+			std::cout << "Layer: " << initializer.first.layer << "\tIndex: " << initializer.first.index << "\tManager: " << initializer.second << "\tDescription: " << initializer.first.description << std::endl;
 		}
 	}
 	std::cout << "------------------------------" << std::endl;
 
 	{
-
-		std::shared_ptr<std::vector<Utility::OperationWrapper>> updaters = std::make_shared<std::vector<Utility::OperationWrapper>>();
-		for (auto& managerPair : _managerTable)
+		std::shared_ptr<std::vector<Utility::Operation>> updateOperations = std::make_shared<std::vector<Utility::Operation>>();
 		{
-			auto&& temp = managerPair.second->OnGetUpdateOperations();
-			updaters->insert(updaters->end(), temp.begin(), temp.end());
+			std::cout << "----------Update----------" << std::endl;
+			std::vector<std::pair<Utility::OperationWrapper, std::string>> updaters{};
+			for (auto& managerPair : _managerTable)
+			{
+				auto&& temp = managerPair.second->OnGetUpdateOperations();
+
+				if (temp.size() == 0) continue;
+
+				std::string managerName = managerPair.second->Name();
+				for (auto& operationWrapper : temp)
+				{
+					updaters.emplace_back(std::pair<Utility::OperationWrapper, std::string>(std::move(operationWrapper), managerName));
+				}
+			}
+
+			std::sort(updaters.begin(), updaters.end(), [](const auto& x, const auto& y)->bool {
+				return x.first.layer == y.first.layer ? x.first.index < y.first.index : x.first.layer < y.first.layer;
+			});
+
+			for (auto& updater : updaters)
+			{
+				updateOperations->emplace_back(std::move(updater.first.operation));
+				std::cout << "Layer: " << updater.first.layer << "\tIndex: " << updater.first.index << "\tManager: " << updater.second << "\tDescription: " << updater.first.description << std::endl;
+			}
+			std::cout << "------------------------------" << std::endl;
 		}
 
 		tf::Taskflow mainLoopTaskFlow("MainLoopTaskFlow");
-		auto&& sortTask = mainLoopTaskFlow.sort(updaters->begin(), updaters->end(), [](const auto& x, const auto& y)->bool {
-				return x.layer == y.layer ? x.index < y.index : x.layer < y.layer;
-			}
-		);
 		auto&& mainLoopTask = mainLoopTaskFlow.emplace(
-			[updaters]()->void
+			[updateOperations]()->void
 			{
-				size_t frameIndex = 0;
 				while (true)
 				{
-					//std::cout << "----------Frame " + std::to_string(frameIndex) + " Update----------" << std::endl;
-
-					for (const auto& updater : *updaters)
+					for (const auto& updater : *updateOperations)
 					{
-						updater.operation();
+						updater();
 					}
 					std::this_thread::yield();
-					++frameIndex;
-
-					//std::cout << "------------------------------" << std::endl;
 				}
 			}
 		); 
-		sortTask.succeed(mainLoopTask);
 
 		_mainLoopFuture = Manager::TaskManager::Executor().run(std::move(mainLoopTaskFlow));
 	}
@@ -129,60 +152,73 @@ void AirEngine::Runtime::Core::Manager::MainManager::Finalize()
 {
 	std::cout << "----------Pre Finalize----------" << std::endl;
 	{
-		std::vector<Utility::OperationWrapper> preFinalizers{};
+		std::vector<std::pair<Utility::OperationWrapper, std::string>> preFinalizers{};
 		for (auto& managerPair : _managerTable)
 		{
-			auto&& temp = managerPair.second->OnGetPostFinalizeOperation();
-			preFinalizers.emplace_back(std::move(temp));
+			auto&& temp = managerPair.second->OnGetPreFinalizeOperation();
+			if (!temp.operation) continue;
+			preFinalizers.emplace_back(std::pair<Utility::OperationWrapper, std::string>(std::move(temp), managerPair.second->Name()));
 		}
 
 		std::sort(preFinalizers.begin(), preFinalizers.end(), [](const auto& x, const auto& y)->bool {
-			return x.layer == y.layer ? x.index < y.index : x.layer < y.layer;
+			return x.first.layer == y.first.layer ? x.first.index < y.first.index : x.first.layer < y.first.layer;
 			});
 
 		for (auto& finalizer : preFinalizers)
 		{
-			finalizer.operation();
+			finalizer.first.operation();
+			std::cout << "Layer: " << finalizer.first.layer << "\tIndex: " << finalizer.first.index << "\tManager: " << finalizer.second << "\tDescription: " << finalizer.first.description << std::endl;
 		}
 	}
 	std::cout << "------------------------------" << std::endl;
 
 	std::cout << "----------Finalize----------" << std::endl;
 	{
-		std::vector<Utility::OperationWrapper> finalizers{};
+		std::vector<std::pair<Utility::OperationWrapper, std::string>> finalizers{};
 		for (auto& managerPair : _managerTable)
 		{
 			auto&& temp = managerPair.second->OnGetFinalizeOperations();
-			finalizers.insert(finalizers.end(), temp.begin(), temp.end());
+
+			if (temp.size() == 0) continue;
+
+			std::string managerName = managerPair.second->Name();
+			for (auto& operationWrapper : temp)
+			{
+				finalizers.emplace_back(std::pair<Utility::OperationWrapper, std::string>(std::move(operationWrapper), managerName));
+			}
 		}
 
 		std::sort(finalizers.begin(), finalizers.end(), [](const auto& x, const auto& y)->bool {
-			return x.layer == y.layer ? x.index < y.index : x.layer < y.layer;
-		});
+			return x.first.layer == y.first.layer ? x.first.index < y.first.index : x.first.layer < y.first.layer;
+			});
 
 		for (auto& finalizer : finalizers)
 		{
-			finalizer.operation();
+			finalizer.first.operation();
+			std::cout << "Layer: " << finalizer.first.layer << "\tIndex: " << finalizer.first.index << "\tManager: " << finalizer.second << "\tDescription: " << finalizer.first.description << std::endl;
 		}
+
 	}
 	std::cout << "------------------------------" << std::endl;
 
 	std::cout << "----------Post Finalize----------" << std::endl;
 	{
-		std::vector<Utility::OperationWrapper> postFinalizers{};
+		std::vector<std::pair<Utility::OperationWrapper, std::string>> postFinalizers{};
 		for (auto& managerPair : _managerTable)
 		{
 			auto&& temp = managerPair.second->OnGetPostFinalizeOperation();
-			postFinalizers.emplace_back(std::move(temp));
+			if (!temp.operation) continue;
+			postFinalizers.emplace_back(std::pair<Utility::OperationWrapper, std::string>(std::move(temp), managerPair.second->Name()));
 		}
 
 		std::sort(postFinalizers.begin(), postFinalizers.end(), [](const auto& x, const auto& y)->bool {
-			return x.layer == y.layer ? x.index < y.index : x.layer < y.layer;
+			return x.first.layer == y.first.layer ? x.first.index < y.first.index : x.first.layer < y.first.layer;
 			});
 
 		for (auto& finalizer : postFinalizers)
 		{
-			finalizer.operation();
+			finalizer.first.operation();
+			std::cout << "Layer: " << finalizer.first.layer << "\tIndex: " << finalizer.first.index << "\tManager: " << finalizer.second << "\tDescription: " << finalizer.first.description << std::endl;
 		}
 	}
 	std::cout << "------------------------------" << std::endl;

@@ -27,74 +27,33 @@ namespace AirEngine
 
 					virtual Utility::OperationWrapper OnGetPreInitializeOperation()
 					{
-						return {
-							0, 0,
-							[this]()->void {
-								std::cout << _name << "'s pre-initializer.\n";
-							}
-						};
+						return { };
 					}
 					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations()
 					{
-						return {
-							{
-								0, 0,
-								[this]()->void {
-									std::cout << _name << "'s initializer.\n";
-								}
-							}
-						};
+						return { };
 					}
 					virtual Utility::OperationWrapper OnGetPostInitializeOperation()
 					{
-						return {
-							0, 0,
-							[this]()->void {
-								std::cout << _name << "'s post-initializer.\n";
-							}
-						};
+						return { };
 					}
 
 					virtual std::vector<Utility::OperationWrapper> OnGetUpdateOperations()
 					{
-						return {
-							//{
-							//	0, 0,
-							//	[this]()->void {
-							//		std::cout << _name << "'s updater.\n";
-							//	}
-							//}
-						};
+						return { };
 					}
 
 					virtual Utility::OperationWrapper OnGetPreFinalizeOperation()
 					{
-						return {
-							0, 0,
-							[this]()->void {
-								std::cout << _name << "'s pre-finalizer.\n";
-							}
-						};
+						return { };
 					}
 					virtual std::vector<Utility::OperationWrapper> OnGetFinalizeOperations()
 					{
-						return {
-							{
-								0, 0,
-								[this]()->void {
-									std::cout << _name << "'s internal finalizer.\n";
-								}
-							}
-						};
+						return { };
 					}
 					virtual Utility::OperationWrapper OnGetPostFinalizeOperation()
 					{
-						return {
-							0, 0,
-							[this]()->void {
-								std::cout << _name << "'s post-finalizer.\n";
-							}
-						};
+						return { };
 					}
 				public:
 					const std::string& Name() const
@@ -103,7 +62,7 @@ namespace AirEngine
 					}
 
 					//Initialize
-					static constexpr uint32_t PRE_INITIALIZE_LAYER = 100;
+					static constexpr uint32_t PRE_INITIALIZE_LAYER = 0;
 
 					static constexpr uint32_t GRAPHIC_INITIALIZE_LAYER = 100;
 					static constexpr uint32_t GRAPHIC_INITIALIZE_INSTANCE_INDEX = 0;
@@ -112,7 +71,7 @@ namespace AirEngine
 					static constexpr uint32_t GRAPHIC_INITIALIZE_SWAPCHAIN_INDEX = 300;
 					static constexpr uint32_t GRAPHIC_INITIALIZE_ORTHER_INDEX = 400;
 
-					static constexpr uint32_t POST_INITIALIZE_LAYER = 100;
+					static constexpr uint32_t POST_INITIALIZE_LAYER = 1000;
 
 					//Update
 					static constexpr uint32_t LOGIC_UPDATE_LAYER = 0;
