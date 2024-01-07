@@ -12,6 +12,9 @@ AirEngine::Runtime::Graphic::Instance::Buffer* AirEngine::Runtime::Graphic::Mana
 std::vector<uint8_t> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_hostMemory{};
 std::vector<AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_dirtyHandles{};
 
+std::unordered_map<vk::DescriptorType, uint8_t> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_descriptorTypeToSizeMap{};
+uint8_t AirEngine::Runtime::Graphic::Manager::DescriptorManager::_descriptorOffsetAlignment{};
+
 inline void AirEngine::Runtime::Graphic::Manager::DescriptorManager::IncreaseHostMemory()
 {
 	DescriptorMemoryHandle newHandle(ToCompressed(_currentSize), ToCompressed(_currentSize));
@@ -316,6 +319,15 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::CopyHostDirtyDataT
 	_hostCachedBuffer->Memory()->Unmap();
 }
 
+AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorManager()
+	: ManagerBase("DescriptorManager")
+{
+}
+
+AirEngine::Runtime::Graphic::Manager::DescriptorManager::~DescriptorManager()
+{
+}
+
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 {
 	auto&& physicalDeviceDescriptorBufferPropertiesEXT = vk::PhysicalDeviceDescriptorBufferPropertiesEXT();
@@ -339,4 +351,19 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached,
 		VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
 	);
+
+	_descriptorOffsetAlignment = physicalDeviceDescriptorBufferPropertiesEXT.descriptorBufferOffsetAlignment;
+
+	_descriptorTypeToSizeMap[vk::DescriptorType::eUniformBuffer] = physicalDeviceDescriptorBufferPropertiesEXT.uniformBufferDescriptorSize;
+	_descriptorTypeToSizeMap[vk::DescriptorType::eCombinedImageSampler] = physicalDeviceDescriptorBufferPropertiesEXT.combinedImageSamplerDescriptorSize;
+	_descriptorTypeToSizeMap[vk::DescriptorType::eStorageBuffer] = physicalDeviceDescriptorBufferPropertiesEXT.storageBufferDescriptorSize;
+	_descriptorTypeToSizeMap[vk::DescriptorType::eStorageImage] = physicalDeviceDescriptorBufferPropertiesEXT.storageImageDescriptorSize;
+	_descriptorTypeToSizeMap[vk::DescriptorType::eInputAttachment] = physicalDeviceDescriptorBufferPropertiesEXT.inputAttachmentDescriptorSize;
+}
+
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Graphic::Manager::DescriptorManager::OnGetInitializeOperations()
+{
+	return {
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_POST_INITIALIZE_DEVICE_INDEX, "Initialize descriptor buffer data.", Initialize }
+	};
 }

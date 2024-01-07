@@ -47,7 +47,6 @@ namespace AirEngine
 					static void PopulateQueue();
 					static void CreateSwapchain();
 					static void CreateMemoryAllocator();
-					static void InitializeGraphicManagers();
 
 					virtual std::vector<Utility::OperationWrapper> OnGetUpdateOperations() override;
 					static void RenderUpdate();

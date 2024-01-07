@@ -65,11 +65,20 @@ namespace AirEngine
 					static constexpr uint32_t PRE_INITIALIZE_LAYER = 0;
 
 					static constexpr uint32_t GRAPHIC_INITIALIZE_LAYER = 100;
-					static constexpr uint32_t GRAPHIC_INITIALIZE_INSTANCE_INDEX = 0;
-					static constexpr uint32_t GRAPHIC_INITIALIZE_WINDOW_SURFACE_INDEX = 100;
-					static constexpr uint32_t GRAPHIC_INITIALIZE_DEVICE_INDEX = 200;
-					static constexpr uint32_t GRAPHIC_INITIALIZE_SWAPCHAIN_INDEX = 300;
-					static constexpr uint32_t GRAPHIC_INITIALIZE_ORTHER_INDEX = 400;
+					static constexpr uint32_t GRAPHIC_PRE_INITIALIZE_INDEX = 0;
+					static constexpr uint32_t GRAPHIC_PRE_INITIALIZE_INSTANCE_INDEX = 100;
+					static constexpr uint32_t GRAPHIC_INITIALIZE_INSTANCE_INDEX = 200;
+					static constexpr uint32_t GRAPHIC_POST_INITIALIZE_INSTANCE_INDEX = 300;
+					static constexpr uint32_t GRAPHIC_PRE_INITIALIZE_WINDOW_SURFACE_INDEX = 400;
+					static constexpr uint32_t GRAPHIC_INITIALIZE_WINDOW_SURFACE_INDEX = 500;
+					static constexpr uint32_t GRAPHIC_POST_INITIALIZE_WINDOW_SURFACE_INDEX = 600;
+					static constexpr uint32_t GRAPHIC_PRE_INITIALIZE_DEVICE_INDEX = 700;
+					static constexpr uint32_t GRAPHIC_INITIALIZE_DEVICE_INDEX = 800;
+					static constexpr uint32_t GRAPHIC_POST_INITIALIZE_DEVICE_INDEX = 900;
+					static constexpr uint32_t GRAPHIC_PRE_INITIALIZE_SWAPCHAIN_INDEX = 1000;
+					static constexpr uint32_t GRAPHIC_INITIALIZE_SWAPCHAIN_INDEX = 1100;
+					static constexpr uint32_t GRAPHIC_POST_INITIALIZE_SWAPCHAIN_INDEX = 1200;
+					static constexpr uint32_t GRAPHIC_POST_INITIALIZE_INDEX = 1300;
 
 					static constexpr uint32_t POST_INITIALIZE_LAYER = 1000;
 
