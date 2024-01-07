@@ -26,6 +26,7 @@ namespace AirEngine
 					std::vector<std::string> imageUsageFlags;
 					std::vector<std::string> memoryPropertyFlags;
 					std::vector<std::string> imageAspectFlags;
+					bool generateDefaultView;
 					bool topDown;
 
 					NLOHMANN_DEFINE_TYPE_INTRUSIVE(
@@ -38,6 +39,7 @@ namespace AirEngine
 						imageUsageFlags,
 						memoryPropertyFlags,
 						imageAspectFlags,
+						generateDefaultView,
 						topDown
 					)
 				};

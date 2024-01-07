@@ -57,6 +57,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	const vk::Format originalFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.originalFormat);
 	const vk::Format targetFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.format);
 	const bool topDown = descriptor.topDown;
+	const bool autoGenerateView = descriptor.generateDefaultView;
 	vk::ImageUsageFlags imageUsageFlags = {};
 	vk::MemoryPropertyFlags memoryPropertyFlags = {};
 	vk::ImageLayout imageLayout = Utility::VulkanOpenCVTypeTransfer::ParseToVkImageLayout(descriptor.imageLayout);
@@ -269,6 +270,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 		vk::ImageUsageFlagBits::eTransferDst | imageUsageFlags,
 		memoryPropertyFlags
 	);
+	if(autoGenerateView) targetImage->AddView({}, vk::ImageViewType::e2D, vk::ImageAspectFlagBits::eColor, 0, mipmapLevelCount, 0, 1);
 	auto&& originalImage = std::unique_ptr<Graphic::Instance::Image>(isDirectCopy ? nullptr : new Graphic::Instance::Image(
 		originalFormat,
 		imageMaxExtent,
