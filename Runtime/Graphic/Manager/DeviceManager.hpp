@@ -11,12 +11,9 @@ namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace Core
+		namespace FrontEnd
 		{
-			namespace FrontEnd
-			{
-				class FrontEndBase;
-			}
+			class FrontEndBase;
 		}
 		namespace Graphic
 		{
@@ -40,7 +37,7 @@ namespace AirEngine
 
 					static std::unordered_map<Utility::InternedString, std::unique_ptr<Graphic::Instance::Queue>> _queueMap;
 					
-					static Core::FrontEnd::FrontEndBase* _frontEnd;
+					static FrontEnd::FrontEndBase* _frontEnd;
 
 					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
 					static void CreateVulkanInstance();
@@ -89,7 +86,7 @@ namespace AirEngine
 						return *_queueMap[queueName];
 					}
 
-					static inline Core::FrontEnd::FrontEndBase& FrontEnd()
+					static inline FrontEnd::FrontEndBase& FrontEnd()
 					{
 						return *_frontEnd;
 					}
