@@ -1,10 +1,10 @@
 ﻿#include "DeviceManager.hpp"
 #include <iostream>
 #include <vk_mem_alloc.h>
-#include "AirEngine/Runtime/Core/FrontEnd/FrontEndBase.hpp"
+#include "AirEngine/Runtime/FrontEnd/FrontEndBase.hpp"
 #include <vulkan/vk_enum_string_helper.h>
-#include "AirEngine/Runtime/Core/FrontEnd/Window.hpp"
-#include "AirEngine/Runtime/Core/FrontEnd/DummyWindow.hpp"
+#include "AirEngine/Runtime/FrontEnd/Window.hpp"
+#include "AirEngine/Runtime/FrontEnd/DummyWindow.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -20,7 +20,7 @@ VmaAllocator AirEngine::Runtime::Graphic::Manager::DeviceManager::_vmaAllocator{
 
 std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::Queue>> AirEngine::Runtime::Graphic::Manager::DeviceManager::_queueMap{ };
 
-AirEngine::Runtime::Core::FrontEnd::FrontEndBase* AirEngine::Runtime::Graphic::Manager::DeviceManager::_frontEnd{ nullptr };
+AirEngine::Runtime::FrontEnd::FrontEndBase* AirEngine::Runtime::Graphic::Manager::DeviceManager::_frontEnd{ nullptr };
 
 #ifndef NDEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
@@ -81,7 +81,7 @@ void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateVulkanInstance()
 void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateSurface()
 {
 	//_frontEnd = new FrontEnd::DummyWindow();
-	_frontEnd = new Core::FrontEnd::Window();
+	_frontEnd = new FrontEnd::Window();
 	_frontEnd->OnCreateSurface();
 }
 
@@ -147,7 +147,7 @@ void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateDevice()
 		.add_required_extension_features(vkPhysicalDeviceDescriptorIndexingFeaturesEXT);
 	if (isWindow)
 	{
-		physicalDeviceSelector.set_surface(dynamic_cast<Core::FrontEnd::WindowFrontEndBase&>(FrontEnd()).VkSurface());
+		physicalDeviceSelector.set_surface(dynamic_cast<FrontEnd::WindowFrontEndBase&>(FrontEnd()).VkSurface());
 		physicalDeviceSelector.require_present(true);
 	}
 	else

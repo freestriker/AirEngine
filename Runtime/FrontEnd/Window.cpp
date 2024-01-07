@@ -22,7 +22,7 @@
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include <QPlatformSurfaceEvent>
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateSurface()
+void AirEngine::Runtime::FrontEnd::Window::OnCreateSurface()
 {
 	//setMinimumSize({ 1600, 900 });
 	//setMaximumSize({ 1600, 900 });
@@ -38,12 +38,12 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateSurface()
 	_vkSurface = _qVulkanInstance.surfaceForWindow(this);
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnCreateSwapchain()
+void AirEngine::Runtime::FrontEnd::Window::OnCreateSwapchain()
 {
 	RecreateVulkanSwapchain();
 }
 
-bool AirEngine::Runtime::Core::FrontEnd::Window::AcquireImage()
+bool AirEngine::Runtime::FrontEnd::Window::AcquireImage()
 {
 	auto&& realWindowExtent = size() * devicePixelRatio();
 	if (realWindowExtent.width() != _vkbSwapchain.extent.width || realWindowExtent.height() != _vkbSwapchain.extent.height)
@@ -88,7 +88,7 @@ static AirEngine::Runtime::AssetLoader::AssetLoadHandle assetLoadHandle{};
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle meshLoadHandle{};
 static AirEngine::Runtime::AssetLoader::AssetLoadHandle shaderLoadHandle{};
 
-bool AirEngine::Runtime::Core::FrontEnd::Window::Present()
+bool AirEngine::Runtime::FrontEnd::Window::Present()
 {
 	if (!isLoaded)
 	{
@@ -263,7 +263,7 @@ bool AirEngine::Runtime::Core::FrontEnd::Window::Present()
 	return true;
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::RecreateVulkanSwapchain()
+void AirEngine::Runtime::FrontEnd::Window::RecreateVulkanSwapchain()
 {
 	vkb::SwapchainBuilder swapchainBuilder(Graphic::Manager::DeviceManager::VkbDevice());
 	swapchainBuilder = swapchainBuilder.set_desired_format({ VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
@@ -310,7 +310,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::RecreateVulkanSwapchain()
 	_transferFence = new Graphic::Command::Fence(true);
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::DestroyVulkanSwapchain()
+void AirEngine::Runtime::FrontEnd::Window::DestroyVulkanSwapchain()
 {
 	if (!_vkSwapchain) return;
 
@@ -340,7 +340,7 @@ void AirEngine::Runtime::Core::FrontEnd::Window::DestroyVulkanSwapchain()
 	_vkbSwapchain.swapchain = _vkSwapchain;
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnFinishRender()
+void AirEngine::Runtime::FrontEnd::Window::OnFinishRender()
 {
 	_beginPresentCondition.Awake();
 
@@ -350,11 +350,11 @@ void AirEngine::Runtime::Core::FrontEnd::Window::OnFinishRender()
 	_endPresentCondition.Reset();
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::OnStartRender()
+void AirEngine::Runtime::FrontEnd::Window::OnStartRender()
 {
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::exposeEvent(QExposeEvent* e)
+void AirEngine::Runtime::FrontEnd::Window::exposeEvent(QExposeEvent* e)
 {
 	if (isExposed()) 
 	{
@@ -371,12 +371,12 @@ void AirEngine::Runtime::Core::FrontEnd::Window::exposeEvent(QExposeEvent* e)
 	}
 }
 
-void AirEngine::Runtime::Core::FrontEnd::Window::resizeEvent(QResizeEvent*)
+void AirEngine::Runtime::FrontEnd::Window::resizeEvent(QResizeEvent*)
 {
 	// Nothing to do here - recreating the swapchain is handled when building the next frame.
 }
 
-bool AirEngine::Runtime::Core::FrontEnd::Window::event(QEvent* e)
+bool AirEngine::Runtime::FrontEnd::Window::event(QEvent* e)
 {
 	switch (e->type()) 
 	{
@@ -431,7 +431,7 @@ bool AirEngine::Runtime::Core::FrontEnd::Window::event(QEvent* e)
 	return QWindow::event(e);
 }
 
-AirEngine::Runtime::Core::FrontEnd::Window::Window()
+AirEngine::Runtime::FrontEnd::Window::Window()
 	: QWindow()
 	, WindowFrontEndBase()
 	, _endPresentCondition()
