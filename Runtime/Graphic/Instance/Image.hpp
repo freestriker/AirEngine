@@ -4,6 +4,7 @@
 #include "AirEngine/Runtime/Utility/ExportMacro.hpp"
 #include <memory>
 #include "Memory.hpp"
+#include "AirEngine/Runtime/Utility/InternedString.hpp"
 
 namespace AirEngine
 {
@@ -14,9 +15,15 @@ namespace AirEngine
 			namespace Instance
 			{
 				class Memory;
-				class 
-					Image final
+				class Image final
 				{
+				public:
+					struct View
+					{
+						vk::ImageViewType type;
+						vk::ImageSubresourceRange subresource;
+						vk::ImageView imageView;
+					};
 				private:
 					vk::Format _format;
 					vk::Extent3D _extent3D;
@@ -29,7 +36,22 @@ namespace AirEngine
 					vk::Image _image;
 					bool _isNative;
 					std::shared_ptr<Memory> _memory;
+				private:
+					std::unordered_map<Utility::InternedString, View> _views;
 				public:
+					void AddView(
+						Utility::InternedString name,
+						vk::ImageViewType type, 
+						vk::ImageAspectFlags aspectMask,
+						uint32_t baseMipLevel,
+						uint32_t levelCount,
+						uint32_t baseArrayLayer,
+						uint32_t layerCount
+					);
+					void RemoveView(Utility::InternedString name);
+					const std::unordered_map<Utility::InternedString, View>& Views() const;
+				public:
+					// VkImage + Memory
 					Image(
 						vk::Format format,
 						vk::Extent3D extent3D,
@@ -42,6 +64,7 @@ namespace AirEngine
 						vk::ImageCreateFlags imageCreateFlags = {},
 						VmaAllocationCreateFlags flags = 0, VmaMemoryUsage memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_AUTO
 					);
+					// VkImage + Existed Memory
 					Image(
 						vk::Format format,
 						vk::Extent3D extent3D,
@@ -53,6 +76,7 @@ namespace AirEngine
 						vk::ImageTiling imageTiling = vk::ImageTiling::eOptimal,
 						vk::ImageCreateFlags imageCreateFlags = {}
 					);
+					// VkImage
 					Image(
 						vk::Format format,
 						vk::Extent3D extent3D,
@@ -63,6 +87,7 @@ namespace AirEngine
 						vk::ImageTiling imageTiling = vk::ImageTiling::eOptimal,
 						vk::ImageCreateFlags imageCreateFlags = {}
 					);
+					// Swapchain
 					Image(
 						vk::Image image,
 						vk::Format format,

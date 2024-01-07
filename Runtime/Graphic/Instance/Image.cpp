@@ -14,6 +14,32 @@ void AirEngine::Runtime::Graphic::Instance::Image::SetMemory(std::shared_ptr<Ins
 	if (VK_SUCCESS != bindResult) qFatal("Failed to bind image.");
 }
 
+void AirEngine::Runtime::Graphic::Instance::Image::AddView(Utility::InternedString name, vk::ImageViewType type, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount)
+{
+	View newView{};
+	newView.type = type;
+	newView.subresource = vk::ImageSubresourceRange(aspectMask, baseMipLevel, levelCount, baseArrayLayer, layerCount);
+
+	vk::ImageViewCreateInfo info({}, _image, type, _format, {}, newView.subresource);
+	newView.imageView = Manager::DeviceManager::Device().createImageView(info);
+
+	if(!_views.try_emplace(name, std::move(newView)).second) qFatal("Image failed to add new view.");
+}
+
+void AirEngine::Runtime::Graphic::Instance::Image::RemoveView(Utility::InternedString name)
+{
+	auto&& iter = _views.find(name);
+	if (iter == _views.end()) qFatal("Image do not contain this view.");
+
+	Manager::DeviceManager::Device().destroyImageView(iter->second.imageView);
+	_views.erase(iter);
+}
+
+const std::unordered_map<AirEngine::Runtime::Utility::InternedString, AirEngine::Runtime::Graphic::Instance::Image::View>& AirEngine::Runtime::Graphic::Instance::Image::Views() const
+{
+	return _views;
+}
+
 AirEngine::Runtime::Graphic::Instance::Image::Image(
 	vk::Format format,
 	vk::Extent3D extent3D,
@@ -88,7 +114,7 @@ AirEngine::Runtime::Graphic::Instance::Image::Image(
 	, _layerCount(layerCount)
 	, _mipmapLevelCount(mipmapLevelCount)
 	, _image()
-	, _memory()
+	, _memory(memory)
 	, _isNative(false)
 {
 	vk::ImageCreateInfo imageCreateInfo{};
