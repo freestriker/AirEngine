@@ -1,16 +1,16 @@
 ﻿#include "Image.hpp"
-#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
-#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 
 AirEngine::Runtime::Graphic::Instance::Image::~Image()
 {
-	if(!_isNative) Core::Manager::RenderManager::Device().destroyImage(_image);
+	if(!_isNative) Graphic::Manager::DeviceManager::Device().destroyImage(_image);
 }
 
 void AirEngine::Runtime::Graphic::Instance::Image::SetMemory(std::shared_ptr<Instance::Memory> memory)
 {
 	_memory = std::move(memory);
-	auto bindResult = vmaBindImageMemory(Core::Manager::RenderManager::VmaAllocator(), _memory->Allocation(), _image);
+	auto bindResult = vmaBindImageMemory(Graphic::Manager::DeviceManager::VmaAllocator(), _memory->Allocation(), _image);
 	if (VK_SUCCESS != bindResult) qFatal("Failed to bind image.");
 }
 
@@ -60,7 +60,7 @@ AirEngine::Runtime::Graphic::Instance::Image::Image(
 	VmaAllocationInfo vmaInfo{};
 	VmaAllocation vmaAllocation{};
 	VkImage vkImage{};
-	auto result = vmaCreateImage(Core::Manager::RenderManager::VmaAllocator(), &imageCreateInfo, &vmaCreateInfo, &vkImage, &vmaAllocation, &vmaInfo);
+	auto result = vmaCreateImage(Graphic::Manager::DeviceManager::VmaAllocator(), &imageCreateInfo, &vmaCreateInfo, &vkImage, &vmaAllocation, &vmaInfo);
 
 	if (VK_SUCCESS != result) qFatal("Failed to create image.");
 
@@ -104,9 +104,9 @@ AirEngine::Runtime::Graphic::Instance::Image::Image(
 	imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 	imageCreateInfo.flags = _imageCreateFlags;
 
-	_image = Core::Manager::RenderManager::Device().createImage(imageCreateInfo);
+	_image = Graphic::Manager::DeviceManager::Device().createImage(imageCreateInfo);
 
-	auto bindResult = vmaBindImageMemory(Core::Manager::RenderManager::VmaAllocator(), _memory->Allocation(), _image);
+	auto bindResult = vmaBindImageMemory(Graphic::Manager::DeviceManager::VmaAllocator(), _memory->Allocation(), _image);
 
 	if (VkResult::VK_SUCCESS != bindResult) qFatal("Failed to bind image.");
 }
@@ -146,7 +146,7 @@ AirEngine::Runtime::Graphic::Instance::Image::Image(
 	imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 	imageCreateInfo.flags = _imageCreateFlags;
 
-	_image = Core::Manager::RenderManager::Device().createImage(imageCreateInfo);
+	_image = Graphic::Manager::DeviceManager::Device().createImage(imageCreateInfo);
 }
 
 AirEngine::Runtime::Graphic::Instance::Image::Image(

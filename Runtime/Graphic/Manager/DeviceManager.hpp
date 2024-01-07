@@ -1,11 +1,11 @@
 #pragma once
-#include "ManagerBase.hpp"
+#include "AirEngine/Runtime/Core/Manager/ManagerBase.hpp"
 #include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
 #include <unordered_map>
 #include "AirEngine/Runtime/Utility/InternedString.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Queue.hpp"
-#include "vulkan/vulkan.hpp"
+#include <vulkan/vulkan.hpp>
 
 namespace AirEngine
 {
@@ -17,13 +17,16 @@ namespace AirEngine
 			{
 				class FrontEndBase;
 			}
+		}
+		namespace Graphic
+		{
 			namespace Manager
 			{
-				class AIR_ENGINE_API RenderManager
-					: public ManagerBase
+				class AIR_ENGINE_API DeviceManager
+					: public Core::Manager::ManagerBase
 				{
 				private:
-					NO_COPY_MOVE(RenderManager)
+					NO_COPY_MOVE(DeviceManager)
 				protected:
 					static vkb::Instance _vkbInstance;
 					static vkb::PhysicalDevice _vkbPhysicalDevice;
@@ -37,7 +40,7 @@ namespace AirEngine
 
 					static std::unordered_map<Utility::InternedString, std::unique_ptr<Graphic::Instance::Queue>> _queueMap;
 					
-					static FrontEnd::FrontEndBase* _frontEnd;
+					static Core::FrontEnd::FrontEndBase* _frontEnd;
 
 					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
 					static void CreateVulkanInstance();
@@ -86,13 +89,13 @@ namespace AirEngine
 						return *_queueMap[queueName];
 					}
 
-					static inline FrontEnd::FrontEndBase& FrontEnd()
+					static inline Core::FrontEnd::FrontEndBase& FrontEnd()
 					{
 						return *_frontEnd;
 					}
 
-					RenderManager();
-					virtual ~RenderManager();
+					DeviceManager();
+					virtual ~DeviceManager();
 				};
 			}
 		}

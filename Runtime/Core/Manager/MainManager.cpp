@@ -1,6 +1,6 @@
 #include "MainManager.hpp"
 #include <algorithm>
-#include "RenderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 #include "SceneManager.hpp"
 #include "ThirdPartyLibraryManager.hpp"
 #include "LogicManager.hpp"
@@ -20,7 +20,7 @@ AirEngine::Runtime::Core::Manager::MainManager::MainManager()
 {
 	ResetManager(std::make_shared<Manager::ThirdPartyLibraryManager>());
 	ResetManager(std::make_shared<Manager::SceneManager>());
-	ResetManager(std::make_shared<Manager::RenderManager>());
+	ResetManager(std::make_shared<Graphic::Manager::DeviceManager>());
 	ResetManager(std::make_shared<Manager::LogicManager>());
 	ResetManager(std::make_shared<Manager::AssetManager>());
 	ResetManager(std::make_shared<Manager::TaskManager>());

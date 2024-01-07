@@ -1,12 +1,12 @@
 ﻿#include "Semaphore.hpp"
-#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 
 AirEngine::Runtime::Graphic::Command::Semaphore::Semaphore()
-	: _vkSemaphore(Core::Manager::RenderManager::Device().createSemaphore(vk::SemaphoreCreateInfo{}))
+	: _vkSemaphore(Graphic::Manager::DeviceManager::Device().createSemaphore(vk::SemaphoreCreateInfo{}))
 {
 }
 
 AirEngine::Runtime::Graphic::Command::Semaphore::~Semaphore()
 {
-	Core::Manager::RenderManager::Device().destroySemaphore(_vkSemaphore);
+	Graphic::Manager::DeviceManager::Device().destroySemaphore(_vkSemaphore);
 }

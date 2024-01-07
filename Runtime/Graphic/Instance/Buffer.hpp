@@ -2,7 +2,7 @@
 #include <vulkan/vulkan.hpp>
 #include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
 #include "AirEngine/Runtime/Utility/ExportMacro.hpp"
-#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 #include <memory>
 #include "Memory.hpp"
 
@@ -43,7 +43,7 @@ namespace AirEngine
 					inline void SetMemory(std::shared_ptr<Memory> memory)
 					{
 						_memory = std::move(memory);
-						auto bindResult = vmaBindBufferMemory(Core::Manager::RenderManager::VmaAllocator(), _memory->Allocation(), _vkBuffer);
+						auto bindResult = vmaBindBufferMemory(Graphic::Manager::DeviceManager::VmaAllocator(), _memory->Allocation(), _vkBuffer);
 						if (VK_SUCCESS != bindResult) qFatal("Failed to bind buffer.");
 					}
 					inline std::shared_ptr<Memory> Memory()const

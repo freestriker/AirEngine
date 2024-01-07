@@ -3,7 +3,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_format_traits.hpp>
-#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 #include "AirEngine/Runtime/Utility/VulkanOpenCVTypeTransfer.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Image.hpp"
