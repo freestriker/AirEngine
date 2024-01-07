@@ -59,6 +59,13 @@ void AirEngine::Runtime::Graphic::Manager::RenderPassManager::UnloadRenderPassIm
     iterator->second.refrenceCount--;
 }
 
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Graphic::Manager::RenderPassManager::OnGetUpdateOperations()
+{
+    return {
+        { COLLECT_UPDATE_LAYER, 0, "Collect free render pass.", Collect }
+    };
+}
+
 void AirEngine::Runtime::Graphic::Manager::RenderPassManager::Collect()
 {
     std::unique_lock<std::mutex> locker(_managerMutex);
@@ -75,4 +82,13 @@ void AirEngine::Runtime::Graphic::Manager::RenderPassManager::Collect()
             ++iterator;
         }
     }
+}
+
+AirEngine::Runtime::Graphic::Manager::RenderPassManager::RenderPassManager()
+    : ManagerBase("RenderPassManager")
+{
+}
+
+AirEngine::Runtime::Graphic::Manager::RenderPassManager::~RenderPassManager()
+{
 }
