@@ -1,5 +1,5 @@
 ﻿#include "UniformBuffer.hpp"
-#include "AirEngine/Runtime/Graphic/Manager/ShaderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 
 AirEngine::Runtime::Graphic::Instance::UniformBuffer::UniformBuffer(
 	vk::DeviceSize size, 
@@ -21,7 +21,7 @@ AirEngine::Runtime::Graphic::Instance::UniformBuffer::UniformBuffer(
 	descriptorGetInfo.type = vk::DescriptorType::eUniformBuffer;
 	descriptorGetInfo.data.pUniformBuffer = &descriptorAddressInfo;
 
-	auto&& descriptorSize = Manager::ShaderManager::DescriptorSize(vk::DescriptorType::eUniformBuffer);
+	auto&& descriptorSize = Manager::DescriptorManager::DescriptorSize(vk::DescriptorType::eUniformBuffer);
 	RawDescriptor().resize(descriptorSize);
 
 	Core::Manager::RenderManager::Device().getDescriptorEXT(

@@ -1,10 +1,11 @@
 #pragma once
+#include "AirEngine/Runtime/Core/Manager/ManagerBase.hpp"
 #include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
 #include "AirEngine/Runtime/Utility/ExportMacro.hpp"
 #include <map>
 #include <vulkan/vulkan.hpp>
-#include "DescriptorManagerData.hpp"
-#include "AirEngine/Runtime/Utility/ThreadInclude.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DescriptorManagerData.hpp"
+#include <unordered_map>
 
 namespace AirEngine
 {
@@ -26,15 +27,13 @@ namespace AirEngine
 			namespace Manager
 			{
 				class AIR_ENGINE_API DescriptorManager final
+					: public Core::Manager::ManagerBase
 				{
-					friend class Core::Manager::RenderManager;
 				private:
-					DescriptorManager() = delete;
-					~DescriptorManager() = delete;
-					NO_COPY_MOVE(DescriptorManager)
-
 					static void Initialize();
+					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
 				private:
+					//Descriptor buffer
 					static std::mutex _mutex;
 					static std::map<uint32_t, DescriptorMemoryHandle> _freeMemoryMap;
 					static size_t _currentSize;
@@ -44,7 +43,15 @@ namespace AirEngine
 					static Instance::Buffer* _hostCachedBuffer;
 					static std::vector<uint8_t> _hostMemory;
 					static std::vector<DescriptorMemoryHandle> _dirtyHandles;
+				
+					//Descriptoe map
+					static std::unordered_map<vk::DescriptorType, uint8_t> _descriptorTypeToSizeMap;
+					static uint8_t _descriptorOffsetAlignment;
 				public:
+					DescriptorManager();
+					~DescriptorManager() override;
+					NO_COPY_MOVE(DescriptorManager)
+
 					static inline std::mutex& Mutex()
 					{
 						return _mutex;
@@ -86,6 +93,15 @@ namespace AirEngine
 					inline static uint16_t DescriptorMemoryAlignment()
 					{
 						return _descriptorMemoryAlignment;
+					}
+
+					inline static uint8_t DescriptorOffsetAlignment()
+					{
+						return _descriptorOffsetAlignment;
+					}
+					inline static uint8_t DescriptorSize(vk::DescriptorType descriptorType)
+					{
+						return _descriptorTypeToSizeMap.at(descriptorType);
 					}
 				};
 			}

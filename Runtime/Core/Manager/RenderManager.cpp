@@ -3,8 +3,6 @@
 #include <vk_mem_alloc.h>
 #include "AirEngine/Runtime/Core/FrontEnd/FrontEndBase.hpp"
 #include <vulkan/vk_enum_string_helper.h>
-#include "AirEngine/Runtime/Graphic/Manager/ShaderManager.hpp"
-#include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include "AirEngine/Runtime/Core/FrontEnd/Window.hpp"
 #include "AirEngine/Runtime/Core/FrontEnd/DummyWindow.hpp"
 
@@ -39,9 +37,8 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 	return {
 		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_INSTANCE_INDEX, "Create vulkan instance.", CreateVulkanInstance},
 		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_WINDOW_SURFACE_INDEX, "Create window's surface.", CreateSurface},
-		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_DEVICE_INDEX, "Create vulkan device.", []()->void { CreateDevice(); SetDefaultDispatcher(); PopulateQueue(); }},
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_DEVICE_INDEX, "Create vulkan device.", []()->void { CreateDevice(); SetDefaultDispatcher(); PopulateQueue(); CreateMemoryAllocator(); }},
 		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_SWAPCHAIN_INDEX, "Create window's swapchain.", CreateSwapchain},
-		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_ORTHER_INDEX, "Initialize orther thing.", []()->void { CreateMemoryAllocator(); InitializeGraphicManagers(); }},
 	};
 }
 
@@ -276,12 +273,6 @@ void AirEngine::Runtime::Core::Manager::RenderManager::CreateMemoryAllocator()
 	allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
 	vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator);
-}
-
-void AirEngine::Runtime::Core::Manager::RenderManager::InitializeGraphicManagers()
-{
-	Graphic::Manager::ShaderManager::Initialize();
-	Graphic::Manager::DescriptorManager::Initialize();
 }
 
 std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::RenderManager::OnGetUpdateOperations()

@@ -8,7 +8,7 @@
 #include "AirEngine/Runtime/Graphic/Instance/RenderPassBase.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/RenderPassManager.hpp"
 #include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
-#include "AirEngine/Runtime/Graphic/Manager/ShaderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include <vulkan/vulkan.hpp>
 #include "AirEngine/Runtime/Utility/StringToVulkanypeTransfer.hpp"
 #include "AirEngine/Runtime/Core/Manager/TaskManager.hpp"
@@ -565,7 +565,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 			{
 				const auto binding = bindingToDescriptorInfoMapPair.first;
 				auto& descriptorInfo = bindingToDescriptorInfoMapPair.second;
-				descriptorInfo.singleDescriptorByteSize = AirEngine::Runtime::Graphic::Manager::ShaderManager::DescriptorSize(descriptorInfo.type);
+				descriptorInfo.singleDescriptorByteSize = AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorSize(descriptorInfo.type);
 				descriptorInfo.solidByteSizeInDescriptorSet = descriptorInfo.singleDescriptorByteSize * descriptorInfo.descriptorCount;
 				descriptorInfo.startByteOffsetInDescriptorSet = uint16_t(AirEngine::Runtime::Core::Manager::RenderManager::Device().getDescriptorSetLayoutBindingOffsetEXT(layout, uint32_t(binding)));
 			}
