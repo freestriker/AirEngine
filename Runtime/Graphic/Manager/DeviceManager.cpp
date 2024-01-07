@@ -1,4 +1,4 @@
-﻿#include "RenderManager.hpp"
+﻿#include "DeviceManager.hpp"
 #include <iostream>
 #include <vk_mem_alloc.h>
 #include "AirEngine/Runtime/Core/FrontEnd/FrontEndBase.hpp"
@@ -8,19 +8,19 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-vkb::Instance AirEngine::Runtime::Core::Manager::RenderManager::_vkbInstance{};
-vkb::PhysicalDevice AirEngine::Runtime::Core::Manager::RenderManager::_vkbPhysicalDevice{};
-vkb::Device AirEngine::Runtime::Core::Manager::RenderManager::_vkbDevice{};
+vkb::Instance AirEngine::Runtime::Graphic::Manager::DeviceManager::_vkbInstance{};
+vkb::PhysicalDevice AirEngine::Runtime::Graphic::Manager::DeviceManager::_vkbPhysicalDevice{};
+vkb::Device AirEngine::Runtime::Graphic::Manager::DeviceManager::_vkbDevice{};
 
-vk::Instance AirEngine::Runtime::Core::Manager::RenderManager::_instance{};
-vk::PhysicalDevice AirEngine::Runtime::Core::Manager::RenderManager::_physicalDevice{};
-vk::Device AirEngine::Runtime::Core::Manager::RenderManager::_device{};
+vk::Instance AirEngine::Runtime::Graphic::Manager::DeviceManager::_instance{};
+vk::PhysicalDevice AirEngine::Runtime::Graphic::Manager::DeviceManager::_physicalDevice{};
+vk::Device AirEngine::Runtime::Graphic::Manager::DeviceManager::_device{};
 
-VmaAllocator AirEngine::Runtime::Core::Manager::RenderManager::_vmaAllocator{ VK_NULL_HANDLE };
+VmaAllocator AirEngine::Runtime::Graphic::Manager::DeviceManager::_vmaAllocator{ VK_NULL_HANDLE };
 
-std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::Queue>> AirEngine::Runtime::Core::Manager::RenderManager::_queueMap{ };
+std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::Queue>> AirEngine::Runtime::Graphic::Manager::DeviceManager::_queueMap{ };
 
-AirEngine::Runtime::Core::FrontEnd::FrontEndBase* AirEngine::Runtime::Core::Manager::RenderManager::_frontEnd{ nullptr };
+AirEngine::Runtime::Core::FrontEnd::FrontEndBase* AirEngine::Runtime::Graphic::Manager::DeviceManager::_frontEnd{ nullptr };
 
 #ifndef NDEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
@@ -32,7 +32,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
 }
 #endif // !NDEBUG
 
-std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::RenderManager::OnGetInitializeOperations()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Graphic::Manager::DeviceManager::OnGetInitializeOperations()
 {
 	return {
 		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_INITIALIZE_INSTANCE_INDEX, "Create vulkan instance.", CreateVulkanInstance},
@@ -42,7 +42,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 	};
 }
 
-void AirEngine::Runtime::Core::Manager::RenderManager::CreateVulkanInstance()
+void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateVulkanInstance()
 {
 	vkb::InstanceBuilder instanceBuilder;	
 	instanceBuilder = instanceBuilder
@@ -78,14 +78,14 @@ void AirEngine::Runtime::Core::Manager::RenderManager::CreateVulkanInstance()
 	_instance = vk::Instance(_vkbInstance.instance);
 }
 
-void AirEngine::Runtime::Core::Manager::RenderManager::CreateSurface()
+void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateSurface()
 {
 	//_frontEnd = new FrontEnd::DummyWindow();
-	_frontEnd = new FrontEnd::Window();
+	_frontEnd = new Core::FrontEnd::Window();
 	_frontEnd->OnCreateSurface();
 }
 
-void AirEngine::Runtime::Core::Manager::RenderManager::CreateDevice()
+void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateDevice()
 {
 	const bool isWindow{ FrontEnd().IsWindow() };
 
@@ -147,7 +147,7 @@ void AirEngine::Runtime::Core::Manager::RenderManager::CreateDevice()
 		.add_required_extension_features(vkPhysicalDeviceDescriptorIndexingFeaturesEXT);
 	if (isWindow)
 	{
-		physicalDeviceSelector.set_surface(dynamic_cast<FrontEnd::WindowFrontEndBase&>(FrontEnd()).VkSurface());
+		physicalDeviceSelector.set_surface(dynamic_cast<Core::FrontEnd::WindowFrontEndBase&>(FrontEnd()).VkSurface());
 		physicalDeviceSelector.require_present(true);
 	}
 	else
@@ -225,7 +225,7 @@ void AirEngine::Runtime::Core::Manager::RenderManager::CreateDevice()
 	_device = vk::Device(_vkbDevice.device);
 }
 
-void AirEngine::Runtime::Core::Manager::RenderManager::SetDefaultDispatcher()
+void AirEngine::Runtime::Graphic::Manager::DeviceManager::SetDefaultDispatcher()
 {
 	vk::DynamicLoader dynamicLoader{};
 	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dynamicLoader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
@@ -234,7 +234,7 @@ void AirEngine::Runtime::Core::Manager::RenderManager::SetDefaultDispatcher()
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(Device());
 }
 
-void AirEngine::Runtime::Core::Manager::RenderManager::PopulateQueue()
+void AirEngine::Runtime::Graphic::Manager::DeviceManager::PopulateQueue()
 {
 	const bool isWindow{ FrontEnd().IsWindow() };
 
@@ -253,12 +253,12 @@ void AirEngine::Runtime::Core::Manager::RenderManager::PopulateQueue()
 
 }
 
-void AirEngine::Runtime::Core::Manager::RenderManager::CreateSwapchain()
+void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateSwapchain()
 {
 	_frontEnd->OnCreateSwapchain();
 }
 
-void AirEngine::Runtime::Core::Manager::RenderManager::CreateMemoryAllocator()
+void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateMemoryAllocator()
 {
 	VmaVulkanFunctions vulkanFunctions = {};
 	vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
@@ -275,7 +275,7 @@ void AirEngine::Runtime::Core::Manager::RenderManager::CreateMemoryAllocator()
 	vmaCreateAllocator(&allocatorCreateInfo, &_vmaAllocator);
 }
 
-std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Core::Manager::RenderManager::OnGetUpdateOperations()
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Graphic::Manager::DeviceManager::OnGetUpdateOperations()
 {
 	return
 	{
@@ -283,7 +283,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 	};
 }
 
-void AirEngine::Runtime::Core::Manager::RenderManager::RenderUpdate()
+void AirEngine::Runtime::Graphic::Manager::DeviceManager::RenderUpdate()
 {
 	if (!_frontEnd->IsReadyToRender())
 	{
@@ -298,11 +298,11 @@ void AirEngine::Runtime::Core::Manager::RenderManager::RenderUpdate()
 	_frontEnd->FinishRender();
 }
 
-AirEngine::Runtime::Core::Manager::RenderManager::RenderManager()
-	: ManagerBase("RenderManager")
+AirEngine::Runtime::Graphic::Manager::DeviceManager::DeviceManager()
+	: ManagerBase("DeviceManager")
 {
 }
 
-AirEngine::Runtime::Core::Manager::RenderManager::~RenderManager()
+AirEngine::Runtime::Graphic::Manager::DeviceManager::~DeviceManager()
 {
 }

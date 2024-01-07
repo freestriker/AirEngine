@@ -1,5 +1,5 @@
 ﻿#include "CommandBuffer.hpp"
-#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 #include "CommandPool.hpp"
 #include "Barrier.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Image.hpp"
@@ -17,12 +17,12 @@ AirEngine::Runtime::Graphic::Command::CommandBuffer::CommandBuffer(Utility::Inte
     allocInfo.level = _vkCommandBufferLevel;
     allocInfo.commandBufferCount = 1;
 
-    _vkCommandBuffer = Core::Manager::RenderManager::Device().allocateCommandBuffers(allocInfo).at(0);
+    _vkCommandBuffer = Graphic::Manager::DeviceManager::Device().allocateCommandBuffers(allocInfo).at(0);
 }
 
 AirEngine::Runtime::Graphic::Command::CommandBuffer::~CommandBuffer()
 {
-    Core::Manager::RenderManager::Device().freeCommandBuffers(_commandPool->VkHandle(), _vkCommandBuffer);
+    Graphic::Manager::DeviceManager::Device().freeCommandBuffers(_commandPool->VkHandle(), _vkCommandBuffer);
 }
 
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::Reset()

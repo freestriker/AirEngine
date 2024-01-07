@@ -8,17 +8,20 @@ namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace Core
+		namespace Graphic
 		{
 			namespace Manager
 			{
-				class RenderManager;
+				class DeviceManager;
 			}
+		}
+		namespace Core
+		{
 			namespace FrontEnd
 			{
 				class AIR_ENGINE_API FrontEndBase
 				{
-					friend class Manager::RenderManager;
+					friend class Graphic::Manager::DeviceManager;
 				public:
 				private:
 					const bool _isWindow;
@@ -64,7 +67,7 @@ namespace AirEngine
 				class AIR_ENGINE_API WindowFrontEndBase
 					: public FrontEndBase
 				{
-					friend class Manager::RenderManager;
+					friend class Graphic::Manager::DeviceManager;
 				private:
 				protected:
 					vkb::Swapchain _vkbSwapchain;

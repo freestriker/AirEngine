@@ -24,7 +24,7 @@ AirEngine::Runtime::Graphic::Instance::UniformBuffer::UniformBuffer(
 	auto&& descriptorSize = Manager::DescriptorManager::DescriptorSize(vk::DescriptorType::eUniformBuffer);
 	RawDescriptor().resize(descriptorSize);
 
-	Core::Manager::RenderManager::Device().getDescriptorEXT(
+	Graphic::Manager::DeviceManager::Device().getDescriptorEXT(
 		&descriptorGetInfo,
 		descriptorSize,
 		RawDescriptor().data()

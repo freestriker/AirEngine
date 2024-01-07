@@ -1,5 +1,5 @@
 ﻿#include "RenderPassBase.hpp"
-#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 
 REGISTRATION
 {
@@ -191,7 +191,7 @@ vk::RenderPass AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPass
 	vkRenderPassCreateInfo.pCorrelatedViewMasks = nullptr;
 	vkRenderPassCreateInfo.pNext = nullptr;
 
-	return Core::Manager::RenderManager::Device().createRenderPass2(vkRenderPassCreateInfo);
+	return Graphic::Manager::DeviceManager::Device().createRenderPass2(vkRenderPassCreateInfo);
 }
 
 AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassInfo AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassBuilder::BuildInfo() const
@@ -334,7 +334,7 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::~RenderPassBase()
 {
 	if (_vkRenderPass)
 	{
-		Core::Manager::RenderManager::Device().destroyRenderPass(_vkRenderPass);
+		Graphic::Manager::DeviceManager::Device().destroyRenderPass(_vkRenderPass);
 	}
 }
 

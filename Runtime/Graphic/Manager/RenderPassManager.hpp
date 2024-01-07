@@ -10,13 +10,6 @@ namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace Core
-		{
-			namespace Manager
-			{
-				class RenderManager;
-			}
-		}
 		namespace Graphic
 		{
 			namespace Instance

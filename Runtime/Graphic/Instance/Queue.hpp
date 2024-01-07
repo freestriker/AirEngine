@@ -8,15 +8,12 @@ namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace Core
+		namespace Graphic
 		{
 			namespace Manager
 			{
-				class RenderManager;
+				class DeviceManager;
 			}
-		}
-		namespace Graphic
-		{
 			namespace Command
 			{
 				class Semaphore;
@@ -27,7 +24,7 @@ namespace AirEngine
 			{
 				class AIR_ENGINE_API Queue final
 				{
-					friend class Core::Manager::RenderManager;
+					friend class Manager::DeviceManager;
 				public:
 					struct CommandBufferSubmitSemaphoreInfo
 					{

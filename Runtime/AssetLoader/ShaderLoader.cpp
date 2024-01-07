@@ -1,13 +1,13 @@
 ﻿#include "ShaderLoader.hpp"
 #include <fstream>
-#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 #include "AirEngine/Runtime/Graphic/Rendering/Shader.hpp"
 #include "AirEngine/Runtime/Utility/InternedString.hpp"
 #include <spirv_reflect.h>
 #include <unordered_map>
 #include "AirEngine/Runtime/Graphic/Instance/RenderPassBase.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/RenderPassManager.hpp"
-#include "AirEngine/Runtime/Core/Manager/RenderManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include <vulkan/vulkan.hpp>
 #include "AirEngine/Runtime/Utility/StringToVulkanypeTransfer.hpp"
@@ -154,7 +154,7 @@ void LoadSpirvData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInf
 			if (result != SpvReflectResult::SPV_REFLECT_RESULT_SUCCESS) qFatal("Load shader spv reflect failed.");
 
 			vk::ShaderModuleCreateInfo shaderModuleCreateInfo{vk::ShaderModuleCreateFlags(), buffer.size(), reinterpret_cast<const uint32_t*>(buffer.data())};
-			shaderData.second = AirEngine::Runtime::Core::Manager::RenderManager::Device().createShaderModule(shaderModuleCreateInfo);
+			shaderData.second = AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().createShaderModule(shaderModuleCreateInfo);
 
 			auto stage = vk::ShaderStageFlagBits(shaderData.first.shader_stage);
 			if(subShaderCreateInfo.shaderDatas.contains(stage)) qFatal("Failed to load the same shader stage.");
@@ -559,7 +559,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 				&setLayoutBindingFlags
 			);
 
-			auto&& layout = AirEngine::Runtime::Core::Manager::RenderManager::Device().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+			auto&& layout = AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 
 			for(auto& bindingToDescriptorInfoMapPair: setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second)
 			{
@@ -567,7 +567,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 				auto& descriptorInfo = bindingToDescriptorInfoMapPair.second;
 				descriptorInfo.singleDescriptorByteSize = AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorSize(descriptorInfo.type);
 				descriptorInfo.solidByteSizeInDescriptorSet = descriptorInfo.singleDescriptorByteSize * descriptorInfo.descriptorCount;
-				descriptorInfo.startByteOffsetInDescriptorSet = uint16_t(AirEngine::Runtime::Core::Manager::RenderManager::Device().getDescriptorSetLayoutBindingOffsetEXT(layout, uint32_t(binding)));
+				descriptorInfo.startByteOffsetInDescriptorSet = uint16_t(AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().getDescriptorSetLayoutBindingOffsetEXT(layout, uint32_t(binding)));
 			}
 
 			auto&& descriptorSetInfo = setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).first;
@@ -576,7 +576,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 			descriptorSetInfo.solidByteSize = 
 				isDynamic ? 
 				setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second.rbegin()->second.startByteOffsetInDescriptorSet: 
-				uint16_t(AirEngine::Runtime::Core::Manager::RenderManager::Device().getDescriptorSetLayoutSizeEXT(layout));
+				uint16_t(AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().getDescriptorSetLayoutSizeEXT(layout));
 		}
 
 		//compact object
@@ -749,7 +749,7 @@ void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& s
 			}
 
 			vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{vk::PipelineLayoutCreateFlags(), vkDescriptorSetLayouts};
-			pipelineLayout = AirEngine::Runtime::Core::Manager::RenderManager::Device().createPipelineLayout(pipelineLayoutCreateInfo);
+			pipelineLayout = AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().createPipelineLayout(pipelineLayoutCreateInfo);
 		}
 
 		vk::Pipeline pipeline{};
@@ -860,7 +860,7 @@ void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& s
 				shaderCreateInfo.renderPass->VkHandle(),
 				shaderCreateInfo.renderPass->Info().SubPassInfo(subPassName).Index()
 			);
-			pipeline = AirEngine::Runtime::Core::Manager::RenderManager::Device().createGraphicsPipeline({}, graphicsPipelineCreateInfo).value;
+			pipeline = AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().createGraphicsPipeline({}, graphicsPipelineCreateInfo).value;
 		}		
 
 		subShaderInfo.pipelineLayout = pipelineLayout;
@@ -878,7 +878,7 @@ void UnloadSpirvData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 			auto&& shaderData = shaderDatasPair.second.second;
 
 			spvReflectDestroyShaderModule(&reflectShaderData);
-			AirEngine::Runtime::Core::Manager::RenderManager::Device().destroyShaderModule(shaderData);
+			AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().destroyShaderModule(shaderData);
 		}
 	}
 }
