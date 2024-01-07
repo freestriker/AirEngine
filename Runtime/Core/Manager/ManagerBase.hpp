@@ -80,7 +80,7 @@ namespace AirEngine
 					static constexpr uint32_t GRAPHIC_POST_INITIALIZE_SWAPCHAIN_INDEX = 1200;
 					static constexpr uint32_t GRAPHIC_POST_INITIALIZE_INDEX = 1300;
 
-					static constexpr uint32_t POST_INITIALIZE_LAYER = 1000;
+					static constexpr uint32_t POST_INITIALIZE_LAYER = 10000;
 
 					//Update
 					static constexpr uint32_t LOGIC_UPDATE_LAYER = 0;

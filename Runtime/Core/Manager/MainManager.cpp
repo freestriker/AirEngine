@@ -9,6 +9,7 @@
 #include <memory>
 #include <taskflow/algorithm/sort.hpp>
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/RenderPassManager.hpp"
 
 using namespace AirEngine::Runtime;
 
@@ -24,6 +25,7 @@ AirEngine::Runtime::Core::Manager::MainManager::MainManager()
 	ResetManager(std::make_shared<Manager::AssetManager>());
 	ResetManager(std::make_shared<Manager::TaskManager>());
 	ResetManager(std::make_shared<Graphic::Manager::DescriptorManager>());
+	ResetManager(std::make_shared<Graphic::Manager::RenderPassManager>());
 }
 
 void Core::Manager::MainManager::Initialize()
