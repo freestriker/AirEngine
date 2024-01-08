@@ -1,6 +1,6 @@
 #pragma once
 #include "AirEngine/Runtime/Utility/ThreadInclude.hpp"
-#include "ManagerBase.hpp"
+#include "AirEngine/Runtime/Core/Manager/ManagerBase.hpp"
 #include <memory>
 #include <unordered_map>
 #include "AirEngine/Runtime/AssetLoader/AssetLoadHandle.hpp"
@@ -13,12 +13,12 @@ namespace AirEngine
 		{
 			class AssetLoaderBase;
 		}
-		namespace Core
+		namespace Asset
 		{
 			namespace Manager
 			{
 				class AIR_ENGINE_API AssetManager
-					: public ManagerBase
+					: public AirEngine::Runtime::Core::Manager::ManagerBase
 				{
 				private:
 				protected:
