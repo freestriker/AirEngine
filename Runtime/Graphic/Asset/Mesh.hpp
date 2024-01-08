@@ -16,16 +16,16 @@ namespace AirEngine
 			{
 				class Buffer;
 			}
-			namespace AssetLoader
-			{
-				class MeshLoader;
-			}
 			namespace Asset
 			{
+				namespace Loader
+				{
+					class MeshLoader;
+				}
 				class AIR_ENGINE_API Mesh final
 					: public AirEngine::Runtime::Asset::AssetBase
 				{
-					friend class AssetLoader::MeshLoader;
+					friend class Loader::MeshLoader;
 				public:
 					struct VertexData
 					{

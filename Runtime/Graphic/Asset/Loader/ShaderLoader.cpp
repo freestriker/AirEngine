@@ -13,7 +13,7 @@
 #include "AirEngine/Runtime/Utility/StringToVulkanypeTransfer.hpp"
 #include "AirEngine/Runtime/Core/Manager/TaskManager.hpp"
 
-AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::AssetLoader::ShaderLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
+AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
 	auto&& shader = new Graphic::Rendering::Shader();
 	bool* isLoadingPtr = &isInLoading;
@@ -34,7 +34,7 @@ AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::AssetLoader::
 	return shader;
 }
 
-void AirEngine::Runtime::Graphic::AssetLoader::ShaderLoader::OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset)
+void AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset)
 {
 	delete static_cast<AirEngine::Runtime::Graphic::Rendering::Shader*>(asset);
 }
@@ -883,7 +883,7 @@ void UnloadSpirvData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 	}
 }
 
-void AirEngine::Runtime::Graphic::AssetLoader::ShaderLoader::PopulateShader(AirEngine::Runtime::Graphic::Rendering::Shader* shader, const std::string path, bool* isInLoading)
+void AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::PopulateShader(AirEngine::Runtime::Graphic::Rendering::Shader* shader, const std::string path, bool* isInLoading)
 {
 	//Load descriptor
 	ShaderDescriptor shaderDescriptor{};
@@ -921,13 +921,13 @@ void AirEngine::Runtime::Graphic::AssetLoader::ShaderLoader::PopulateShader(AirE
 	*isInLoading = false;
 }
 
-AirEngine::Runtime::Graphic::AssetLoader::ShaderLoader::ShaderLoader()
-	: AssetLoaderBase("ShaderLoader", "shader")
+AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::ShaderLoader()
+	: LoaderBase("ShaderLoader", "shader")
 {
 
 }
 
-AirEngine::Runtime::Graphic::AssetLoader::ShaderLoader::~ShaderLoader()
+AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::~ShaderLoader()
 {
 }
 

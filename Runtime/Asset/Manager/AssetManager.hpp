@@ -3,18 +3,18 @@
 #include "AirEngine/Runtime/Core/Manager/ManagerBase.hpp"
 #include <memory>
 #include <unordered_map>
-#include "AirEngine/Runtime/AssetLoader/AssetLoadHandle.hpp"
+#include "AirEngine/Runtime/Asset/Loader/LoadHandle.hpp"
 
 namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace AssetLoader
-		{
-			class AssetLoaderBase;
-		}
 		namespace Asset
 		{
+			namespace Loader
+			{
+				class LoaderBase;
+			}
 			namespace Manager
 			{
 				class AIR_ENGINE_API AssetManager
@@ -22,8 +22,8 @@ namespace AirEngine
 				{
 				private:
 				protected:
-					static std::unordered_map<std::string, AssetLoader::AssetLoaderBase*> _nameToAssetLoaderMap;
-					static std::unordered_map<std::string, AssetLoader::AssetLoaderBase*> _suffixNameToAssetLoaderMap;
+					static std::unordered_map<std::string, Loader::LoaderBase*> _nameToAssetLoaderMap;
+					static std::unordered_map<std::string, Loader::LoaderBase*> _suffixNameToAssetLoaderMap;
 					virtual std::vector<Utility::OperationWrapper> OnGetUpdateOperations() override;
 				public:
 					AssetManager();
@@ -46,7 +46,7 @@ namespace AirEngine
 					{
 						return *static_cast<TAssetLoader*>(_nameToAssetLoaderMap[name]);
 					}
-					static AirEngine::Runtime::AssetLoader::AssetLoadHandle LoadAsset(const std::string& path);
+					static AirEngine::Runtime::Asset::Loader::LoadHandle LoadAsset(const std::string& path);
 					static void UnloadAsset(const std::string& path);
 					static void CollectAll();
 				};

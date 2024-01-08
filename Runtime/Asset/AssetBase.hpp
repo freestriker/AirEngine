@@ -6,16 +6,16 @@ namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace AssetLoader
+		namespace Loader
 		{
-			class AssetLoadContext;
+			class LoadContext;
 		}
 		namespace Asset
 		{
 			class AIR_ENGINE_API AssetBase
 			{
 			private:
-				AssetLoader::AssetLoadContext* assetLoadContext;
+				Loader::LoadContext* assetLoadContext;
 			public:
 				AssetBase() = default;
 

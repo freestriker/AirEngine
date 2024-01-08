@@ -8,7 +8,7 @@ namespace AirEngine
 	{
 		namespace Graphic
 		{
-			namespace AssetLoader
+			namespace Loader
 			{
 				class Texture2DLoader;
 			}
@@ -18,7 +18,7 @@ namespace AirEngine
 					: public AirEngine::Runtime::Asset::AssetBase
 					, public AirEngine::Runtime::Graphic::Instance::Image
 				{
-					friend class AssetLoader::Texture2DLoader;
+					friend class Loader::Texture2DLoader;
 				public:
 					Texture2D();
 					~Texture2D();

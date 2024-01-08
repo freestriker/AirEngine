@@ -8,7 +8,7 @@
 #include "AirEngine/Runtime/Graphic/Command/CommandPool.hpp"
 #include "AirEngine/Runtime/Graphic/Command/CommandBuffer.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Queue.hpp"
-#include "AirEngine/Runtime/Graphic/AssetLoader/Texture2DLoader.hpp"
+#include "AirEngine/Runtime/Graphic/Asset/Loader/Texture2DLoader.hpp"
 #include "AirEngine/Runtime/Graphic/Asset/Texture2D.hpp"
 #include "AirEngine/Runtime/Graphic/Asset/Mesh.hpp"
 #include "AirEngine/Runtime/Asset/Manager/AssetManager.hpp"
@@ -84,9 +84,9 @@ bool AirEngine::Runtime::FrontEnd::Window::AcquireImage()
 }
 
 static bool isLoaded = false;
-static AirEngine::Runtime::AssetLoader::AssetLoadHandle assetLoadHandle{};
-static AirEngine::Runtime::AssetLoader::AssetLoadHandle meshLoadHandle{};
-static AirEngine::Runtime::AssetLoader::AssetLoadHandle shaderLoadHandle{};
+static AirEngine::Runtime::Asset::Loader::LoadHandle assetLoadHandle{};
+static AirEngine::Runtime::Asset::Loader::LoadHandle meshLoadHandle{};
+static AirEngine::Runtime::Asset::Loader::LoadHandle shaderLoadHandle{};
 
 bool AirEngine::Runtime::FrontEnd::Window::Present()
 {
