@@ -1,5 +1,5 @@
 ﻿#include "AssetManager.hpp"
-#include "AirEngine/Runtime/AssetLoader/Texture2DLoader.hpp"
+#include "AirEngine/Runtime/Graphic/AssetLoader/Texture2DLoader.hpp"
 #include "AirEngine/Runtime/AssetLoader/MeshLoader.hpp"
 #include "AirEngine/Runtime/AssetLoader/ShaderLoader.hpp"
 #include "AirEngine/Runtime/AssetLoader/AssetLoaderBase.hpp"
@@ -23,7 +23,7 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::C
 AirEngine::Runtime::Core::Manager::AssetManager::AssetManager()
 	: ManagerBase("AssetManager")
 {
-	AddAssetLoader<AirEngine::Runtime::AssetLoader::Texture2DLoader>();
+	AddAssetLoader<AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader>();
 	AddAssetLoader<AirEngine::Runtime::AssetLoader::MeshLoader>();
 	AddAssetLoader<AirEngine::Runtime::AssetLoader::ShaderLoader>();
 }

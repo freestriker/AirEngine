@@ -11,14 +11,14 @@
 #include "AirEngine/Runtime/Graphic/Command/CommandBuffer.hpp"
 #include "AirEngine/Runtime/Graphic/Command/Fence.hpp"
 #include "AirEngine/Runtime/Graphic/Command/Barrier.hpp"
-#include "AirEngine/Runtime/Asset/Texture2D.hpp"
+#include "AirEngine/Runtime/Graphic/Asset/Texture2D.hpp"
 #include <boost/ref.hpp>
 #include <opencv2/imgproc.hpp>
 #include "AirEngine/Runtime/Core/Manager/TaskManager.hpp"
 
-AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::Texture2DLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
+AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
-	auto&& texture2d = new Asset::Texture2D();
+	auto&& texture2d = new AirEngine::Runtime::Graphic::Asset::Texture2D();
 	bool* isLoadingPtr = &isInLoading;
 
 	loadOperationFuture = std::move(
@@ -36,12 +36,12 @@ AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::AssetLoader::Texture2D
 	return texture2d;
 }
 
-void AirEngine::Runtime::AssetLoader::Texture2DLoader::OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset)
+void AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset)
 {
-	delete static_cast<AirEngine::Runtime::Asset::Texture2D*>(asset);
+	delete static_cast<AirEngine::Runtime::Graphic::Asset::Texture2D*>(asset);
 }
 
-void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngine::Runtime::Asset::Texture2D* texture2d, const std::string path, bool* isInLoading)
+void AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngine::Runtime::Graphic::Asset::Texture2D* texture2d, const std::string path, bool* isInLoading)
 {
 	//Load descriptor
 	Descriptor descriptor{};
@@ -262,7 +262,7 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 	Graphic::Command::Barrier barrier{};
 	auto&& transferFence = Graphic::Command::Fence(false);
 
-	auto&& targetImage = new Graphic::Instance::Image(
+	auto&& targetImage = texture2d->PopulateDataAndCreateInstance(
 		targetFormat,
 		imageMaxExtent,
 		vk::ImageType::e2D,
@@ -382,15 +382,14 @@ void AirEngine::Runtime::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngi
 
 	while (transferFence.Status() == vk::Result::eNotReady) std::this_thread::yield();
 
-	texture2d->_image = targetImage;
 	*isInLoading = false;
 }
 
-AirEngine::Runtime::AssetLoader::Texture2DLoader::Texture2DLoader()
+AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::Texture2DLoader()
 	: AssetLoaderBase("Texture2DLoader", "texture2d")
 {
 
 }
-AirEngine::Runtime::AssetLoader::Texture2DLoader::~Texture2DLoader()
+AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::~Texture2DLoader()
 {
 }
