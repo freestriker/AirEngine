@@ -9,12 +9,12 @@ namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace AssetLoader
-		{
-			class ShaderLoader;
-		}
 		namespace Graphic
 		{
+			namespace AssetLoader
+			{
+				class ShaderLoader;
+			}
 			namespace Instance
 			{
 				class RenderPassBase;
@@ -24,7 +24,7 @@ namespace AirEngine
 				class AIR_ENGINE_API Shader final
 					: public Runtime::Asset::AssetBase
 				{
-					friend class Runtime::AssetLoader::ShaderLoader;
+					friend class Runtime::Graphic::AssetLoader::ShaderLoader;
 				private:
 					ShaderInfo _shaderInfo;
 				public:
