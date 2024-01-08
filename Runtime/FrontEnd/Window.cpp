@@ -19,6 +19,7 @@
 #include "AirEngine/Runtime/Graphic/Rendering/Shader.hpp"
 #include "AirEngine/Runtime/Graphic/Rendering/Material.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/UniformBuffer.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/ImageSampler.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include <QPlatformSurfaceEvent>
 
@@ -93,6 +94,9 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 	if (!isLoaded)
 	{
 		isLoaded = true;
+
+		auto&& sampler = new Graphic::Instance::ImageSampler(vk::Filter::eNearest, vk::Filter::eNearest, vk::SamplerMipmapMode::eLinear, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, 0, 1);
+
 		assetLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
 		meshLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NineSphere.mesh");
 		shaderLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
