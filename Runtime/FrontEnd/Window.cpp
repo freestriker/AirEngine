@@ -10,7 +10,7 @@
 #include "AirEngine/Runtime/Graphic/Instance/Queue.hpp"
 #include "AirEngine/Runtime/Graphic/AssetLoader/Texture2DLoader.hpp"
 #include "AirEngine/Runtime/Graphic/Asset/Texture2D.hpp"
-#include "AirEngine/Runtime/Asset/Mesh.hpp"
+#include "AirEngine/Runtime/Graphic/Asset/Mesh.hpp"
 #include "AirEngine/Runtime/Core/Manager/AssetManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/RenderPassManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
