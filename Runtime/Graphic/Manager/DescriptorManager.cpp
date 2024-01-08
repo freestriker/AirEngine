@@ -355,7 +355,8 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 	_descriptorOffsetAlignment = physicalDeviceDescriptorBufferPropertiesEXT.descriptorBufferOffsetAlignment;
 
 	_descriptorTypeToSizeMap[vk::DescriptorType::eUniformBuffer] = physicalDeviceDescriptorBufferPropertiesEXT.uniformBufferDescriptorSize;
-	_descriptorTypeToSizeMap[vk::DescriptorType::eCombinedImageSampler] = physicalDeviceDescriptorBufferPropertiesEXT.combinedImageSamplerDescriptorSize;
+	_descriptorTypeToSizeMap[vk::DescriptorType::eSampledImage] = physicalDeviceDescriptorBufferPropertiesEXT.sampledImageDescriptorSize;
+	_descriptorTypeToSizeMap[vk::DescriptorType::eSampler] = physicalDeviceDescriptorBufferPropertiesEXT.samplerDescriptorSize;
 	_descriptorTypeToSizeMap[vk::DescriptorType::eStorageBuffer] = physicalDeviceDescriptorBufferPropertiesEXT.storageBufferDescriptorSize;
 	_descriptorTypeToSizeMap[vk::DescriptorType::eStorageImage] = physicalDeviceDescriptorBufferPropertiesEXT.storageImageDescriptorSize;
 	_descriptorTypeToSizeMap[vk::DescriptorType::eInputAttachment] = physicalDeviceDescriptorBufferPropertiesEXT.inputAttachmentDescriptorSize;

@@ -24,7 +24,6 @@ namespace AirEngine
 					MaterialBindableAssetBase() = default;
 					virtual ~MaterialBindableAssetBase() = default;
 					NO_COPY_MOVE(MaterialBindableAssetBase);
-
 				};
 			}
 		}
