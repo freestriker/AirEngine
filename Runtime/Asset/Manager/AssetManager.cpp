@@ -1,11 +1,11 @@
 ﻿#include "AssetManager.hpp"
-#include "AirEngine/Runtime/Graphic/AssetLoader/Texture2DLoader.hpp"
-#include "AirEngine/Runtime/Graphic/AssetLoader/MeshLoader.hpp"
-#include "AirEngine/Runtime/Graphic/AssetLoader/ShaderLoader.hpp"
-#include "AirEngine/Runtime/AssetLoader/AssetLoaderBase.hpp"
+#include "AirEngine/Runtime/Graphic/Asset/Loader/Texture2DLoader.hpp"
+#include "AirEngine/Runtime/Graphic/Asset/Loader/MeshLoader.hpp"
+#include "AirEngine/Runtime/Graphic/Asset/Loader/ShaderLoader.hpp"
+#include "AirEngine/Runtime/Asset/Loader/LoaderBase.hpp"
 
-std::unordered_map<std::string, AirEngine::Runtime::AssetLoader::AssetLoaderBase*> AirEngine::Runtime::Asset::Manager::AssetManager::_nameToAssetLoaderMap{ };
-std::unordered_map<std::string, AirEngine::Runtime::AssetLoader::AssetLoaderBase*> AirEngine::Runtime::Asset::Manager::AssetManager::_suffixNameToAssetLoaderMap{ };
+std::unordered_map<std::string, AirEngine::Runtime::Asset::Loader::LoaderBase*> AirEngine::Runtime::Asset::Manager::AssetManager::_nameToAssetLoaderMap{ };
+std::unordered_map<std::string, AirEngine::Runtime::Asset::Loader::LoaderBase*> AirEngine::Runtime::Asset::Manager::AssetManager::_suffixNameToAssetLoaderMap{ };
 
 void AirEngine::Runtime::Asset::Manager::AssetManager::CollectUpdate()
 {
@@ -23,9 +23,9 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::A
 AirEngine::Runtime::Asset::Manager::AssetManager::AssetManager()
 	: ManagerBase("AssetManager")
 {
-	AddAssetLoader<AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader>();
-	AddAssetLoader<AirEngine::Runtime::Graphic::AssetLoader::MeshLoader>();
-	AddAssetLoader<AirEngine::Runtime::Graphic::AssetLoader::ShaderLoader>();
+	AddAssetLoader<AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader>();
+	AddAssetLoader<AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader>();
+	AddAssetLoader<AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader>();
 }
 
 AirEngine::Runtime::Asset::Manager::AssetManager::~AssetManager()
@@ -40,7 +40,7 @@ void AirEngine::Runtime::Asset::Manager::AssetManager::RemoveAssetLoader(const s
 	delete assetLoader;
 }
 
-AirEngine::Runtime::AssetLoader::AssetLoadHandle AirEngine::Runtime::Asset::Manager::AssetManager::LoadAsset(const std::string& path)
+AirEngine::Runtime::Asset::Loader::LoadHandle AirEngine::Runtime::Asset::Manager::AssetManager::LoadAsset(const std::string& path)
 {
 	auto&& suffix = path.substr(path.find_last_of('.') + 1);
 	return _suffixNameToAssetLoaderMap[suffix]->LoadAsset(path);

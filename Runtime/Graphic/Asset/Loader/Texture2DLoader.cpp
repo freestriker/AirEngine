@@ -16,7 +16,7 @@
 #include <opencv2/imgproc.hpp>
 #include "AirEngine/Runtime/Core/Manager/TaskManager.hpp"
 
-AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
+AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
 	auto&& texture2d = new AirEngine::Runtime::Graphic::Asset::Texture2D();
 	bool* isLoadingPtr = &isInLoading;
@@ -36,12 +36,12 @@ AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::AssetLoader::
 	return texture2d;
 }
 
-void AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset)
+void AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader::OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset)
 {
 	delete static_cast<AirEngine::Runtime::Graphic::Asset::Texture2D*>(asset);
 }
 
-void AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::PopulateTexture2D(AirEngine::Runtime::Graphic::Asset::Texture2D* texture2d, const std::string path, bool* isInLoading)
+void AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader::PopulateTexture2D(AirEngine::Runtime::Graphic::Asset::Texture2D* texture2d, const std::string path, bool* isInLoading)
 {
 	//Load descriptor
 	Descriptor descriptor{};
@@ -385,11 +385,11 @@ void AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::PopulateTexture2
 	*isInLoading = false;
 }
 
-AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::Texture2DLoader()
-	: AssetLoaderBase("Texture2DLoader", "texture2d")
+AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader::Texture2DLoader()
+	: LoaderBase("Texture2DLoader", "texture2d")
 {
 
 }
-AirEngine::Runtime::Graphic::AssetLoader::Texture2DLoader::~Texture2DLoader()
+AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader::~Texture2DLoader()
 {
 }

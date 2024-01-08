@@ -64,7 +64,7 @@ constexpr uint32_t DEFAULT_POST_PROCESS_STEPS =
 constexpr uint32_t INVALID_POST_PROCESS_STEPS =
 	~(aiProcess_PreTransformVertices);
 
-AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::AssetLoader::MeshLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
+AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
 	auto&& Mesh = new Asset::Mesh();
 	bool* isLoadingPtr = &isInLoading;
@@ -85,12 +85,12 @@ AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::AssetLoader::
 	return Mesh;
 }
 
-void AirEngine::Runtime::Graphic::AssetLoader::MeshLoader::OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset)
+void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset)
 {
 	delete static_cast<AirEngine::Runtime::Graphic::Asset::Mesh*>(asset);
 }
 
-void AirEngine::Runtime::Graphic::AssetLoader::MeshLoader::PopulateMesh(AirEngine::Runtime::Graphic::Asset::Mesh* mesh, const std::string path, bool* isInLoading)
+void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::PopulateMesh(AirEngine::Runtime::Graphic::Asset::Mesh* mesh, const std::string path, bool* isInLoading)
 {
 	// Load descriptor
 	Descriptor descriptor{};
@@ -331,11 +331,11 @@ void AirEngine::Runtime::Graphic::AssetLoader::MeshLoader::PopulateMesh(AirEngin
 	*isInLoading = false;
 }
 
-AirEngine::Runtime::Graphic::AssetLoader::MeshLoader::MeshLoader()
-	: AssetLoaderBase("MeshLoader", "mesh")
+AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::MeshLoader()
+	: LoaderBase("MeshLoader", "mesh")
 {
 
 }
-AirEngine::Runtime::Graphic::AssetLoader::MeshLoader::~MeshLoader()
+AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::~MeshLoader()
 {
 }

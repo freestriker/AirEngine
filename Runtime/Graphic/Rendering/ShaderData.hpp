@@ -8,7 +8,7 @@ namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace AssetLoader
+		namespace Loader
 		{
 			class ShaderLoader;
 		}

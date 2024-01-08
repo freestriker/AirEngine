@@ -16,7 +16,7 @@ namespace AirEngine
 				class AIR_ENGINE_API MeshAttributePaserBase
 					: public Utility::ReflectableObject
 				{
-					friend class AssetLoader::MeshLoader;
+					friend class Asset::Loader::MeshLoader;
 					REFLECTABLE_OBJECT
 				protected:
 					virtual void OnEditPostProcessSteps(uint32_t& postProcessSteps) const { };

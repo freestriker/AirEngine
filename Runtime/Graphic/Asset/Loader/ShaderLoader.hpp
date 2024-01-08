@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "AirEngine/Runtime/AssetLoader/AssetLoaderBase.hpp"
+#include "AirEngine/Runtime/Asset/Loader/LoaderBase.hpp"
 #include <nlohmann/json.hpp>
 
 namespace AirEngine
@@ -12,10 +12,10 @@ namespace AirEngine
 			{
 				class Shader;
 			}
-			namespace AssetLoader
+			namespace Asset::Loader
 			{
 				class AIR_ENGINE_API ShaderLoader final
-					: public AirEngine::Runtime::AssetLoader::AssetLoaderBase
+					: public AirEngine::Runtime::Asset::Loader::LoaderBase
 				{
 				private:
 					Runtime::Asset::AssetBase* OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading) override;

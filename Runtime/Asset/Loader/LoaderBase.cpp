@@ -1,19 +1,19 @@
-﻿#include "AssetLoaderBase.hpp"
+﻿#include "LoaderBase.hpp"
 #include <city.h>
 #include <filesystem>
 
-AirEngine::Runtime::AssetLoader::AssetLoadHandle AirEngine::Runtime::AssetLoader::AssetLoaderBase::LoadAsset(const std::string& path)
+AirEngine::Runtime::Asset::Loader::LoadHandle AirEngine::Runtime::Asset::Loader::LoaderBase::LoadAsset(const std::string& path)
 {
 	std::filesystem::path fsPath(path); 
 	auto&& currentPath = std::filesystem::current_path();
 	if (!std::filesystem::exists(fsPath)) qFatal("File do not exist.");
 
 	fsPath = std::filesystem::absolute(fsPath);
-	AssetLoadContext::PathHashValue pathHash = std::filesystem::hash_value(fsPath);
+	LoadContext::PathHashValue pathHash = std::filesystem::hash_value(fsPath);
 
 	std::unique_lock< std::mutex> loaderLock(_loaderMutex);
 
-	AssetLoadContext* assetLoadContext = nullptr;
+	LoadContext* assetLoadContext = nullptr;
 	auto iter = _assetLoadContextMap.find(pathHash);
 	if (iter != _assetLoadContextMap.end())
 	{
@@ -23,7 +23,7 @@ AirEngine::Runtime::AssetLoader::AssetLoadHandle AirEngine::Runtime::AssetLoader
 	}
 	else
 	{
-		assetLoadContext = new AssetLoadContext{};
+		assetLoadContext = new LoadContext{};
 
 		assetLoadContext->path = fsPath.generic_string();
 		assetLoadContext->pathHash = pathHash;
@@ -37,15 +37,15 @@ AirEngine::Runtime::AssetLoader::AssetLoadHandle AirEngine::Runtime::AssetLoader
 		_gcHoldAssetSet.insert(asset);
 	}
 
-	AssetLoadHandle handle{};
+	LoadHandle handle{};
 	handle.assetLoadContext = assetLoadContext;
 	return handle;
 }
 
-void AirEngine::Runtime::AssetLoader::AssetLoaderBase::UnloadAsset(const std::string& path)
+void AirEngine::Runtime::Asset::Loader::LoaderBase::UnloadAsset(const std::string& path)
 {
 	auto&& fsPath = std::filesystem::absolute(std::filesystem::path(path));
-	AssetLoadContext::PathHashValue pathHash = std::filesystem::hash_value(fsPath);
+	LoadContext::PathHashValue pathHash = std::filesystem::hash_value(fsPath);
 
 	std::unique_lock< std::mutex> loaderLock(_loaderMutex);
 
@@ -58,7 +58,7 @@ void AirEngine::Runtime::AssetLoader::AssetLoaderBase::UnloadAsset(const std::st
 	else qFatal("Never load this file.");
 }
 
-void AirEngine::Runtime::AssetLoader::AssetLoaderBase::CollectUnloadableAssets()
+void AirEngine::Runtime::Asset::Loader::LoaderBase::CollectUnloadableAssets()
 {
 	if (_assetLoadContextMap.size() == 0) return;
 
@@ -83,7 +83,7 @@ void AirEngine::Runtime::AssetLoader::AssetLoaderBase::CollectUnloadableAssets()
 	}
 }
 
-AirEngine::Runtime::AssetLoader::AssetLoaderBase::AssetLoaderBase(const std::string& name, const std::string& supportedSuffixName)
+AirEngine::Runtime::Asset::Loader::LoaderBase::LoaderBase(const std::string& name, const std::string& supportedSuffixName)
 	: _name(name)
 	, _gcHoldAssetSet()
 	, _assetLoadContextMap()
@@ -92,6 +92,6 @@ AirEngine::Runtime::AssetLoader::AssetLoaderBase::AssetLoaderBase(const std::str
 {
 }
 
-AirEngine::Runtime::AssetLoader::AssetLoaderBase::~AssetLoaderBase()
+AirEngine::Runtime::Asset::Loader::LoaderBase::~LoaderBase()
 {
 }
