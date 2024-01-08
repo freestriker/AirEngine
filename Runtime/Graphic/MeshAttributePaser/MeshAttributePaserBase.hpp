@@ -2,17 +2,13 @@
 #include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
 #include "AirEngine/Runtime/Utility/ExportMacro.hpp"
 #include <assimp/scene.h>
-#include "AirEngine/Runtime/Asset/Mesh.hpp"
+#include "AirEngine/Runtime/Graphic/Asset/Mesh.hpp"
 #include "AirEngine/Runtime/Utility/ReflectableObject.hpp"
 
 namespace AirEngine
 {
 	namespace Runtime
 	{
-		namespace AssetLoader
-		{
-			class MeshLoader;
-		}
 		namespace Graphic
 		{
 			namespace MeshAttributePaser

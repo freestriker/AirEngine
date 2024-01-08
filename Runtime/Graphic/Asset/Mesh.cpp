@@ -1,13 +1,13 @@
 ﻿#include "Mesh.hpp"
 
-AirEngine::Runtime::Asset::Mesh::Mesh()
+AirEngine::Runtime::Graphic::Asset::Mesh::Mesh()
 	: AssetBase()
 	, _vertexBuffer(nullptr)
 	, _indexBuffer(nullptr)
 {
 }
 
-AirEngine::Runtime::Asset::Mesh::~Mesh()
+AirEngine::Runtime::Graphic::Asset::Mesh::~Mesh()
 {
 	delete _vertexBuffer;
 	_vertexBuffer = nullptr;

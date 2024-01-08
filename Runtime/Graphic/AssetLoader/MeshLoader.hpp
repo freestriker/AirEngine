@@ -1,0 +1,45 @@
+﻿#pragma once
+#include "AirEngine/Runtime/AssetLoader/AssetLoaderBase.hpp"
+#include <nlohmann/json.hpp>
+
+namespace AirEngine
+{
+	namespace Runtime
+	{
+		namespace Graphic
+		{
+			namespace Asset
+			{
+				class Mesh;
+			}
+			namespace AssetLoader
+			{
+				class AIR_ENGINE_API MeshLoader final
+					: public AirEngine::Runtime::AssetLoader::AssetLoaderBase
+				{
+				private:
+					struct Descriptor
+					{
+						std::string meshPath;
+						std::vector<std::string> postProcessSteps;
+						std::string meshAttributePaser;
+
+						NLOHMANN_DEFINE_TYPE_INTRUSIVE(
+							Descriptor,
+							meshPath,
+							postProcessSteps,
+							meshAttributePaser
+						)
+					};
+					AirEngine::Runtime::Asset::AssetBase* OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading) override;
+					void OnUnloadAsset(AirEngine::Runtime::Asset::AssetBase* asset) override;
+					static void PopulateMesh(AirEngine::Runtime::Graphic::Asset::Mesh* mesh, const std::string path, bool* isInLoading);
+				public:
+					MeshLoader();
+					virtual ~MeshLoader();
+					NO_COPY_MOVE(MeshLoader);
+				};
+			}
+		}
+	}
+}
