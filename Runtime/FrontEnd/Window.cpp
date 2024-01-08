@@ -8,8 +8,8 @@
 #include "AirEngine/Runtime/Graphic/Command/CommandPool.hpp"
 #include "AirEngine/Runtime/Graphic/Command/CommandBuffer.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Queue.hpp"
-#include "AirEngine/Runtime/AssetLoader/Texture2DLoader.hpp"
-#include "AirEngine/Runtime/Asset/Texture2D.hpp"
+#include "AirEngine/Runtime/Graphic/AssetLoader/Texture2DLoader.hpp"
+#include "AirEngine/Runtime/Graphic/Asset/Texture2D.hpp"
 #include "AirEngine/Runtime/Asset/Mesh.hpp"
 #include "AirEngine/Runtime/Core/Manager/AssetManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/RenderPassManager.hpp"
@@ -172,7 +172,7 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 		);
 		_commandBuffer->AddPipelineBarrier(barrier);
 		_commandBuffer->Blit(
-			assetLoadHandle.Asset<Asset::Texture2D>().Image(), vk::ImageLayout::eTransferSrcOptimal,
+			assetLoadHandle.Asset<Graphic::Asset::Texture2D>(), vk::ImageLayout::eTransferSrcOptimal,
 			*currentImage.image, vk::ImageLayout::eTransferDstOptimal,
 			vk::ImageAspectFlagBits::eColor,
 			vk::Filter::eLinear

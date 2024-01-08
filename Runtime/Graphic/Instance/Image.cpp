@@ -40,6 +40,79 @@ const std::unordered_map<AirEngine::Runtime::Utility::InternedString, AirEngine:
 	return _views;
 }
 
+AirEngine::Runtime::Graphic::Instance::Image::Image()
+	: _format()
+	, _extent3D()
+	, _imageType()
+	, _imageTiling()
+	, _imageUsageFlags()
+	, _imageCreateFlags()
+	, _layerCount()
+	, _mipmapLevelCount()
+	, _image()
+	, _memory()
+	, _isNative(false)
+{
+}
+
+AirEngine::Runtime::Graphic::Instance::Image* AirEngine::Runtime::Graphic::Instance::Image::PopulateDataAndCreateInstance(
+	vk::Format format, 
+	vk::Extent3D extent3D, 
+	vk::ImageType imageType, 
+	uint32_t layerCount, 
+	uint32_t mipmapLevelCount,
+	vk::ImageUsageFlags imageUsageFlags, 
+	vk::MemoryPropertyFlags property, 
+	vk::ImageTiling imageTiling, 
+	vk::ImageCreateFlags imageCreateFlags, 
+	VmaAllocationCreateFlags flags, 
+	VmaMemoryUsage memoryUsage
+)
+{
+	if (_image || _memory) qFatal("Already exist vulkan instance in this image.");
+
+	_format = format;
+	_extent3D = extent3D;
+	_imageType = imageType;
+	_imageTiling = imageTiling;
+	_imageUsageFlags = imageUsageFlags;
+	_imageCreateFlags = imageCreateFlags;
+	_layerCount = layerCount;
+	_mipmapLevelCount = mipmapLevelCount;
+	_isNative = false;
+
+	VkImageCreateInfo imageCreateInfo{};
+	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCreateInfo.imageType = VkImageType(_imageType);
+	imageCreateInfo.extent = _extent3D;
+	imageCreateInfo.mipLevels = _mipmapLevelCount;
+	imageCreateInfo.arrayLayers = _layerCount;
+	imageCreateInfo.format = VkFormat(_format);
+	imageCreateInfo.tiling = VkImageTiling(_imageTiling);
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageCreateInfo.usage = VkImageUsageFlags(_imageUsageFlags);
+	imageCreateInfo.samples = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.flags = VkImageCreateFlags(_imageCreateFlags);
+
+	VmaAllocationCreateInfo vmaCreateInfo{};
+	vmaCreateInfo.flags = flags;
+	vmaCreateInfo.usage = memoryUsage;
+	vmaCreateInfo.requiredFlags = property.operator unsigned int();
+
+	VmaAllocationInfo vmaInfo{};
+	VmaAllocation vmaAllocation{};
+	VkImage vkImage{};
+	auto result = vmaCreateImage(Graphic::Manager::DeviceManager::VmaAllocator(), &imageCreateInfo, &vmaCreateInfo, &vkImage, &vmaAllocation, &vmaInfo);
+
+	if (VK_SUCCESS != result) qFatal("Failed to create image.");
+
+	_image = vkImage;
+	_memory = std::shared_ptr<Instance::Memory>(new Instance::Memory(vmaAllocation, vmaInfo));
+
+	return this;
+}
+
 AirEngine::Runtime::Graphic::Instance::Image::Image(
 	vk::Format format,
 	vk::Extent3D extent3D,

@@ -22,9 +22,9 @@ namespace AirEngine
 			namespace Rendering
 			{
 				class AIR_ENGINE_API Shader final
-					: public Asset::AssetBase
+					: public Runtime::Asset::AssetBase
 				{
-					friend class AssetLoader::ShaderLoader;
+					friend class Runtime::AssetLoader::ShaderLoader;
 				private:
 					ShaderInfo _shaderInfo;
 				public:

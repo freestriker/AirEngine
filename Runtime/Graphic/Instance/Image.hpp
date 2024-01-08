@@ -15,7 +15,7 @@ namespace AirEngine
 			namespace Instance
 			{
 				class Memory;
-				class Image final
+				class Image
 				{
 				public:
 					struct View
@@ -50,6 +50,22 @@ namespace AirEngine
 					);
 					void RemoveView(Utility::InternedString name);
 					const std::unordered_map<Utility::InternedString, View>& Views() const;
+					
+				public:
+					// Empty
+					Image();
+					AirEngine::Runtime::Graphic::Instance::Image* PopulateDataAndCreateInstance(
+						vk::Format format,
+						vk::Extent3D extent3D,
+						vk::ImageType imageType,
+						uint32_t layerCount,
+						uint32_t mipmapLevelCount,
+						vk::ImageUsageFlags imageUsageFlags,
+						vk::MemoryPropertyFlags property,
+						vk::ImageTiling imageTiling = vk::ImageTiling::eOptimal,
+						vk::ImageCreateFlags imageCreateFlags = {},
+						VmaAllocationCreateFlags flags = 0, VmaMemoryUsage memoryUsage = VmaMemoryUsage::VMA_MEMORY_USAGE_AUTO
+					);
 				public:
 					// VkImage + Memory
 					Image(
