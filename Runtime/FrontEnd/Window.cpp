@@ -11,7 +11,7 @@
 #include "AirEngine/Runtime/Graphic/AssetLoader/Texture2DLoader.hpp"
 #include "AirEngine/Runtime/Graphic/Asset/Texture2D.hpp"
 #include "AirEngine/Runtime/Graphic/Asset/Mesh.hpp"
-#include "AirEngine/Runtime/Core/Manager/AssetManager.hpp"
+#include "AirEngine/Runtime/Asset/Manager/AssetManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/RenderPassManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/RenderPassBase.hpp"
@@ -93,9 +93,9 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 	if (!isLoaded)
 	{
 		isLoaded = true;
-		assetLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
-		meshLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NineSphere.mesh");
-		shaderLoadHandle = Core::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
+		assetLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
+		meshLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NineSphere.mesh");
+		shaderLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
 
 		{
 			auto&& renderPass0 = Graphic::Manager::RenderPassManager::LoadRenderPass<Graphic::Instance::DummyRenderPass>();

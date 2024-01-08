@@ -4,7 +4,7 @@
 #include "SceneManager.hpp"
 #include "ThirdPartyLibraryManager.hpp"
 #include "LogicManager.hpp"
-#include "AssetManager.hpp"
+#include "AirEngine/Runtime/Asset/Manager/AssetManager.hpp"
 #include "TaskManager.hpp"
 #include <memory>
 #include <taskflow/algorithm/sort.hpp>
@@ -22,7 +22,7 @@ AirEngine::Runtime::Core::Manager::MainManager::MainManager()
 	ResetManager(std::make_shared<Manager::SceneManager>());
 	ResetManager(std::make_shared<Graphic::Manager::DeviceManager>());
 	ResetManager(std::make_shared<Manager::LogicManager>());
-	ResetManager(std::make_shared<Manager::AssetManager>());
+	ResetManager(std::make_shared<Asset::Manager::AssetManager>());
 	ResetManager(std::make_shared<Manager::TaskManager>());
 	ResetManager(std::make_shared<Graphic::Manager::DescriptorManager>());
 	ResetManager(std::make_shared<Graphic::Manager::RenderPassManager>());
