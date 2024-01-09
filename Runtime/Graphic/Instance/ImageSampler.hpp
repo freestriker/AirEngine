@@ -33,11 +33,26 @@ namespace AirEngine
 						vk::SamplerAddressMode addressModeU,
 						vk::SamplerAddressMode addressModeV,
 						vk::SamplerAddressMode addressModeW,
-						float _minMipmapLevel,
-						float _maxMipmapLevel
+						float minMipmapLevel,
+						float maxMipmapLevel
+					);
+					ImageSampler(
+						vk::Filter filter,
+						vk::SamplerMipmapMode mipmapMode,
+						vk::SamplerAddressMode addressMode,
+						float mipmapLevel
+					);
+					ImageSampler(
+						vk::Filter filter,
+						vk::SamplerMipmapMode mipmapMode,
+						vk::SamplerAddressMode addressMode,
+						float minMipmapLevel,
+						float maxMipmapLevel
 					);
 					~ImageSampler();
-					NO_COPY_MOVE(ImageSampler)					
+					NO_COPY_MOVE(ImageSampler)		
+				private:
+					void CreateVulkanInstance();
 				};
 			}
 		}

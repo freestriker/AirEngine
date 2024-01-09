@@ -24,7 +24,47 @@ AirEngine::Runtime::Graphic::Instance::ImageSampler::ImageSampler(
 	, _sampler()
 
 {
-	vk::SamplerCreateInfo info({}, magFilter, minFilter, mipmapMode, addressModeU, addressModeV, addressModeW, 0, vk::Bool32(false), 0, vk::Bool32(false), VULKAN_HPP_NAMESPACE::CompareOp::eNever, minMipmapLevel, maxMipmapLevel);
+	CreateVulkanInstance();
+}
+
+AirEngine::Runtime::Graphic::Instance::ImageSampler::ImageSampler(vk::Filter filter, vk::SamplerMipmapMode mipmapMode, vk::SamplerAddressMode addressMode, float mipmapLevel)
+	: AirEngine::Runtime::Graphic::Rendering::MaterialBindableAssetBase()
+	, _magFilter(filter)
+	, _minFilter(filter)
+	, _mipmapMode(mipmapMode)
+	, _addressModeU(addressMode)
+	, _addressModeV(addressMode)
+	, _addressModeW(addressMode)
+	, _minMipmapLevel(mipmapLevel)
+	, _maxMipmapLevel(mipmapLevel)
+	, _sampler()
+{
+	CreateVulkanInstance();
+}
+
+AirEngine::Runtime::Graphic::Instance::ImageSampler::ImageSampler(vk::Filter filter, vk::SamplerMipmapMode mipmapMode, vk::SamplerAddressMode addressMode, float minMipmapLevel, float maxMipmapLevel)
+	: AirEngine::Runtime::Graphic::Rendering::MaterialBindableAssetBase()
+	, _magFilter(filter)
+	, _minFilter(filter)
+	, _mipmapMode(mipmapMode)
+	, _addressModeU(addressMode)
+	, _addressModeV(addressMode)
+	, _addressModeW(addressMode)
+	, _minMipmapLevel(minMipmapLevel)
+	, _maxMipmapLevel(maxMipmapLevel)
+	, _sampler()
+{
+	CreateVulkanInstance();
+}
+
+AirEngine::Runtime::Graphic::Instance::ImageSampler::~ImageSampler()
+{
+	Manager::DeviceManager::Device().destroySampler(_sampler);
+}
+
+void AirEngine::Runtime::Graphic::Instance::ImageSampler::CreateVulkanInstance()
+{
+	vk::SamplerCreateInfo info({}, _magFilter, _minFilter, _mipmapMode, _addressModeU, _addressModeV, _addressModeW, 0, vk::Bool32(false), 0, vk::Bool32(false), VULKAN_HPP_NAMESPACE::CompareOp::eNever, _minMipmapLevel, _maxMipmapLevel);
 	_sampler = Manager::DeviceManager::Device().createSampler(info);
 
 	vk::DescriptorGetInfoEXT descriptorGetInfo{};
@@ -39,9 +79,4 @@ AirEngine::Runtime::Graphic::Instance::ImageSampler::ImageSampler(
 		descriptorSize,
 		RawDescriptor().data()
 	);
-}
-
-AirEngine::Runtime::Graphic::Instance::ImageSampler::~ImageSampler()
-{
-	Manager::DeviceManager::Device().destroySampler(_sampler);
 }
