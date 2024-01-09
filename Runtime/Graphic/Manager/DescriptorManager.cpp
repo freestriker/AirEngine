@@ -231,6 +231,19 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::WriteToHostDescrip
 	_dirtyHandles.emplace_back(descriptorMemoryHandle);
 }
 
+uint8_t* AirEngine::Runtime::Graphic::Manager::DescriptorManager::GetHostDescriptorMemoryPtr(DescriptorMemoryHandle descriptorMemoryHandle)
+{
+	if ((descriptorMemoryHandle.compressedOffset + descriptorMemoryHandle.compressedSize) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.compressedSize == 0)
+	{
+		qFatal("Memory handle is not valid.");
+	}
+
+	_dirtyHandles.emplace_back(descriptorMemoryHandle);
+
+	size_t blockOffset = FromCompressed(descriptorMemoryHandle.compressedOffset);
+	return _hostMemory.data() + blockOffset;
+}
+
 void AirEngine::Runtime::Graphic::Manager::DescriptorManager::ClearHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint32_t offset, uint32_t size)
 {
 	if ((descriptorMemoryHandle.compressedOffset + descriptorMemoryHandle.compressedSize) << _descriptorMemoryAlignmentStride > _currentSize || descriptorMemoryHandle.compressedSize == 0)

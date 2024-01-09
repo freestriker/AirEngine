@@ -5,6 +5,11 @@
 AirEngine::Runtime::Graphic::Instance::Image::~Image()
 {
 	if(!_isNative) Graphic::Manager::DeviceManager::Device().destroyImage(_image);
+
+	for (auto& viewPair : _views)
+	{
+		Manager::DeviceManager::Device().destroyImageView(viewPair.second.imageView);
+	}
 }
 
 void AirEngine::Runtime::Graphic::Instance::Image::SetMemory(std::shared_ptr<Instance::Memory> memory)

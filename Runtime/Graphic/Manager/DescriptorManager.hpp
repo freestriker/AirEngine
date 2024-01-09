@@ -77,6 +77,7 @@ namespace AirEngine
 					static void FreeDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle);
 
 					static void WriteToHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint8_t* dataPtr, uint32_t offset, uint32_t size);
+					static uint8_t* GetHostDescriptorMemoryPtr(DescriptorMemoryHandle descriptorMemoryHandle);
 					static void ClearHostDescriptorMemory(DescriptorMemoryHandle descriptorMemoryHandle, uint32_t offset, uint32_t size);
 
 					static std::vector<DescriptorMemoryHandle> MergeAndClearDirtyHandles();

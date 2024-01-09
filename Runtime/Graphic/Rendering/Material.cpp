@@ -93,7 +93,7 @@ void AirEngine::Runtime::Graphic::Rendering::Material::AutoCheckDescriptorSetMem
 		{
 			uint32_t dynamicElementCapcity = std::pow(2u, uint32_t(std::ceil(std::log2(desiredIndex + 1))));
 			uint32_t totalByteCapcity = shaderDescriptorSetInfo.solidByteSize + dynamicElementCapcity * shaderDescriptorInfo.singleDescriptorByteSize;
-
+			      
 			auto&& handle = Manager::DescriptorManager::ReallocateDescriptorMemory(materialDescriptorSetMemoryInfo.handle, totalByteCapcity);
 
 			dynamicElementCapcity = (handle.Size() - shaderDescriptorSetInfo.solidByteSize) / shaderDescriptorInfo.singleDescriptorByteSize;

@@ -16,6 +16,10 @@ namespace AirEngine
 				private:
 					std::vector<uint8_t> _rawDescriptor;
 				protected:
+					virtual void SetDescriptorData(uint8_t* targetPtr)
+					{
+
+					}
 				public:
 					inline std::vector<uint8_t>& RawDescriptor()
 					{
