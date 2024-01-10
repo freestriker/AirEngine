@@ -124,6 +124,16 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 			vk::MemoryPropertyFlagBits::eDeviceLocal
 		);
 
+		auto&& floatImage = std::make_unique<Graphic::Instance::Image>(
+			vk::Format::eR32G32B32A32Sfloat,
+			vk::Extent3D{128, 128, 1},
+			vk::ImageType::e2D, 
+			1, 1,
+			vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
+			vk::MemoryPropertyFlagBits::eDeviceLocal
+		);
+		floatImage->AddImageView(Utility::InternedString("SampledView"), vk::ImageViewType::e2D, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+
 		//auto&& handle0 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
 		//auto&& handle1 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(4 * 1024 * 1024);
 		////auto&& handle2 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
