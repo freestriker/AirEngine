@@ -5,6 +5,7 @@
 #include <memory>
 #include "Memory.hpp"
 #include "AirEngine/Runtime/Utility/InternedString.hpp"
+#include "AirEngine/Runtime/Graphic/Rendering/MaterialBindableAssetBase.hpp"
 
 namespace AirEngine
 {
@@ -18,11 +19,17 @@ namespace AirEngine
 				class Image
 				{
 				public:
-					struct View
+					class View final
+						: public Rendering::MaterialBindableAssetBase
 					{
+					public:
 						vk::ImageViewType type;
 						vk::ImageSubresourceRange subresource;
 						vk::ImageView imageView;
+						vk::ImageLayout layout;
+						Image* image;
+						void SetDescriptorData(uint8_t* targetPtr, vk::DescriptorType descriptorType) override;
+						~View();
 					};
 				private:
 					vk::Format _format;
@@ -37,11 +44,12 @@ namespace AirEngine
 					bool _isNative;
 					std::shared_ptr<Memory> _memory;
 				private:
-					std::unordered_map<Utility::InternedString, View> _views;
+					std::unordered_map<Utility::InternedString, std::unique_ptr<View>> _views;
 				public:
 					void AddView(
 						Utility::InternedString name,
 						vk::ImageViewType type, 
+						vk::ImageLayout layout,
 						vk::ImageAspectFlags aspectMask,
 						uint32_t baseMipLevel,
 						uint32_t levelCount,
@@ -49,8 +57,11 @@ namespace AirEngine
 						uint32_t layerCount
 					);
 					void RemoveView(Utility::InternedString name);
-					const std::unordered_map<Utility::InternedString, View>& Views() const;
-					
+					const std::unordered_map<Utility::InternedString, std::unique_ptr<View>>& GetViews() const;
+					const View& GetView(Utility::InternedString name) const
+					{
+						return *_views.at(name);
+					}
 				public:
 					// Empty
 					Image();

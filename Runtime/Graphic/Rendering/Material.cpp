@@ -163,12 +163,8 @@ void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility:
 			}
 			else
 			{
-				Manager::DescriptorManager::WriteToHostDescriptorMemory(
-					descriptorSetMemoryInfo.handle,
-					uniformBuffer->RawDescriptor().data(),
-					descriptorInfo.startByteOffsetInDescriptorSet + index * descriptorInfo.singleDescriptorByteSize,
-					descriptorInfo.singleDescriptorByteSize
-				);
+				auto&& ptr = Manager::DescriptorManager::GetHostDescriptorMemoryPtr(descriptorSetMemoryInfo.handle);
+				uniformBuffer->SetDescriptorData(ptr + descriptorInfo.startByteOffsetInDescriptorSet + index * descriptorInfo.singleDescriptorByteSize, descriptorInfo.type);
 			}
 			++setCount;
 		}

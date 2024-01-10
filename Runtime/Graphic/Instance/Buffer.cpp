@@ -2,7 +2,8 @@
 #include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 
 AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, vk::MemoryPropertyFlags property, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage)
-	: _vkBuffer(VK_NULL_HANDLE)
+	: Rendering::MaterialBindableAssetBase()
+	, _vkBuffer(VK_NULL_HANDLE)
 	, _size(size)
 	, _usage(bufferUsage)
 	, _memory()
@@ -37,7 +38,8 @@ AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::B
 }
 
 AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, std::shared_ptr<Instance::Memory> memory)
-	: _vkBuffer(VK_NULL_HANDLE)
+	: Rendering::MaterialBindableAssetBase()
+	, _vkBuffer(VK_NULL_HANDLE)
 	, _size(size)
 	, _usage(bufferUsage)
 	, _memory(memory)
@@ -61,7 +63,8 @@ AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::B
 }
 
 AirEngine::Runtime::Graphic::Instance::Buffer::Buffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage)
-	: _vkBuffer(VK_NULL_HANDLE)
+	: Rendering::MaterialBindableAssetBase()
+	, _vkBuffer(VK_NULL_HANDLE)
 	, _size(size)
 	, _usage(bufferUsage)
 	, _memory()

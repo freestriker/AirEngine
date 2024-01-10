@@ -64,19 +64,19 @@ AirEngine::Runtime::Graphic::Instance::ImageSampler::~ImageSampler()
 
 void AirEngine::Runtime::Graphic::Instance::ImageSampler::CreateVulkanInstance()
 {
-	vk::SamplerCreateInfo info({}, _magFilter, _minFilter, _mipmapMode, _addressModeU, _addressModeV, _addressModeW, 0, vk::Bool32(false), 0, vk::Bool32(false), VULKAN_HPP_NAMESPACE::CompareOp::eNever, _minMipmapLevel, _maxMipmapLevel);
-	_sampler = Manager::DeviceManager::Device().createSampler(info);
+	//vk::SamplerCreateInfo info({}, _magFilter, _minFilter, _mipmapMode, _addressModeU, _addressModeV, _addressModeW, 0, vk::Bool32(false), 0, vk::Bool32(false), VULKAN_HPP_NAMESPACE::CompareOp::eNever, _minMipmapLevel, _maxMipmapLevel);
+	//_sampler = Manager::DeviceManager::Device().createSampler(info);
 
-	vk::DescriptorGetInfoEXT descriptorGetInfo{};
-	descriptorGetInfo.type = vk::DescriptorType::eSampler;
-	descriptorGetInfo.data.pSampler = &_sampler;
+	//vk::DescriptorGetInfoEXT descriptorGetInfo{};
+	//descriptorGetInfo.type = vk::DescriptorType::eSampler;
+	//descriptorGetInfo.data.pSampler = &_sampler;
 
-	auto&& descriptorSize = Manager::DescriptorManager::DescriptorSize(vk::DescriptorType::eSampler);
-	RawDescriptor().resize(descriptorSize);
+	//auto&& descriptorSize = Manager::DescriptorManager::DescriptorSize(vk::DescriptorType::eSampler);
+	//RawDescriptor().resize(descriptorSize);
 
-	Graphic::Manager::DeviceManager::Device().getDescriptorEXT(
-		&descriptorGetInfo,
-		descriptorSize,
-		RawDescriptor().data()
-	);
+	//Graphic::Manager::DeviceManager::Device().getDescriptorEXT(
+	//	&descriptorGetInfo,
+	//	descriptorSize,
+	//	RawDescriptor().data()
+	//);
 }

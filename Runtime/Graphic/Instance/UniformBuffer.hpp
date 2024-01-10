@@ -1,6 +1,7 @@
 #pragma once
 #include "Buffer.hpp"
 #include "AirEngine/Runtime/Graphic/Rendering/MaterialBindableAssetBase.hpp"
+#include <vector>
 
 namespace AirEngine
 {
@@ -12,8 +13,9 @@ namespace AirEngine
 			{
 				class AIR_ENGINE_API UniformBuffer final
 					: public Buffer
-					, public Rendering::MaterialBindableAssetBase
 				{
+				private:
+					std::vector<uint8_t> _descriptorData;
 				public:
 					UniformBuffer(
 						vk::DeviceSize size, 
@@ -24,6 +26,7 @@ namespace AirEngine
 					);
 					~UniformBuffer();
 					NO_COPY_MOVE(UniformBuffer)
+					void SetDescriptorData(uint8_t* targetPtr, vk::DescriptorType descriptorType) override;
 				};
 			}
 		}

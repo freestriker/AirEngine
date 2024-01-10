@@ -2,6 +2,7 @@
 #include "AirEngine/Runtime/Utility/ExportMacro.hpp"
 #include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
 #include <vector>
+#include <vulkan/vulkan.hpp>
 
 namespace AirEngine
 {
@@ -11,20 +12,16 @@ namespace AirEngine
 		{
 			namespace Rendering
 			{
+				class Material;
 				class AIR_ENGINE_API MaterialBindableAssetBase
 				{
-				private:
-					std::vector<uint8_t> _rawDescriptor;
+					friend class Material;
 				protected:
-					virtual void SetDescriptorData(uint8_t* targetPtr)
+					virtual void SetDescriptorData(uint8_t* targetPtr, vk::DescriptorType descriptorType)
 					{
 
 					}
 				public:
-					inline std::vector<uint8_t>& RawDescriptor()
-					{
-						return _rawDescriptor;
-					}
 					MaterialBindableAssetBase() = default;
 					virtual ~MaterialBindableAssetBase() = default;
 					NO_COPY_MOVE(MaterialBindableAssetBase);
