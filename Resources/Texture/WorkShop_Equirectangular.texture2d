@@ -9,6 +9,6 @@
     "imageUsageFlags": ["VK_IMAGE_USAGE_TRANSFER_SRC_BIT"],
     "memoryPropertyFlags": ["VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT"],
     "imageAspectFlags": ["VK_IMAGE_ASPECT_COLOR_BIT"],
-    "generateDefaultView": false,
-    "topDown": false
+    "topDown": false,
+    "views": []
 }

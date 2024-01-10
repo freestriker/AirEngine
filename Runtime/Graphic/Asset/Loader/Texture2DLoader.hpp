@@ -17,6 +17,7 @@ namespace AirEngine
 						: public AirEngine::Runtime::Asset::Loader::LoaderBase
 					{
 					private:
+						struct ViewDescriptor;
 						struct Descriptor
 						{
 							std::vector<std::string> perMipmapLevelTexturePath;
@@ -27,8 +28,8 @@ namespace AirEngine
 							std::vector<std::string> imageUsageFlags;
 							std::vector<std::string> memoryPropertyFlags;
 							std::vector<std::string> imageAspectFlags;
-							bool generateDefaultView;
 							bool topDown;
+							std::vector< ViewDescriptor> views;
 
 							NLOHMANN_DEFINE_TYPE_INTRUSIVE(
 								Descriptor,
@@ -40,8 +41,23 @@ namespace AirEngine
 								imageUsageFlags,
 								memoryPropertyFlags,
 								imageAspectFlags,
-								generateDefaultView,
-								topDown
+								topDown,
+								views
+							)
+						};
+						struct ViewDescriptor
+						{
+							std::string name;
+							std::string layout;
+							uint32_t baseMipmapLevel;
+							uint32_t mipmapLevelCount;
+
+							NLOHMANN_DEFINE_TYPE_INTRUSIVE(
+								ViewDescriptor,
+								name,
+								layout,
+								baseMipmapLevel,
+								mipmapLevelCount
 							)
 						};
 						AirEngine::Runtime::Asset::AssetBase* OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading) override;

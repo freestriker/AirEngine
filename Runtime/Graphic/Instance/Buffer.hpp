@@ -5,6 +5,7 @@
 #include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 #include <memory>
 #include "Memory.hpp"
+#include "AirEngine/Runtime/Graphic/Rendering/MaterialBindableAssetBase.hpp"
 
 namespace AirEngine
 {
@@ -16,6 +17,7 @@ namespace AirEngine
 			{
 				class Memory;
 				class AIR_ENGINE_API Buffer
+					: public Rendering::MaterialBindableAssetBase
 				{
 				protected:
 					vk::Buffer _vkBuffer;

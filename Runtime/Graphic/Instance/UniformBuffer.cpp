@@ -9,9 +9,8 @@ AirEngine::Runtime::Graphic::Instance::UniformBuffer::UniformBuffer(
 	VmaMemoryUsage memoryUsage
 )
 	: Buffer(size, bufferUsage | vk::BufferUsageFlagBits::eUniformBuffer, property, flags, memoryUsage)
-	, Rendering::MaterialBindableAssetBase()
+	, _descriptorData(Manager::DescriptorManager::DescriptorSize(vk::DescriptorType::eUniformBuffer))
 {
-
 	vk::DescriptorAddressInfoEXT descriptorAddressInfo{};
 	descriptorAddressInfo.address = BufferDeviceAddress();
 	descriptorAddressInfo.range = Size();
@@ -22,15 +21,21 @@ AirEngine::Runtime::Graphic::Instance::UniformBuffer::UniformBuffer(
 	descriptorGetInfo.data.pUniformBuffer = &descriptorAddressInfo;
 
 	auto&& descriptorSize = Manager::DescriptorManager::DescriptorSize(vk::DescriptorType::eUniformBuffer);
-	RawDescriptor().resize(descriptorSize);
 
 	Graphic::Manager::DeviceManager::Device().getDescriptorEXT(
 		&descriptorGetInfo,
 		descriptorSize,
-		RawDescriptor().data()
+		_descriptorData.data()
 	);
 }
 
 AirEngine::Runtime::Graphic::Instance::UniformBuffer::~UniformBuffer()
 {
+}
+
+void AirEngine::Runtime::Graphic::Instance::UniformBuffer::SetDescriptorData(uint8_t* targetPtr, vk::DescriptorType descriptorType)
+{
+	if (descriptorType != vk::DescriptorType::eUniformBuffer) qFatal("Can not write to defferent descriptor type's memory.");
+
+	std::memcpy(targetPtr, _descriptorData.data(), _descriptorData.size());
 }

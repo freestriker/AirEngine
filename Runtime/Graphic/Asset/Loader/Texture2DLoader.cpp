@@ -5,6 +5,7 @@
 #include <vulkan/vulkan_format_traits.hpp>
 #include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 #include "AirEngine/Runtime/Utility/VulkanOpenCVTypeTransfer.hpp"
+#include "AirEngine/Runtime/Utility/StringToVulkanypeTransfer.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Image.hpp"
 #include "AirEngine/Runtime/Graphic/Command/CommandPool.hpp"
@@ -57,7 +58,6 @@ void AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader::PopulateTextur
 	const vk::Format originalFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.originalFormat);
 	const vk::Format targetFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.format);
 	const bool topDown = descriptor.topDown;
-	const bool autoGenerateView = descriptor.generateDefaultView;
 	vk::ImageUsageFlags imageUsageFlags = {};
 	vk::MemoryPropertyFlags memoryPropertyFlags = {};
 	vk::ImageLayout imageLayout = Utility::VulkanOpenCVTypeTransfer::ParseToVkImageLayout(descriptor.imageLayout);
@@ -270,7 +270,10 @@ void AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader::PopulateTextur
 		vk::ImageUsageFlagBits::eTransferDst | imageUsageFlags,
 		memoryPropertyFlags
 	);
-	if(autoGenerateView) targetImage->AddView({}, vk::ImageViewType::e2D, vk::ImageAspectFlagBits::eColor, 0, mipmapLevelCount, 0, 1);
+	for (const auto& viewDescriptor : descriptor.views)
+	{
+		targetImage->AddView(Utility::InternedString(viewDescriptor.name), vk::ImageViewType::e2D, Utility::StringToVulkanypeTransfer::ParseToVkImageLayout(viewDescriptor.layout), vk::ImageAspectFlagBits::eColor, viewDescriptor.baseMipmapLevel, viewDescriptor.mipmapLevelCount, 0, 1);
+	}
 	auto&& originalImage = std::unique_ptr<Graphic::Instance::Image>(isDirectCopy ? nullptr : new Graphic::Instance::Image(
 		originalFormat,
 		imageMaxExtent,

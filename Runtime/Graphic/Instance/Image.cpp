@@ -1,15 +1,10 @@
 ﻿#include "Image.hpp"
-#include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
+#include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 
 AirEngine::Runtime::Graphic::Instance::Image::~Image()
 {
 	if(!_isNative) Graphic::Manager::DeviceManager::Device().destroyImage(_image);
-
-	for (auto& viewPair : _views)
-	{
-		Manager::DeviceManager::Device().destroyImageView(viewPair.second.imageView);
-	}
 }
 
 void AirEngine::Runtime::Graphic::Instance::Image::SetMemory(std::shared_ptr<Instance::Memory> memory)
@@ -19,16 +14,18 @@ void AirEngine::Runtime::Graphic::Instance::Image::SetMemory(std::shared_ptr<Ins
 	if (VK_SUCCESS != bindResult) qFatal("Failed to bind image.");
 }
 
-void AirEngine::Runtime::Graphic::Instance::Image::AddView(Utility::InternedString name, vk::ImageViewType type, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount)
+void AirEngine::Runtime::Graphic::Instance::Image::AddView(Utility::InternedString name, vk::ImageViewType type, vk::ImageLayout layout, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount)
 {
-	View newView{};
-	newView.type = type;
-	newView.subresource = vk::ImageSubresourceRange(aspectMask, baseMipLevel, levelCount, baseArrayLayer, layerCount);
+	View* newView{};
+	newView->type = type;
+	newView->subresource = vk::ImageSubresourceRange(aspectMask, baseMipLevel, levelCount, baseArrayLayer, layerCount);
+	newView->layout = layout;
+	newView->image = this;
 
-	vk::ImageViewCreateInfo info({}, _image, type, _format, {}, newView.subresource);
-	newView.imageView = Manager::DeviceManager::Device().createImageView(info);
+	vk::ImageViewCreateInfo info({}, _image, type, _format, {}, newView->subresource);
+	newView->imageView = Manager::DeviceManager::Device().createImageView(info);
 
-	if(!_views.try_emplace(name, std::move(newView)).second) qFatal("Image failed to add new view.");
+	if(!_views.try_emplace(name, std::unique_ptr<View>(newView)).second) qFatal("Image failed to add new view.");
 }
 
 void AirEngine::Runtime::Graphic::Instance::Image::RemoveView(Utility::InternedString name)
@@ -36,11 +33,10 @@ void AirEngine::Runtime::Graphic::Instance::Image::RemoveView(Utility::InternedS
 	auto&& iter = _views.find(name);
 	if (iter == _views.end()) qFatal("Image do not contain this view.");
 
-	Manager::DeviceManager::Device().destroyImageView(iter->second.imageView);
 	_views.erase(iter);
 }
 
-const std::unordered_map<AirEngine::Runtime::Utility::InternedString, AirEngine::Runtime::Graphic::Instance::Image::View>& AirEngine::Runtime::Graphic::Instance::Image::Views() const
+const std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::Image::View>>& AirEngine::Runtime::Graphic::Instance::Image::GetViews() const
 {
 	return _views;
 }
@@ -286,4 +282,18 @@ AirEngine::Runtime::Graphic::Instance::Image* AirEngine::Runtime::Graphic::Insta
 )
 {
 	return new Image(image, format, { extent2D.width, extent2D.height, 1 }, vk::ImageType::e2D, 1, 1, imageUsageFlags);
+}
+
+void AirEngine::Runtime::Graphic::Instance::Image::View::SetDescriptorData(uint8_t* targetPtr, vk::DescriptorType descriptorType)
+{
+	vk::DescriptorGetInfoEXT descriptorGetInfo{};
+	vk::DescriptorImageInfo descriptorImageInfo({}, imageView, layout);
+	descriptorGetInfo.data.pSampledImage = &descriptorImageInfo;
+
+	Manager::DeviceManager::Device().getDescriptorEXT(&descriptorGetInfo, Manager::DescriptorManager::DescriptorSize(descriptorType), targetPtr);
+}
+
+AirEngine::Runtime::Graphic::Instance::Image::View::~View()
+{
+	Manager::DeviceManager::Device().destroyImageView(imageView);
 }

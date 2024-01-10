@@ -25,6 +25,7 @@ namespace AirEngine
 				static const std::unordered_map<std::string, vk::ColorComponentFlagBits> _vkColorComponentFlagBitsStringToVkColorComponentFlagBitsMap;
 				static const std::unordered_map<std::string, vk::CullModeFlagBits> _vkCullModeFlagBitsStringToVkCullModeFlagBitsMap;
 				static const std::unordered_map<std::string, vk::CompareOp> _vkCompareOpStringToVkCompareOpMap;
+				static const std::unordered_map<std::string, vk::ImageLayout> _vkImageLayoutStringToVkCompareOpMap;
 			public:
 				static inline vk::BlendOp ParseToVkBlendOp(const std::string& type)
 				{
@@ -61,6 +62,10 @@ namespace AirEngine
 					if (type == "COUNTER_CLOCKWISE") return vk::FrontFace::eCounterClockwise;
 					else if (type == "CLOCKWISE") return vk::FrontFace::eClockwise;
 					else return vk::FrontFace();
+				}
+				static inline vk::ImageLayout ParseToVkImageLayout(const std::string& type)
+				{
+					return _vkImageLayoutStringToVkCompareOpMap.at(type);
 				}
 			};
 		}
