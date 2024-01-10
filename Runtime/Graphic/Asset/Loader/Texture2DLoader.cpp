@@ -272,7 +272,7 @@ void AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader::PopulateTextur
 	);
 	for (const auto& viewDescriptor : descriptor.views)
 	{
-		targetImage->AddView(Utility::InternedString(viewDescriptor.name), vk::ImageViewType::e2D, Utility::StringToVulkanypeTransfer::ParseToVkImageLayout(viewDescriptor.layout), vk::ImageAspectFlagBits::eColor, viewDescriptor.baseMipmapLevel, viewDescriptor.mipmapLevelCount, 0, 1);
+		targetImage->AddImageView(Utility::InternedString(viewDescriptor.name), vk::ImageViewType::e2D, Utility::StringToVulkanypeTransfer::ParseToVkImageLayout(viewDescriptor.layout), vk::ImageAspectFlagBits::eColor, viewDescriptor.baseMipmapLevel, viewDescriptor.mipmapLevelCount, 0, 1);
 	}
 	auto&& originalImage = std::unique_ptr<Graphic::Instance::Image>(isDirectCopy ? nullptr : new Graphic::Instance::Image(
 		originalFormat,
