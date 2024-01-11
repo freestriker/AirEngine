@@ -200,6 +200,7 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassInfo AirEngine:
 	renderPassInfo._name = Utility::InternedString(_name);
 
 	std::unordered_map<Utility::InternedString, SubPassInfo>& subPassInfos = renderPassInfo._subPassInfos;
+	std::unordered_map<Utility::InternedString, AttachmentInfo>& totalAttachmentInfos = renderPassInfo._attachmentInfos;
 	for (uint32_t subpassIndex = 0; subpassIndex < _renderSubpassBuilders.size(); subpassIndex++)
 	{
 		const auto& subpassBuilder = _renderSubpassBuilders[subpassIndex];
@@ -261,6 +262,18 @@ AirEngine::Runtime::Graphic::Instance::RenderPassBase::RenderPassInfo AirEngine:
 		}
 
 		subPassInfos.emplace(subPassInfo._name, subPassInfo);
+
+		// Populate total attachment info
+		for (const auto& attachmentInfo : subPassInfo._attachments)
+		{
+
+			auto&& result = totalAttachmentInfos.try_emplace(attachmentInfo.name, attachmentInfo);
+			if (!result.second) continue;
+
+			auto&& attachmentInfo = result.first->second;
+			attachmentInfo.attachmentInfoIndex = attachmentInfo.attachmentIndex;
+			attachmentInfo.location = std::numeric_limits<uint32_t>::max();
+		}
 	}
 
 	return renderPassInfo;
