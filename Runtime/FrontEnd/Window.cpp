@@ -88,8 +88,8 @@ bool AirEngine::Runtime::FrontEnd::Window::AcquireImage()
 
 static bool isLoaded = false;
 static AirEngine::Runtime::Asset::Loader::LoadHandle assetLoadHandle{};
-static AirEngine::Runtime::Asset::Loader::LoadHandle meshLoadHandle{};
-static AirEngine::Runtime::Asset::Loader::LoadHandle shaderLoadHandle{};
+static AirEngine::Runtime::Asset::Loader::LoadHandle ndcFullScreenMeshLoadHandle{};
+static AirEngine::Runtime::Asset::Loader::LoadHandle presentShaderLoadHandle{};
 
 bool AirEngine::Runtime::FrontEnd::Window::Present()
 {
@@ -101,32 +101,11 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 		auto&& builtinSampler = Graphic::Manager::ImageSamplerManager::ImageSampler(vk::Filter::eNearest, vk::SamplerMipmapMode::eNearest, vk::SamplerAddressMode::eRepeat, 0, 10);
 
 		assetLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
-		meshLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NineSphere.mesh");
-		shaderLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
+		ndcFullScreenMeshLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NdcFullScreen.mesh");
+		presentShaderLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
 
 		{
-			auto&& renderPass0 = Graphic::Manager::RenderPassManager::LoadRenderPass<Graphic::Instance::DummyRenderPass>();
-			auto&& renderPass1 = Graphic::Manager::RenderPassManager::LoadRenderPass("AirEngine::Runtime::Graphic::Instance::DummyRenderPass");
-			Graphic::Manager::RenderPassManager::Collect();
-			Graphic::Manager::RenderPassManager::UnloadRenderPass<Graphic::Instance::DummyRenderPass>();
-			Graphic::Manager::RenderPassManager::UnloadRenderPass("AirEngine::Runtime::Graphic::Instance::DummyRenderPass");
-			Graphic::Manager::RenderPassManager::Collect();
-		}
-
-		auto&& stagingBuffer = Graphic::Instance::Buffer(
-			32 * 1024 * 1024,
-			vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT | vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT | vk::BufferUsageFlagBits::eTransferDst,
-			vk::MemoryPropertyFlagBits::eDeviceLocal
-		);
-
-		auto&& uniformBuffer = Graphic::Instance::UniformBuffer(
-			4 * 1024 * 1024,
-			vk::BufferUsageFlagBits::eUniformBuffer,
-			vk::MemoryPropertyFlagBits::eDeviceLocal
-		);
-
-		{
-			auto renderPass = Graphic::Manager::RenderPassManager::LoadRenderPass<Graphic::Instance::DummyRenderPass>();
+			auto presentRenderPass = Graphic::Manager::RenderPassManager::LoadRenderPass<PresentRenderPass>();
 			auto attachmentImage = std::make_unique<Graphic::Instance::Image>(
 				vk::Format::eR8G8B8A8Srgb,
 				vk::Extent3D{ 256, 256, 1 },
@@ -135,11 +114,11 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 				vk::ImageUsageFlagBits::eColorAttachment,
 				vk::MemoryPropertyFlagBits::eDeviceLocal
 			);
-			auto colorAttachmentName = Utility::InternedString("ColorAttachment");
-			auto colorAttachment = attachmentImage->AddImageView(colorAttachmentName, vk::ImageViewType::e2D, vk::ImageLayout::eAttachmentOptimal, vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+			auto swapchainAttachmentName = Utility::InternedString("SwapchainAttachment");
+			auto colorAttachment = attachmentImage->AddImageView(swapchainAttachmentName, vk::ImageViewType::e2D, vk::ImageLayout::eAttachmentOptimal, vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
 			auto frameBuffer = Graphic::Instance::FrameBufferBuilder()
-				.SetRenderPass(renderPass)
-				.SetAttachment(colorAttachmentName, colorAttachment)
+				.SetRenderPass(presentRenderPass)
+				.SetAttachment(swapchainAttachmentName, colorAttachment)
 				.Build();
 		}
 
@@ -160,22 +139,21 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 		////Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);
 		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle12);
 
-		shaderLoadHandle.SharedFuture().wait();
-		auto&& shader = shaderLoadHandle.Asset<Graphic::Rendering::Shader>();
-		Graphic::Manager::DescriptorManager::ToAligned(0);
-		auto&& material = Graphic::Rendering::Material(shader);
-		material.SetUniformBuffer(Utility::InternedString("sampler2d"), &uniformBuffer, 0);
-		material.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 0);
-		material.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 1);
-		material.SetUniformBuffer(Utility::InternedString("sampler2dArray"), &uniformBuffer, 0);
-		auto&& ub = material.GetUniformBuffer(Utility::InternedString("sampler2dArray"), 0);
-		material.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 0);
-		material.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 15);
-		material.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 31);
-		material.SetUniformBuffer(Utility::InternedString("cubes"), nullptr, 0);
+		presentShaderLoadHandle.SharedFuture().wait();
+		auto&& presentShader = presentShaderLoadHandle.Asset<Graphic::Rendering::Shader>();
+		auto&& presentMaterial = Graphic::Rendering::Material(presentShader);
+		//presentMaterial.SetUniformBuffer(Utility::InternedString("sampler2d"), &uniformBuffer, 0);
+		//presentMaterial.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 0);
+		//presentMaterial.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 1);
+		//presentMaterial.SetUniformBuffer(Utility::InternedString("sampler2dArray"), &uniformBuffer, 0);
+		//auto&& ub = presentMaterial.GetUniformBuffer(Utility::InternedString("sampler2dArray"), 0);
+		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 0);
+		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 15);
+		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 31);
+		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), nullptr, 0);
 
-		auto&& dirtyHandles = Graphic::Manager::DescriptorManager::MergeAndClearDirtyHandles();
-		Graphic::Manager::DescriptorManager::CopyHostDirtyDataToCachedBuffer(dirtyHandles);
+		//auto&& dirtyHandles = Graphic::Manager::DescriptorManager::MergeAndClearDirtyHandles();
+		//Graphic::Manager::DescriptorManager::CopyHostDirtyDataToCachedBuffer(dirtyHandles);
 	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
@@ -472,3 +450,38 @@ AirEngine::Runtime::FrontEnd::Window::Window()
 	, _transferFence(nullptr)
 {
 }
+
+REGISTRATION
+{
+	DECLARE_TYPE(AirEngine::Runtime::FrontEnd::PresentRenderPass*)
+}
+AirEngine::Runtime::FrontEnd::PresentRenderPass::PresentRenderPass()
+	: RenderPassBase(
+		RenderPassBase::RenderPassBuilder()
+		.SetName("PresentRenderPass")
+		.AddColorAttachment(
+			"SwapchainAttachment",
+			vk::Format::eR8G8B8A8Srgb,
+			vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+			vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eColorAttachmentOptimal
+		)
+		.AddDependency(
+			"ExternalSubpass", "PresentSubpass",
+			vk::PipelineStageFlagBits2::eNone, vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eNone
+		)
+		.AddSubpass(
+			RenderPassBase::RenderSubpassBuilder()
+			.SetName("PresentSubpass")
+			.SetPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+			.AddColorAttachment("SwapchainAttachment", vk::ImageLayout::eColorAttachmentOptimal)
+		)
+		.AddDependency(
+			"PresentSubpass", "ExternalSubpass",
+			vk::PipelineStageFlagBits2::eNone, vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eNone
+		)
+	)
+{
+}
+#include "moc_Window.cpp"

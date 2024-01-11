@@ -7,6 +7,7 @@
 #include "AirEngine/Runtime/Utility/Condition.hpp"
 #include <mutex>
 #include <condition_variable>
+#include "AirEngine/Runtime/Graphic/Instance/RenderPassBase.hpp"
 
 namespace AirEngine
 {
@@ -28,6 +29,15 @@ namespace AirEngine
 		}
 		namespace FrontEnd
 		{
+			class PresentRenderPass final
+				: public AirEngine::Runtime::Graphic::Instance::RenderPassBase
+			{
+				REFLECTABLE_OBJECT
+			public:
+				INVOKABLE PresentRenderPass();
+				INVOKABLE ~PresentRenderPass() = default;
+				NO_COPY_MOVE(PresentRenderPass);
+			};
 			class AIR_ENGINE_API Window
 				: public QWindow
 				, public WindowFrontEndBase

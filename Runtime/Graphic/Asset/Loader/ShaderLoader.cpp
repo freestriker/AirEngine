@@ -76,7 +76,7 @@ struct SubShaderDescriptor
 
 	std::vector<std::string> spvShaderPaths{};
 
-	std::vector <std::string> cullModes;
+	std::string cullMode;
 	std::string frountFace;
 
 	bool depthTestEnable{};
@@ -93,7 +93,7 @@ struct SubShaderDescriptor
 
 		spvShaderPaths,
 
-		cullModes,
+		cullMode,
 		frountFace,
 
 		depthTestEnable,
@@ -772,7 +772,7 @@ void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& s
 				VK_FALSE,
 				VK_FALSE,
 				vk::PolygonMode::eFill,
-				Utility::StringToVulkanypeTransfer::ParseToVkCullModeFlags(subShaderDescriptor.cullModes),
+				Utility::StringToVulkanypeTransfer::ParseToVkCullModeFlags(subShaderDescriptor.cullMode),
 				Utility::StringToVulkanypeTransfer::ParseToVkFrontFace(subShaderDescriptor.frountFace),
 				VK_FALSE,
 				0,

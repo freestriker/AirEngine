@@ -44,14 +44,9 @@ namespace AirEngine
 					}
 					return flag;
 				}
-				static inline vk::CullModeFlags ParseToVkCullModeFlags(const std::vector<std::string>& types)
+				static inline vk::CullModeFlags ParseToVkCullModeFlags(std::string type)
 				{
-					vk::CullModeFlags flag{};
-					for (const auto& type : types)
-					{
-						flag |= _vkCullModeFlagBitsStringToVkCullModeFlagBitsMap.at(type);
-					}
-					return flag;
+					return _vkCullModeFlagBitsStringToVkCullModeFlagBitsMap.at(type);
 				}
 				static inline vk::CompareOp ParseToVkCompareOp(const std::string& type)
 				{
