@@ -1,6 +1,7 @@
 ﻿#include "Image.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/ImageView.hpp"
 
 AirEngine::Runtime::Graphic::Instance::Image::~Image()
 {
@@ -14,24 +15,27 @@ void AirEngine::Runtime::Graphic::Instance::Image::SetMemory(std::shared_ptr<Ins
 	if (VK_SUCCESS != bindResult) qFatal("Failed to bind image.");
 }
 
-void AirEngine::Runtime::Graphic::Instance::Image::AddImageView(Utility::InternedString name, vk::ImageViewType type, vk::ImageLayout layout, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount)
+AirEngine::Runtime::Graphic::Instance::ImageView* AirEngine::Runtime::Graphic::Instance::Image::AddImageView(Utility::InternedString name, vk::ImageViewType type, vk::ImageLayout layout, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount)
 {
 	auto&& newImageView = std::make_unique<Instance::ImageView>(this, name, type, layout, aspectMask, baseMipLevel, levelCount, baseArrayLayer, layerCount);
 
-	if(!_views.try_emplace(name, std::move(newImageView)).second) qFatal("Image failed to add new view.");
+	auto iter = _imageViews.try_emplace(name, std::move(newImageView));
+	if(!iter.second) qFatal("Image failed to add new view.");
+
+	return iter.first->second.get();
 }
 
 void AirEngine::Runtime::Graphic::Instance::Image::RemoveImageView(Utility::InternedString name)
 {
-	auto&& iter = _views.find(name);
-	if (iter == _views.end()) qFatal("Image do not contain this view.");
+	auto&& iter = _imageViews.find(name);
+	if (iter == _imageViews.end()) qFatal("Image do not contain this view.");
 
-	_views.erase(iter);
+	_imageViews.erase(iter);
 }
 
 const std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::unique_ptr<AirEngine::Runtime::Graphic::Instance::ImageView>>& AirEngine::Runtime::Graphic::Instance::Image::ImageViews() const
 {
-	return _views;
+	return _imageViews;
 }
 
 AirEngine::Runtime::Graphic::Instance::Image::Image()

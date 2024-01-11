@@ -67,6 +67,7 @@ namespace AirEngine
 					private:
 						Utility::InternedString _name;
 						std::unordered_map<Utility::InternedString, SubPassInfo> _subPassInfos;
+						std::unordered_map<Utility::InternedString, AttachmentInfo> _attachmentInfos;
 					public:
 						inline Utility::InternedString Name() const
 						{
@@ -75,6 +76,10 @@ namespace AirEngine
 						inline const SubPassInfo& SubPassInfo(Utility::InternedString name) const
 						{
 							return _subPassInfos.at(name);
+						}
+						inline const std::unordered_map<Utility::InternedString, AttachmentInfo>& AttachmentInfos() const
+						{
+							return _attachmentInfos;
 						}
 					};
 

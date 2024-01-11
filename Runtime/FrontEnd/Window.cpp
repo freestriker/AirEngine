@@ -20,6 +20,7 @@
 #include "AirEngine/Runtime/Graphic/Rendering/Material.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/UniformBuffer.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/ImageSampler.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/FrameBuffer.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/ImageSamplerManager.hpp"
 #include <QPlatformSurfaceEvent>
@@ -124,15 +125,24 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 			vk::MemoryPropertyFlagBits::eDeviceLocal
 		);
 
-		auto&& floatImage = std::make_unique<Graphic::Instance::Image>(
-			vk::Format::eR32G32B32A32Sfloat,
-			vk::Extent3D{128, 128, 1},
-			vk::ImageType::e2D, 
-			1, 1,
-			vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
-			vk::MemoryPropertyFlagBits::eDeviceLocal
-		);
-		floatImage->AddImageView(Utility::InternedString("SampledView"), vk::ImageViewType::e2D, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+		{
+			auto renderPass = Graphic::Manager::RenderPassManager::LoadRenderPass<Graphic::Instance::DummyRenderPass>();
+			auto attachmentImage = std::make_unique<Graphic::Instance::Image>(
+				vk::Format::eR8G8B8A8Srgb,
+				vk::Extent3D{ 256, 256, 1 },
+				vk::ImageType::e2D,
+				1, 1,
+				vk::ImageUsageFlagBits::eColorAttachment,
+				vk::MemoryPropertyFlagBits::eDeviceLocal
+			);
+			auto colorAttachmentName = Utility::InternedString("ColorAttachment");
+			auto colorAttachment = attachmentImage->AddImageView(colorAttachmentName, vk::ImageViewType::e2D, vk::ImageLayout::eAttachmentOptimal, vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+			auto frameBuffer = Graphic::Instance::FrameBufferBuilder()
+				.SetRenderPass(renderPass)
+				.SetAttachment(colorAttachmentName, colorAttachment)
+				.Build();
+		}
+
 
 		//auto&& handle0 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
 		//auto&& handle1 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(4 * 1024 * 1024);

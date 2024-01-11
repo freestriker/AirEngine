@@ -6,7 +6,6 @@
 #include "Memory.hpp"
 #include "AirEngine/Runtime/Utility/InternedString.hpp"
 #include "AirEngine/Runtime/Graphic/Rendering/MaterialBindableAssetBase.hpp"
-#include "AirEngine/Runtime/Graphic/Instance/ImageView.hpp"
 
 namespace AirEngine
 {
@@ -17,6 +16,7 @@ namespace AirEngine
 			namespace Instance
 			{
 				class Memory;
+				class ImageView;
 				class Image
 				{
 				public:
@@ -33,9 +33,9 @@ namespace AirEngine
 					bool _isNative;
 					std::shared_ptr<Memory> _memory;
 				private:
-					std::unordered_map<Utility::InternedString, std::unique_ptr<Instance::ImageView>> _views;
+					std::unordered_map<Utility::InternedString, std::unique_ptr<Instance::ImageView>> _imageViews;
 				public:
-					void AddImageView(
+					AirEngine::Runtime::Graphic::Instance::ImageView* AddImageView(
 						Utility::InternedString name,
 						vk::ImageViewType type, 
 						vk::ImageLayout layout,
@@ -47,9 +47,9 @@ namespace AirEngine
 					);
 					void RemoveImageView(Utility::InternedString name);
 					const std::unordered_map<Utility::InternedString, std::unique_ptr<Instance::ImageView>>& ImageViews() const;
-					const Instance::ImageView& ImageView(Utility::InternedString name) const
+					Instance::ImageView* ImageView(Utility::InternedString name) const
 					{
-						return *_views.at(name);
+						return _imageViews.at(name).get();
 					}
 				public:
 					// Empty
