@@ -1,0 +1,5 @@
+{
+    "meshPath": "../..\\Resources\\Mesh\\NdcFullScreenMesh.ply",
+    "postProcessSteps": [],
+    "meshAttributePaser": "AirEngine::Runtime::Graphic::MeshAttributePaser::Position_MeshAttributePaser"
+}

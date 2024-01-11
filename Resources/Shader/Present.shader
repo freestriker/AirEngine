@@ -1,9 +1,9 @@
 {
-    "renderPass": "AirEngine::Runtime::Graphic::Instance::DummyRenderPass",
+    "renderPass": "AirEngine::Runtime::FrontEnd::PresentRenderPass",
     "subShaders": 
     [
         {
-            "subPass": "DrawSubpass",
+            "subPass": "PresentSubpass",
 
             "spvShaderPaths": 
             [
@@ -11,17 +11,17 @@
                 "../../Resources/Shader/Spv/Present.frag.spv"
             ],
 
-            "cullModes": ["BACK"],
+            "cullMode": "NONE",
             "frountFace": "CLOCKWISE",
 
-            "depthTestEnable": true,
-            "depthWriteEnable": true,
+            "depthTestEnable": false,
+            "depthWriteEnable": false,
             "depthCompareOp": "LESS",
 
             "colorAttachmentBlendStates":
             [
                 {
-                    "colorAttachment": "ColorAttachment",
+                    "colorAttachment": "SwapchainAttachment",
 
                     "blendEnable": false,
                     "srcColorBlendFactor": "ZERO",
@@ -31,7 +31,7 @@
                     "alphaBlendOp": "ADD",
                     "dstAlphaBlendFactor": "ZERO",
         
-                    "colorWriteMasks": ["R", "G", "B"] 
+                    "colorWriteMasks": ["R", "G", "B", "A"] 
                 }
             ]
         }
