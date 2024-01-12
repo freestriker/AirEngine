@@ -16,6 +16,8 @@ namespace AirEngine
 				class Queue;
 				class Image;
 				class Buffer;
+				class FrameBuffer;
+				class RenderPassBase;
 			}
 			namespace Command
 			{
@@ -48,7 +50,11 @@ namespace AirEngine
 					void ClearColorImage(const Instance::Image& image, vk::ImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color);
 					void CopyBufferToImage(const Instance::Buffer& buffer, const Instance::Image& image, vk::ImageLayout imageLayout, vk::ImageAspectFlags imageAspectFlags);
 					void CopyBuffer(const Instance::Buffer& srcBuffer, const Instance::Buffer& dstBuffer, const std::vector<std::tuple<vk::DeviceSize, vk::DeviceSize, vk::DeviceSize>> srcOffsetDstOffsetSizes);
+					void FillBuffer(const Instance::Buffer* buffer, size_t offset, size_t size, uint32_t data);
 					void Blit(const Instance::Image& srcImage, vk::ImageLayout srcImageLayout, const Instance::Image& dstImage, vk::ImageLayout dstImageLayout, vk::ImageAspectFlags imageAspectFlags, vk::Filter filter);
+				
+					void BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer);
+					void EndRenderPass();
 				};
 				template<typename TColorChannel>
 				inline void CommandBuffer::ClearColorImage(const Instance::Image& image, vk::ImageLayout imageLayout, const glm::vec<4, TColorChannel, glm::defaultp>& color)

@@ -13,6 +13,10 @@ namespace AirEngine
 	{
 		namespace Graphic
 		{
+			namespace Command
+			{
+				class CommandBuffer;
+			}
 			namespace Instance
 			{
 				class Buffer;
@@ -82,6 +86,7 @@ namespace AirEngine
 
 					static std::vector<DescriptorMemoryHandle> MergeAndClearDirtyHandles();
 					static void CopyHostDirtyDataToCachedBuffer(const std::vector<DescriptorMemoryHandle>& dirtyHandles);
+					static void CopyCachedBufferToDeviceBuffer(Command::CommandBuffer* commandBuffer, const std::vector<DescriptorMemoryHandle>& dirtyHandles);
 				private:
 				public:
 					inline static uint16_t DescriptorMemoryAlignment()

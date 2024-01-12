@@ -27,6 +27,7 @@ namespace AirEngine
 				private:
 					FrameBuffer();
 				public:
+					FrameBuffer(const FrameBufferBuilder& builder);
 					~FrameBuffer();
 					NO_COPY_MOVE(FrameBuffer);
 
@@ -50,6 +51,7 @@ namespace AirEngine
 
 				class AIR_ENGINE_API FrameBufferBuilder final
 				{
+					friend class FrameBuffer;
 				private:
 					std::map<Utility::InternedString, Instance::ImageView*> _attachmentMap;
 					std::vector<vk::ImageView> _vkImageViews;

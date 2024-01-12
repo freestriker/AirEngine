@@ -4,6 +4,8 @@
 #include "Barrier.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Image.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/FrameBuffer.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/RenderPassBase.hpp"
 #include <vulkan/vulkan_format_traits.hpp>
 
 AirEngine::Runtime::Graphic::Command::CommandBuffer::CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, vk::CommandBufferLevel level)
@@ -112,6 +114,11 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::CopyBuffer(const Insta
     _vkCommandBuffer.copyBuffer(srcBuffer.VkHandle(), dstBuffer.VkHandle(), copys);
 }
 
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::FillBuffer(const Instance::Buffer* buffer, size_t offset, size_t size, uint32_t data)
+{
+    _vkCommandBuffer.fillBuffer(buffer->VkHandle(), offset, size, data);
+}
+
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::Blit(const Instance::Image& srcImage, vk::ImageLayout srcImageLayout, const Instance::Image& dstImage, vk::ImageLayout dstImageLayout, vk::ImageAspectFlags imageAspectFlags, vk::Filter filter)
 {
     auto&& layerCount = std::min(srcImage.LayerCount(), dstImage.LayerCount());
@@ -140,4 +147,23 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::Blit(const Instance::I
     }
 
     _vkCommandBuffer.blitImage(srcImage.VkHandle(), srcImageLayout, dstImage.VkHandle(), dstImageLayout, blits, filter);
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer)
+{
+    if (renderPass == nullptr || frameBuffer == nullptr) qFatal("Begin render pass must have valid data.");
+
+    auto&& renderRect = vk::Rect2D({ 0, 0 }, frameBuffer->Extent2D());
+    auto&& renderViewport = vk::Viewport(renderRect.offset.x, renderRect.offset.y, renderRect.extent.width, renderRect.extent.height, 0, 1);
+
+    vk::RenderPassBeginInfo renderPassBeginInfo(renderPass->VkHandle(), frameBuffer->VkHandle(), renderRect);
+
+    _vkCommandBuffer.beginRenderPass(renderPassBeginInfo, _vkCommandBufferLevel == vk::CommandBufferLevel::ePrimary ? vk::SubpassContents::eInline : vk::SubpassContents::eSecondaryCommandBuffers);
+    _vkCommandBuffer.setViewport(0, 1, &renderViewport);
+    _vkCommandBuffer.setScissor(0, 1, &renderRect);
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::EndRenderPass()
+{
+    _vkCommandBuffer.endRenderPass();
 }

@@ -1,6 +1,8 @@
 ﻿#include "DescriptorManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DeviceManager.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
+#include "AirEngine/Runtime/Graphic/Command/CommandBuffer.hpp"
+#include "AirEngine/Runtime/Graphic/Command/Barrier.hpp"
 
 std::mutex AirEngine::Runtime::Graphic::Manager::DescriptorManager::_mutex{};
 std::map<uint32_t, AirEngine::Runtime::Graphic::Manager::DescriptorMemoryHandle> AirEngine::Runtime::Graphic::Manager::DescriptorManager::_freeMemoryMap{};
@@ -330,6 +332,37 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::CopyHostDirtyDataT
 		hostCachedBufferOffset += dirtyHandle.Size();
 	}
 	_hostCachedBuffer->Memory()->Unmap();
+}
+
+void AirEngine::Runtime::Graphic::Manager::DescriptorManager::CopyCachedBufferToDeviceBuffer(Command::CommandBuffer* commandBuffer, const std::vector<DescriptorMemoryHandle>& dirtyHandles)
+{
+	std::vector<std::tuple<vk::DeviceSize, vk::DeviceSize, vk::DeviceSize>> srcOffsetDstOffsetSizes{};
+	srcOffsetDstOffsetSizes.reserve(dirtyHandles.size());
+	size_t hostCachedBufferOffset = 0;
+	for (const auto& dirtyHandle : dirtyHandles)
+	{
+		srcOffsetDstOffsetSizes.emplace_back(hostCachedBufferOffset, dirtyHandle.Offset(), dirtyHandle.Size());
+		hostCachedBufferOffset += dirtyHandle.Size();
+	}
+	if (_deviceBuffer == nullptr || _deviceBuffer->Size() < _hostMemory.size())
+	{
+		delete _deviceBuffer;
+		_deviceBuffer = new Graphic::Instance::Buffer(
+			_hostMemory.size(),
+			vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT | vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT | vk::BufferUsageFlagBits::eTransferDst,
+			vk::MemoryPropertyFlagBits::eDeviceLocal
+		);
+		commandBuffer->FillBuffer(_deviceBuffer, 0, _deviceBuffer->Size(), 0);
+		Command::Barrier barrier{};
+		barrier.AddBufferMemoryBarrier(*_deviceBuffer,
+			vk::PipelineStageFlagBits2::eClear,
+			vk::AccessFlagBits2::eMemoryWrite,
+			vk::PipelineStageFlagBits2::eAllTransfer,
+			vk::AccessFlagBits2::eMemoryWrite
+		);
+		commandBuffer->AddPipelineBarrier(barrier);
+	}
+	commandBuffer->CopyBuffer(*_hostCachedBuffer, *_deviceBuffer, srcOffsetDstOffsetSizes);
 }
 
 AirEngine::Runtime::Graphic::Manager::DescriptorManager::DescriptorManager()
