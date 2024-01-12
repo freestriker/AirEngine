@@ -8,6 +8,7 @@
 #include <mutex>
 #include <condition_variable>
 #include "AirEngine/Runtime/Graphic/Instance/RenderPassBase.hpp"
+#include <memory>
 
 namespace AirEngine
 {
@@ -18,6 +19,7 @@ namespace AirEngine
 			namespace Instance
 			{
 				class Image;
+				class FrameBuffer;
 			}
 			namespace Command
 			{
@@ -44,15 +46,17 @@ namespace AirEngine
 			{
 			private:
 				struct FrameResource {
-					Graphic::Command::Fence* acquireFence = nullptr;
-					Graphic::Command::Semaphore* acquireSemaphore = nullptr;
+					std::unique_ptr<Graphic::Command::Fence> acquireFence;
+					std::unique_ptr<Graphic::Command::Semaphore> acquireSemaphore;
 				};
 				struct ImageResource {
-					Graphic::Instance::Image* image = nullptr;
-					Graphic::Command::Semaphore* transferSemaphore = nullptr;
+					std::unique_ptr<Graphic::Instance::Image> image;
+					std::unique_ptr<Graphic::Instance::FrameBuffer> frameBuffer;
+					std::unique_ptr<Graphic::Command::Semaphore> transferSemaphore;
 				};
 
 			private:
+				void LoadPresentData();
 				void OnCreateSurface() override;
 				void OnCreateSwapchain() override;
 				bool AcquireImage();
@@ -66,9 +70,9 @@ namespace AirEngine
 				std::vector<ImageResource> _imageResources;
 				uint32_t _curFrameIndex;
 				uint32_t _curImageIndex;
-				Graphic::Command::CommandPool* _commandPool;
-				Graphic::Command::CommandBuffer* _commandBuffer;
-				Graphic::Command::Fence* _transferFence;
+				std::unique_ptr<Graphic::Command::CommandPool> _commandPool;
+				std::unique_ptr<Graphic::Command::Fence> _transferFence;
+				std::unique_ptr<PresentRenderPass> _presentRenderPass;
 				void OnFinishRender()override;
 				void OnStartRender()override;
 			protected:
@@ -77,7 +81,7 @@ namespace AirEngine
 				bool event(QEvent*) override;
 			public:
 				NO_COPY_MOVE(Window)
-					Window();
+				Window();
 				~Window() = default;
 				inline QVulkanInstance& QVulkanInstance()
 				{

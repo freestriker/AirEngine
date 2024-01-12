@@ -13,6 +13,27 @@ AirEngine::Runtime::Graphic::Instance::FrameBuffer::FrameBuffer()
 {
 }
 
+AirEngine::Runtime::Graphic::Instance::FrameBuffer::FrameBuffer(const FrameBufferBuilder& builder)
+	: _vkFrameBuffer()
+	, _attachments()
+	, _extent2D()
+	, _renderPass()
+{
+	if (builder._renderPass == nullptr) qFatal("Render pass must not be null.");
+
+	if (builder._renderPass->Info().AttachmentInfos().size() != builder._attachmentMap.size()) qFatal("Render pass do not contains this attachment.");
+
+	if (std::find_if(builder._vkImageViews.begin(), builder._vkImageViews.end(), [](const auto& x)->bool { return x == vk::ImageView(); }) != builder._vkImageViews.end()) qFatal("Frame buffer should set all attachments.");
+
+	vk::FramebufferCreateInfo createInfo(vk::FramebufferCreateFlags(0), builder._renderPass->VkHandle(), builder._vkImageViews.size(), builder._vkImageViews.data(), builder._extent2D.width, builder._extent2D.height, 1);
+	auto&& vkFrameBuffer = Manager::DeviceManager::Device().createFramebuffer(createInfo);
+
+	_attachments = builder._attachmentMap;
+	_extent2D = builder._extent2D;
+	_vkFrameBuffer = vkFrameBuffer;
+	_renderPass = builder._renderPass;
+}
+
 AirEngine::Runtime::Graphic::Instance::FrameBuffer::~FrameBuffer()
 {
 	Manager::DeviceManager::Device().destroyFramebuffer(_vkFrameBuffer);

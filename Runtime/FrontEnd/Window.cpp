@@ -21,6 +21,7 @@
 #include "AirEngine/Runtime/Graphic/Instance/UniformBuffer.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/ImageSampler.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/FrameBuffer.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/FrameBuffer.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/ImageSamplerManager.hpp"
 #include <QPlatformSurfaceEvent>
@@ -41,8 +42,77 @@ void AirEngine::Runtime::FrontEnd::Window::OnCreateSurface()
 	_vkSurface = _qVulkanInstance.surfaceForWindow(this);
 }
 
+static AirEngine::Runtime::Asset::Loader::LoadHandle sampledImageLoadHandle{};
+static AirEngine::Runtime::Asset::Loader::LoadHandle ndcFullScreenMeshLoadHandle{};
+static AirEngine::Runtime::Asset::Loader::LoadHandle presentShaderLoadHandle{};
+static AirEngine::Runtime::Utility::InternedString swapchainAttachmentName{};
+static AirEngine::Runtime::Utility::InternedString swapchainName{};
+static AirEngine::Runtime::Utility::InternedString presentQueueName{};
+static AirEngine::Runtime::Utility::InternedString presentCommandBufferName{};
+
+void AirEngine::Runtime::FrontEnd::Window::LoadPresentData()
+{
+	sampledImageLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
+	ndcFullScreenMeshLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NdcFullScreen.mesh");
+	presentShaderLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
+
+	swapchainAttachmentName = Utility::InternedString("SwapchainAttachment");
+	swapchainName = Utility::InternedString("Swapchain");
+	presentQueueName = Utility::InternedString("PresentQueue");
+	presentCommandBufferName = Utility::InternedString("PresentCommandBuffer");
+
+	_presentRenderPass = std::make_unique<PresentRenderPass>();
+
+	//auto&& handle0 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
+	//auto&& handle1 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(4 * 1024 * 1024);
+	////auto&& handle2 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
+	//auto&& handle11 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle1, 5 * 1024 * 1024);
+	//auto&& handle12 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle11, 7 * 1024 * 1024);
+
+	//std::vector<uint8_t> data(10, 5);
+	//Graphic::Manager::DescriptorManager::WriteToHostDescriptorMemory(handle0, data.data(), 4, data.size());
+	//auto&& offset = handle0.Offset();
+	//auto&& size = handle0.Size();
+
+	////Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle2);
+	//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle0);
+	////Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);
+	//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle12);
+	sampledImageLoadHandle.SharedFuture().wait();
+	auto&& sampledImage = sampledImageLoadHandle.Asset<Graphic::Asset::Texture2D>();
+	ndcFullScreenMeshLoadHandle.SharedFuture().wait();
+	auto&& ndcFullScreenMesh = ndcFullScreenMeshLoadHandle.Asset<Graphic::Asset::Mesh>();
+	presentShaderLoadHandle.SharedFuture().wait();
+	auto&& presentShader = presentShaderLoadHandle.Asset<Graphic::Rendering::Shader>();
+
+	auto&& presentMaterial = Graphic::Rendering::Material(presentShader);
+	presentMaterial.SetImageSampler(Utility::InternedString("sourceAttachmentSampler"), Graphic::Manager::ImageSamplerManager::ImageSampler(vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear, vk::SamplerAddressMode::eMirroredRepeat, 0, 1));
+	presentMaterial.SetSampledImage(Utility::InternedString("sourceAttachment"), sampledImage.ImageView(Utility::InternedString("Sampled")));
+
+	_commandPool = std::make_unique<Graphic::Command::CommandPool>(presentQueueName, vk::CommandPoolCreateFlagBits::eTransient);
+	auto&& commandBuffer = _commandPool->CreateCommandBuffer(presentCommandBufferName);
+
+	Graphic::Command::Fence copyDescriptorBufferFence(false);
+	auto&& dirtyHandles = Graphic::Manager::DescriptorManager::MergeAndClearDirtyHandles();
+	Graphic::Manager::DescriptorManager::CopyHostDirtyDataToCachedBuffer(dirtyHandles);
+	commandBuffer.BeginRecord();
+	Graphic::Manager::DescriptorManager::CopyCachedBufferToDeviceBuffer(&commandBuffer, dirtyHandles);
+	commandBuffer.EndRecord();
+	_commandPool->Queue().ImmediateIndividualSubmit(
+		{
+			{},
+			{&commandBuffer},
+			{}
+		},
+		copyDescriptorBufferFence
+	);
+	copyDescriptorBufferFence.Wait();
+	_commandPool->Reset();
+}
+
 void AirEngine::Runtime::FrontEnd::Window::OnCreateSwapchain()
 {
+	LoadPresentData();
 	RecreateVulkanSwapchain();
 }
 
@@ -86,88 +156,15 @@ bool AirEngine::Runtime::FrontEnd::Window::AcquireImage()
 	}
 }
 
-static bool isLoaded = false;
-static AirEngine::Runtime::Asset::Loader::LoadHandle sampledImageLoadHandle{};
-static AirEngine::Runtime::Asset::Loader::LoadHandle ndcFullScreenMeshLoadHandle{};
-static AirEngine::Runtime::Asset::Loader::LoadHandle presentShaderLoadHandle{};
-
 bool AirEngine::Runtime::FrontEnd::Window::Present()
 {
-	if (!isLoaded)
-	{
-		isLoaded = true;
-
-		auto&& sampler = new Graphic::Instance::ImageSampler(vk::Filter::eNearest, vk::Filter::eNearest, vk::SamplerMipmapMode::eLinear, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, 0, 1);
-		auto&& builtinSampler = Graphic::Manager::ImageSamplerManager::ImageSampler(vk::Filter::eNearest, vk::SamplerMipmapMode::eNearest, vk::SamplerAddressMode::eRepeat, 0, 10);
-
-		sampledImageLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
-		ndcFullScreenMeshLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NdcFullScreen.mesh");
-		presentShaderLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
-
-		{
-			auto presentRenderPass = Graphic::Manager::RenderPassManager::LoadRenderPass<PresentRenderPass>();
-			auto attachmentImage = std::make_unique<Graphic::Instance::Image>(
-				vk::Format::eR8G8B8A8Srgb,
-				vk::Extent3D{ 256, 256, 1 },
-				vk::ImageType::e2D,
-				1, 1,
-				vk::ImageUsageFlagBits::eColorAttachment,
-				vk::MemoryPropertyFlagBits::eDeviceLocal
-			);
-			auto swapchainAttachmentName = Utility::InternedString("SwapchainAttachment");
-			auto colorAttachment = attachmentImage->AddImageView(swapchainAttachmentName, vk::ImageViewType::e2D, vk::ImageLayout::eAttachmentOptimal, vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-			auto frameBuffer = Graphic::Instance::FrameBufferBuilder()
-				.SetRenderPass(presentRenderPass)
-				.SetAttachment(swapchainAttachmentName, colorAttachment)
-				.Build();
-		}
-
-
-		//auto&& handle0 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
-		//auto&& handle1 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(4 * 1024 * 1024);
-		////auto&& handle2 = Graphic::Manager::DescriptorManager::AllocateDescriptorMemory(2 * 1024 * 1024);
-		//auto&& handle11 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle1, 5 * 1024 * 1024);
-		//auto&& handle12 = Graphic::Manager::DescriptorManager::ReallocateDescriptorMemory(handle11, 7 * 1024 * 1024);
-
-		//std::vector<uint8_t> data(10, 5);
-		//Graphic::Manager::DescriptorManager::WriteToHostDescriptorMemory(handle0, data.data(), 4, data.size());
-		//auto&& offset = handle0.Offset();
-		//auto&& size = handle0.Size();
-
-		////Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle2);
-		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle0);
-		////Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);
-		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle12);
-		sampledImageLoadHandle.SharedFuture().wait();
-		auto&& sampledImage = sampledImageLoadHandle.Asset<Graphic::Asset::Texture2D>();
-		ndcFullScreenMeshLoadHandle.SharedFuture().wait();
-		auto&& ndcFullScreenMesh = ndcFullScreenMeshLoadHandle.Asset<Graphic::Asset::Mesh>();
-		presentShaderLoadHandle.SharedFuture().wait();
-		auto&& presentShader = presentShaderLoadHandle.Asset<Graphic::Rendering::Shader>();
-
-		auto&& presentMaterial = Graphic::Rendering::Material(presentShader);
-		presentMaterial.SetImageSampler(Utility::InternedString("sourceAttachmentSampler"), Graphic::Manager::ImageSamplerManager::ImageSampler(vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear, vk::SamplerAddressMode::eMirroredRepeat, 0, 1));
-		presentMaterial.SetSampledImage(Utility::InternedString("sourceAttachment"), sampledImage.ImageView(Utility::InternedString("Sampled")));
-
-		//presentMaterial.SetUniformBuffer(Utility::InternedString("sampler2d"), &uniformBuffer, 0);
-		//presentMaterial.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 0);
-		//presentMaterial.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 1);
-		//presentMaterial.SetUniformBuffer(Utility::InternedString("sampler2dArray"), &uniformBuffer, 0);
-		//auto&& ub = presentMaterial.GetUniformBuffer(Utility::InternedString("sampler2dArray"), 0);
-		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 0);
-		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 15);
-		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformSetUniformBufferBuffer, 31);
-		//presentMaterial.(Utility::InternedString("cubes"), nullptr, 0);
-
-		//auto&& dirtyHandles = Graphic::Manager::DescriptorManager::MergeAndClearDirtyHandles();
-		//Graphic::Manager::DescriptorManager::CopyHostDirtyDataToCachedBuffer(dirtyHandles);
-	}
 
 	auto&& currentFrame = _frameResources[_curFrameIndex];
 	auto&& currentImage = _imageResources[_curImageIndex];
 
 	_commandPool->Reset();
-	_commandBuffer->BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	auto&& _commandBuffer = _commandPool->GetCommandBuffer(presentCommandBufferName);
+	_commandBuffer.BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	Graphic::Command::Barrier barrier{};
 	//if (sampledImageLoadHandle.IsCompleted())
 	//{
@@ -181,8 +178,8 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 	//		vk::ImageLayout::eTransferDstOptimal,
 	//		vk::ImageAspectFlagBits::eColor
 	//	);
-	//	_commandBuffer->AddPipelineBarrier(barrier);
-	//	_commandBuffer->Blit(
+	//	_commandBuffer.AddPipelineBarrier(barrier);
+	//	_commandBuffer.Blit(
 	//		sampledImageLoadHandle.Asset<Graphic::Asset::Texture2D>(), vk::ImageLayout::eTransferSrcOptimal,
 	//		*currentImage.image, vk::ImageLayout::eTransferDstOptimal,
 	//		vk::ImageAspectFlagBits::eColor,
@@ -199,7 +196,7 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 	//		vk::ImageLayout::ePresentSrcKHR,
 	//		vk::ImageAspectFlagBits::eColor
 	//	);
-	//	_commandBuffer->AddPipelineBarrier(barrier);
+	//	_commandBuffer.AddPipelineBarrier(barrier);
 	//}
 	//else
 	{
@@ -213,8 +210,8 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 			vk::ImageLayout::eTransferDstOptimal,
 			vk::ImageAspectFlagBits::eColor
 		);
-		_commandBuffer->AddPipelineBarrier(barrier);
-		_commandBuffer->ClearColorImage<float>(*currentImage.image, vk::ImageLayout::eTransferDstOptimal, { 1.0f, 1.0f, 1.0f, 1.0f });
+		_commandBuffer.AddPipelineBarrier(barrier);
+		_commandBuffer.ClearColorImage<float>(*currentImage.image, vk::ImageLayout::eTransferDstOptimal, { 1.0f, 1.0f, 1.0f, 1.0f });
 		barrier.ClearImageMemoryBarriers();
 		barrier.AddImageMemoryBarrier(
 			*currentImage.image,
@@ -226,16 +223,16 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 			vk::ImageLayout::ePresentSrcKHR,
 			vk::ImageAspectFlagBits::eColor
 		);
-		_commandBuffer->AddPipelineBarrier(barrier);
+		_commandBuffer.AddPipelineBarrier(barrier);
 	}
-	_commandBuffer->EndRecord();
+	_commandBuffer.EndRecord();
 
 	_transferFence->Reset();
 	_commandPool->Queue().ImmediateIndividualSubmit(
 		{
-			{{currentFrame.acquireSemaphore, vk::PipelineStageFlagBits2::eClear}},
-			{_commandBuffer},
-			{{currentImage.transferSemaphore, vk::PipelineStageFlagBits2::eNone}}
+			{{currentFrame.acquireSemaphore.get(), vk::PipelineStageFlagBits2::eClear}},
+			{&_commandBuffer},
+			{{currentImage.transferSemaphore.get(), vk::PipelineStageFlagBits2::eNone}}
 		},
 		*_transferFence
 	);
@@ -301,24 +298,28 @@ void AirEngine::Runtime::FrontEnd::Window::RecreateVulkanSwapchain()
 	for (auto& vkImage : vkImages)
 	{
 		_frameResources.emplace_back(
-			new Graphic::Command::Fence(true),
-			new Graphic::Command::Semaphore()
+			std::make_unique<Graphic::Command::Fence>(true),
+			std::make_unique<Graphic::Command::Semaphore>()
+		);
+
+		auto swapchainImage = Graphic::Instance::Image::CreateSwapchainImage(
+			vkImage,
+			vk::Format(_vkbSwapchain.image_format),
+			vk::Extent2D(_vkbSwapchain.extent),
+			vk::ImageUsageFlags(_vkbSwapchain.image_usage_flags)
 		);
 		_imageResources.emplace_back(
-			Graphic::Instance::Image::CreateSwapchainImage(
-				vkImage,
-				vk::Format(_vkbSwapchain.image_format),
-				vk::Extent2D(_vkbSwapchain.extent),
-				vk::ImageUsageFlags(_vkbSwapchain.image_usage_flags)
+			std::unique_ptr<Graphic::Instance::Image>(swapchainImage),
+			std::make_unique<Graphic::Instance::FrameBuffer>(
+				Graphic::Instance::FrameBufferBuilder()
+				.SetRenderPass(_presentRenderPass.get())
+				.SetAttachment(swapchainAttachmentName, swapchainImage->AddImageView(swapchainName, vk::ImageViewType::e2D, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1))
 			),
-			new Graphic::Command::Semaphore()
+			std::make_unique<Graphic::Command::Semaphore>()
 		);
 	}
 
-	_commandPool = new Graphic::Command::CommandPool(Utility::InternedString("PresentQueue"), vk::CommandPoolCreateFlagBits::eTransient);
-	_commandBuffer = &_commandPool->CreateCommandBuffer(Utility::InternedString("PresentCommandBuffer"));
-
-	_transferFence = new Graphic::Command::Fence(true);
+	_transferFence = std::make_unique<Graphic::Command::Fence>(true);
 }
 
 void AirEngine::Runtime::FrontEnd::Window::DestroyVulkanSwapchain()
@@ -328,22 +329,14 @@ void AirEngine::Runtime::FrontEnd::Window::DestroyVulkanSwapchain()
 	Graphic::Manager::DeviceManager::DeviceManager().Device().waitIdle();
 
 	_transferFence->Wait();
-	delete _transferFence;
-	delete _commandPool;
+	_transferFence.release();
 
 	for (auto& frameResource : _frameResources)
 	{
 		frameResource.acquireFence->Wait();
-		delete frameResource.acquireFence;
-		delete frameResource.acquireSemaphore;
 	}
 	_frameResources.clear();
 
-	for (auto& imageResource : _imageResources)
-	{
-		delete imageResource.transferSemaphore;
-		delete imageResource.image;
-	}
 	_imageResources.clear();
 
 	vkb::destroy_swapchain(_vkbSwapchain); 
@@ -452,9 +445,8 @@ AirEngine::Runtime::FrontEnd::Window::Window()
 	, _imageResources()
 	, _curFrameIndex(0)
 	, _curImageIndex(0)
-	, _commandPool(nullptr)
-	, _commandBuffer(nullptr)
-	, _transferFence(nullptr)
+	, _commandPool()
+	, _transferFence()
 {
 }
 
@@ -468,7 +460,7 @@ AirEngine::Runtime::FrontEnd::PresentRenderPass::PresentRenderPass()
 		.SetName("PresentRenderPass")
 		.AddColorAttachment(
 			"SwapchainAttachment",
-			vk::Format::eR8G8B8A8Srgb,
+			vk::Format::eB8G8R8A8Srgb,
 			vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
 			vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eColorAttachmentOptimal
 		)
