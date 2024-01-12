@@ -3,7 +3,7 @@
 
 layout (set = 0, binding = 0) uniform sampler sourceAttachmentSampler;
 layout (set = 0, binding = 1) uniform texture2D sourceAttachment;
-layout(push_constant) uniform TransformConstant 
+layout(push_constant) uniform ConstantInfo 
 { 
     vec4 swapchainAttachmentSize;
 } constantInfo;

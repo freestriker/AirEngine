@@ -2,6 +2,9 @@
 #include "Shader.hpp"
 #include "AirEngine/Runtime/Graphic/Manager/DescriptorManager.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/UniformBuffer.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/Image.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/ImageSampler.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/ImageView.hpp"
 
 std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>> AirEngine::Runtime::Graphic::Rendering::Material::PopulateDescriptorSetMemoryInfosMap(const Shader& shader)
 {
@@ -126,7 +129,7 @@ AirEngine::Runtime::Graphic::Rendering::MaterialBindableAssetBase* AirEngine::Ru
 	return iter == bindableAssetMap.end() ? nullptr : iter->second;
 }
 
-void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility::InternedString name, Instance::UniformBuffer* uniformBuffer, uint32_t index)
+void AirEngine::Runtime::Graphic::Rendering::Material::SetDescriptorData(Utility::InternedString name, MaterialBindableAssetBase* bindableAsset, uint32_t index, vk::DescriptorType descriptorType)
 {
 	uint32_t setCount = 0;
 	{
@@ -143,9 +146,9 @@ void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility:
 
 			const auto& descriptorInfo = subpassShaderInfo.descriptorInfos.at(iter->second);
 
-			if (descriptorInfo.type != vk::DescriptorType::eUniformBuffer)
+			if (descriptorInfo.type != descriptorType)
 			{
-				qFatal("This name is not a uniform buffer.");
+				qFatal("This material asset can not bind to this material slot.");
 			}
 
 			const auto& descriptorSetInfo = *descriptorInfo.descriptorSetInfo;
@@ -153,7 +156,7 @@ void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility:
 
 			AutoCheckDescriptorSetMemory(descriptorSetMemoryInfo, descriptorInfo, index);
 
-			if (uniformBuffer == nullptr)
+			if (bindableAsset == nullptr)
 			{
 				Manager::DescriptorManager::ClearHostDescriptorMemory(
 					descriptorSetMemoryInfo.handle,
@@ -164,7 +167,7 @@ void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility:
 			else
 			{
 				auto&& ptr = Manager::DescriptorManager::GetHostDescriptorMemoryPtr(descriptorSetMemoryInfo.handle);
-				uniformBuffer->SetDescriptorData(ptr + descriptorInfo.startByteOffsetInDescriptorSet + index * descriptorInfo.singleDescriptorByteSize, descriptorInfo.type);
+				bindableAsset->SetDescriptorData(ptr + descriptorInfo.startByteOffsetInDescriptorSet + index * descriptorInfo.singleDescriptorByteSize, descriptorType);
 			}
 			++setCount;
 		}
@@ -172,13 +175,42 @@ void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility:
 
 	if (setCount == 0)
 	{
-		qFatal("Do not have asset in shader.");
+		qFatal("Do not have the same name of slot in this material.");
 	}
 
-	AddToBindableAssetMap(name, index, uniformBuffer, _bindableAssetMap);
+	AddToBindableAssetMap(name, index, bindableAsset, _bindableAssetMap);
 }
 
-AirEngine::Runtime::Graphic::Instance::UniformBuffer* AirEngine::Runtime::Graphic::Rendering::Material::GetUniformBuffer(Utility::InternedString name, uint32_t index)
+void AirEngine::Runtime::Graphic::Rendering::Material::SetUniformBuffer(Utility::InternedString name, Instance::Buffer* uniformBuffer, uint32_t index)
 {
-	return static_cast<AirEngine::Runtime::Graphic::Instance::UniformBuffer * >(GetFromBindableAssetMap(name, index, _bindableAssetMap));
+	if (uniformBuffer && (uniformBuffer->BufferUsageFlags() | vk::BufferUsageFlagBits::eUniformBuffer) == vk::BufferUsageFlags(0)) qFatal("Can not bind a non uniform buufer to this slot.");
+
+	SetDescriptorData(name, uniformBuffer, index, vk::DescriptorType::eUniformBuffer);
+}
+
+AirEngine::Runtime::Graphic::Instance::Buffer* AirEngine::Runtime::Graphic::Rendering::Material::GetUniformBuffer(Utility::InternedString name, uint32_t index)
+{
+	return dynamic_cast<AirEngine::Runtime::Graphic::Instance::UniformBuffer*>(GetFromBindableAssetMap(name, index, _bindableAssetMap));
+}
+
+void AirEngine::Runtime::Graphic::Rendering::Material::SetSampledImage(Utility::InternedString name, Instance::ImageView* sampledImageView, uint32_t index)
+{
+	if (sampledImageView && (sampledImageView->Image()->ImageUsageFlags() | vk::ImageUsageFlagBits::eSampled) == vk::ImageUsageFlagBits(0)) qFatal("Can not bind a non sampled image to this slot.");
+
+	SetDescriptorData(name, sampledImageView, index, vk::DescriptorType::eSampledImage);
+}
+
+AirEngine::Runtime::Graphic::Instance::ImageView* AirEngine::Runtime::Graphic::Rendering::Material::GetSampledImage(Utility::InternedString name, uint32_t index)
+{
+	return dynamic_cast<AirEngine::Runtime::Graphic::Instance::ImageView*>(GetFromBindableAssetMap(name, index, _bindableAssetMap));
+}
+
+void AirEngine::Runtime::Graphic::Rendering::Material::SetImageSampler(Utility::InternedString name, Instance::ImageSampler* imageSampler, uint32_t index)
+{
+	SetDescriptorData(name, imageSampler, index, vk::DescriptorType::eSampler);
+}
+
+AirEngine::Runtime::Graphic::Instance::ImageSampler* AirEngine::Runtime::Graphic::Rendering::Material::GetImageSampler(Utility::InternedString name, uint32_t index)
+{
+	return dynamic_cast<AirEngine::Runtime::Graphic::Instance::ImageSampler*>(GetFromBindableAssetMap(name, index, _bindableAssetMap));
 }

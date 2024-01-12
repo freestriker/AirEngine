@@ -55,26 +55,26 @@ void AirEngine::Runtime::Graphic::Asset::Loader::Texture2DLoader::PopulateTextur
 	}
 
 	//Parse descriptor data
-	const vk::Format originalFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.originalFormat);
-	const vk::Format targetFormat = Utility::VulkanOpenCVTypeTransfer::ParseToVkFormat(descriptor.format);
+	const vk::Format originalFormat = Utility::StringToVulkanypeTransfer::ParseToVkFormat(descriptor.originalFormat);
+	const vk::Format targetFormat = Utility::StringToVulkanypeTransfer::ParseToVkFormat(descriptor.format);
 	const bool topDown = descriptor.topDown;
 	vk::ImageUsageFlags imageUsageFlags = {};
 	vk::MemoryPropertyFlags memoryPropertyFlags = {};
-	vk::ImageLayout imageLayout = Utility::VulkanOpenCVTypeTransfer::ParseToVkImageLayout(descriptor.imageLayout);
+	vk::ImageLayout imageLayout = Utility::StringToVulkanypeTransfer::ParseToVkImageLayout(descriptor.imageLayout);
 	vk::ImageAspectFlags imageAspectFlags = {};
 	uint32_t desiredMipmapLevelCount = 0;
 	{
 		for (const auto& imageUsageFlag : descriptor.imageUsageFlags)
 		{
-			imageUsageFlags = imageUsageFlags | Utility::VulkanOpenCVTypeTransfer::ParseToVkImageUsageFlagBits(imageUsageFlag);
+			imageUsageFlags = imageUsageFlags | Utility::StringToVulkanypeTransfer::ParseToVkImageUsageFlagBits(imageUsageFlag);
 		}
 		for (const auto& memoryPropertyFlag : descriptor.memoryPropertyFlags)
 		{
-			memoryPropertyFlags = memoryPropertyFlags | Utility::VulkanOpenCVTypeTransfer::ParseToVkMemoryPropertyFlagBits(memoryPropertyFlag);
+			memoryPropertyFlags = memoryPropertyFlags | Utility::StringToVulkanypeTransfer::ParseToVkMemoryPropertyFlagBits(memoryPropertyFlag);
 		}
 		for (const auto& imageAspectFlag : descriptor.imageAspectFlags)
 		{
-			imageAspectFlags = imageAspectFlags | Utility::VulkanOpenCVTypeTransfer::ParseToVkImageAspectFlagBits(imageAspectFlag);
+			imageAspectFlags = imageAspectFlags | Utility::StringToVulkanypeTransfer::ParseToVkImageAspectFlagBits(imageAspectFlag);
 		}
 		{
 			if (descriptor.mipmapGenerateType == "min")

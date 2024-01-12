@@ -748,7 +748,10 @@ void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& s
 				vkDescriptorSetLayouts.emplace_back(descriptorSetInfo.layout);
 			}
 
-			vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{vk::PipelineLayoutCreateFlags(), vkDescriptorSetLayouts};
+			std::vector<vk::PushConstantRange> pushConstantRanges{};
+			if (subShaderCreateInfo.pushConstantRange) pushConstantRanges.emplace_back(subShaderCreateInfo.pushConstantRange.value());
+
+			vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{ vk::PipelineLayoutCreateFlags(), vkDescriptorSetLayouts, pushConstantRanges };
 			pipelineLayout = AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().createPipelineLayout(pipelineLayoutCreateInfo);
 		}
 

@@ -35,12 +35,6 @@ namespace AirEngine
 			private:
 				static const std::unordered_map<std::string, PerChannelValueTypeIndex> _numericFormatStringToPerChannelValueTypeIndexMap;
 				static const int _perChannelBitsIndexAndPerChannelValueTypeIndexToPerChannelValueTypeMap[3][3];
-				static const std::unordered_map<std::string, VkFormat> _vkFormatStringToVkFormatMap;
-				static const std::unordered_map<std::string, VkImageUsageFlagBits> _vkImageUsageFlagBitsStringToVkImageUsageFlagBitsMap;
-				static const std::unordered_map<std::string, VkMemoryPropertyFlagBits> _vkMemoryPropertyFlagBitsStringToVkMemoryPropertyFlagBitsMap;
-				static const std::unordered_map<std::string, VkImageLayout> _vkImageLayoutStringToVkImageLayoutMap;
-				static const std::unordered_map<std::string, VkImageAspectFlagBits> _vkImageAspectFlagBitsStringToVkImageAspectFlagBitsMap;
-
 			public:
 				inline static PerChannelValueTypeIndex NumericFormatStringToPerChannelValueTypeIndex(const std::string& numericFormatString)
 				{
@@ -59,26 +53,6 @@ namespace AirEngine
 				inline static int8_t PerChannelBitsIndexAndPerChannelValueTypeIndexToPerChannelValueType(PerChannelBitsIndex perChannelBitsIndex, PerChannelValueTypeIndex perChannelValueTypeIndex)
 				{
 					return _perChannelBitsIndexAndPerChannelValueTypeIndexToPerChannelValueTypeMap[perChannelBitsIndex][perChannelValueTypeIndex];
-				}
-				inline static vk::Format ParseToVkFormat(const std::string& formatString)
-				{
-					return vk::Format(_vkFormatStringToVkFormatMap.at(formatString));
-				}
-				inline static vk::ImageUsageFlagBits ParseToVkImageUsageFlagBits(const std::string& usageString)
-				{
-					return vk::ImageUsageFlagBits(_vkImageUsageFlagBitsStringToVkImageUsageFlagBitsMap.at(usageString));
-				}
-				inline static vk::MemoryPropertyFlagBits ParseToVkMemoryPropertyFlagBits(const std::string& propertyString)
-				{
-					return vk::MemoryPropertyFlagBits(_vkMemoryPropertyFlagBitsStringToVkMemoryPropertyFlagBitsMap.at(propertyString));
-				}
-				inline static vk::ImageLayout ParseToVkImageLayout(const std::string& propertyString)
-				{
-					return vk::ImageLayout(_vkImageLayoutStringToVkImageLayoutMap.at(propertyString));
-				}
-				inline static vk::ImageAspectFlagBits ParseToVkImageAspectFlagBits(const std::string& propertyString)
-				{
-					return vk::ImageAspectFlagBits(_vkImageAspectFlagBitsStringToVkImageAspectFlagBitsMap.at(propertyString));
 				}
 				inline static int VkFormatToPerChannelValueType(vk::Format format, std::string& error)
 				{
