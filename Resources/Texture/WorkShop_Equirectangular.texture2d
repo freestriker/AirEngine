@@ -3,12 +3,19 @@
         "../..\\Resources\\Texture\\workshop_2k.exr"
     ],
     "mipmapGenerateType": "auto",
-    "originalFormat": "VK_FORMAT_R16G16B16A16_SFLOAT",
-    "format": "VK_FORMAT_B10G11R11_UFLOAT_PACK32",
-    "imageLayout": "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL",
-    "imageUsageFlags": ["VK_IMAGE_USAGE_TRANSFER_SRC_BIT"],
-    "memoryPropertyFlags": ["VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT"],
-    "imageAspectFlags": ["VK_IMAGE_ASPECT_COLOR_BIT"],
+    "originalFormat": "R16G16B16A16_SFLOAT",
+    "format": "B10G11R11_UFLOAT_PACK32",
+    "imageLayout": "ShaderReadOnlyOptimal",
+    "imageUsageFlags": ["Sampled"],
+    "memoryPropertyFlags": ["DeviceLocal"],
+    "imageAspectFlags": ["Color"],
     "topDown": false,
-    "views": []
+    "views": [
+        {
+            "name": "Sampled",
+            "layout": "ShaderReadOnlyOptimal",
+            "baseMipmapLevel": 0,
+            "mipmapLevelCount": 1
+        }
+    ]
 }

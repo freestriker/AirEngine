@@ -52,13 +52,17 @@ namespace AirEngine
 					{
 						return _memory;
 					}
-					void ClearMemory()
+					inline void ClearMemory()
 					{
 						_memory.reset();
 					}
-					uint64_t BufferDeviceAddress()const
+					inline uint64_t BufferDeviceAddress()const
 					{
 						return _bufferAddress;
+					}
+					inline vk::BufferUsageFlags BufferUsageFlags() const
+					{
+						return _usage;
 					}
 
 					NO_COPY_MOVE(Buffer)

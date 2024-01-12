@@ -25,7 +25,11 @@ namespace AirEngine
 				static const std::unordered_map<std::string, vk::ColorComponentFlagBits> _vkColorComponentFlagBitsStringToVkColorComponentFlagBitsMap;
 				static const std::unordered_map<std::string, vk::CullModeFlagBits> _vkCullModeFlagBitsStringToVkCullModeFlagBitsMap;
 				static const std::unordered_map<std::string, vk::CompareOp> _vkCompareOpStringToVkCompareOpMap;
-				static const std::unordered_map<std::string, vk::ImageLayout> _vkImageLayoutStringToVkCompareOpMap;
+				static const std::unordered_map<std::string, vk::ImageLayout> _vkImageLayoutStringToVkImageLayoutMap;
+				static const std::unordered_map<std::string, vk::Format> _vkFormatStringToVkFormatMap;
+				static const std::unordered_map <std::string, vk::ImageUsageFlags> _vkImageUsageFlagBitsStringToVkImageUsageFlagsMap;
+				static const std::unordered_map<std::string, vk::MemoryPropertyFlags> _vkMemoryPropertyFlagBitsStringToVkMemoryPropertyFlagsMap;
+				static const std::unordered_map<std::string, vk::ImageAspectFlags> _vkImageAspectFlagBitsStringToVkImageAspectFlagsMap;
 			public:
 				static inline vk::BlendOp ParseToVkBlendOp(const std::string& type)
 				{
@@ -60,7 +64,23 @@ namespace AirEngine
 				}
 				static inline vk::ImageLayout ParseToVkImageLayout(const std::string& type)
 				{
-					return _vkImageLayoutStringToVkCompareOpMap.at(type);
+					return _vkImageLayoutStringToVkImageLayoutMap.at(type);
+				}
+				inline static vk::Format ParseToVkFormat(const std::string& formatString)
+				{
+					return vk::Format(_vkFormatStringToVkFormatMap.at(formatString));
+				}
+				inline static vk::ImageUsageFlags ParseToVkImageUsageFlagBits(const std::string& usageString)
+				{
+					return _vkImageUsageFlagBitsStringToVkImageUsageFlagsMap.at(usageString);
+				}
+				inline static vk::MemoryPropertyFlags ParseToVkMemoryPropertyFlagBits(const std::string& propertyString)
+				{
+					return _vkMemoryPropertyFlagBitsStringToVkMemoryPropertyFlagsMap.at(propertyString);
+				}
+				inline static vk::ImageAspectFlags ParseToVkImageAspectFlagBits(const std::string& propertyString)
+				{
+					return _vkImageAspectFlagBitsStringToVkImageAspectFlagsMap.at(propertyString);
 				}
 			};
 		}

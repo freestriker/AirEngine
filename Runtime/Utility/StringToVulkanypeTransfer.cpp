@@ -1,4 +1,5 @@
 ﻿#include "StringToVulkanypeTransfer.hpp"
+#include <vulkan/vk_enum_string_helper.h>
 
 const std::unordered_map<std::string, vk::BlendOp> AirEngine::Runtime::Utility::StringToVulkanypeTransfer::_vkBlendOpStringToVkBlendOpMap
 {
@@ -56,7 +57,7 @@ const std::unordered_map<std::string, vk::CompareOp> AirEngine::Runtime::Utility
 	{ "GREATER_OR_EQUAL", vk::CompareOp::eGreaterOrEqual },
 	{ "ALWAYS", vk::CompareOp::eAlways },
 };
-const std::unordered_map<std::string, vk::ImageLayout> AirEngine::Runtime::Utility::StringToVulkanypeTransfer::_vkImageLayoutStringToVkCompareOpMap
+const std::unordered_map<std::string, vk::ImageLayout> AirEngine::Runtime::Utility::StringToVulkanypeTransfer::_vkImageLayoutStringToVkImageLayoutMap
 {
 	{"Undefined", vk::ImageLayout(VK_IMAGE_LAYOUT_UNDEFINED)},
 	{"General", vk::ImageLayout(VK_IMAGE_LAYOUT_GENERAL)},
@@ -89,4 +90,60 @@ const std::unordered_map<std::string, vk::ImageLayout> AirEngine::Runtime::Utili
 	{"DepthReadOnlyOptimalKHR", vk::ImageLayout(VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR)},
 	{"StencilAttachmentOptimalKHR", vk::ImageLayout(VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR)},
 	{"StencilReadOnlyOptimalKHR", vk::ImageLayout(VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR)}
+};
+static std::unordered_map<std::string, vk::Format> BuildVkFormatStringToEnumMap()
+{
+	std::unordered_map<std::string, vk::Format> target{};
+
+	const std::vector<uint32_t> VK_FORMAT_ENUM_FIRST_INDEX_GROUP{ 0, 1000156000, 1000330000, 1000340000, 1000066000, 1000054000, 1000464000 };
+	const std::vector<uint32_t> VK_FORMAT_ENUM_LAST_INDEX_GROUP{ 184, 1000156033, 1000330003, 1000340001, 1000066013, 1000054007, 1000464000 };
+
+	const auto&& GROUP_COUNT = VK_FORMAT_ENUM_FIRST_INDEX_GROUP.size();
+
+	for (uint32_t groupIndex = 0; groupIndex < GROUP_COUNT; groupIndex++)
+	{
+		for (uint32_t formatIndex = VK_FORMAT_ENUM_FIRST_INDEX_GROUP[groupIndex]; formatIndex <= VK_FORMAT_ENUM_LAST_INDEX_GROUP[groupIndex]; formatIndex++)
+		{
+			vk::Format format = vk::Format(formatIndex);
+			std::string formatString = string_VkFormat(VkFormat(format));
+			formatString = formatString.substr(10, formatString.size() - 10);
+			target[formatString] = format;
+		}
+	}
+
+	return target;
+}
+const std::unordered_map<std::string, vk::Format> AirEngine::Runtime::Utility::StringToVulkanypeTransfer::_vkFormatStringToVkFormatMap
+{
+	BuildVkFormatStringToEnumMap()
+};
+const std::unordered_map <std::string, vk::ImageUsageFlags> AirEngine::Runtime::Utility::StringToVulkanypeTransfer::_vkImageUsageFlagBitsStringToVkImageUsageFlagsMap
+{
+	{ "TransferSrc", vk::ImageUsageFlags(VK_IMAGE_USAGE_TRANSFER_SRC_BIT) },
+	{ "TransferDst", vk::ImageUsageFlags(VK_IMAGE_USAGE_TRANSFER_DST_BIT) },
+	{ "Sampled", vk::ImageUsageFlags(VK_IMAGE_USAGE_SAMPLED_BIT) },
+	{ "Storage", vk::ImageUsageFlags(VK_IMAGE_USAGE_STORAGE_BIT) },
+	{ "ColorAttachment", vk::ImageUsageFlags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) },
+	{ "DepthStencilAttachment", vk::ImageUsageFlags(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) },
+	{ "TransientAttachment", vk::ImageUsageFlags(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) },
+	{ "InputAttachment", vk::ImageUsageFlags(VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) },
+};
+const std::unordered_map<std::string, vk::MemoryPropertyFlags> AirEngine::Runtime::Utility::StringToVulkanypeTransfer::_vkMemoryPropertyFlagBitsStringToVkMemoryPropertyFlagsMap
+{
+	{ "DeviceLocal", vk::MemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) },
+	{ "HostVisible", vk::MemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) },
+	{ "HostCoherent", vk::MemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) },
+	{ "HostCached", vk::MemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_CACHED_BIT) },
+	{ "LazilyAllocated", vk::MemoryPropertyFlags(VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) },
+	{ "Protected", vk::MemoryPropertyFlags(VK_MEMORY_PROPERTY_PROTECTED_BIT) },
+	{ "DeviceCoherentAMD", vk::MemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) },
+	{ "DeviceUncachedAMD", vk::MemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD) },
+	{ "RdmaCapableNV", vk::MemoryPropertyFlags(VK_MEMORY_PROPERTY_RDMA_CAPABLE_BIT_NV) }
+};
+
+const std::unordered_map<std::string, vk::ImageAspectFlags> AirEngine::Runtime::Utility::StringToVulkanypeTransfer::_vkImageAspectFlagBitsStringToVkImageAspectFlagsMap
+{
+	{ "Color", vk::ImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT) },
+	{ "Depth", vk::ImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT) },
+	{ "Stencil", vk::ImageAspectFlags(VK_IMAGE_ASPECT_STENCIL_BIT) }
 };

@@ -4,8 +4,9 @@
 #include "AirEngine/Runtime/Utility/ExportMacro.hpp"
 #include "AirEngine/Runtime/Utility/ContructorMacro.hpp"
 #include <unordered_map>
-#include "MaterialData.hpp"
-#include "ShaderData.hpp"
+#include "AirEngine/Runtime/Graphic/Rendering/MaterialData.hpp"
+#include "AirEngine/Runtime/Graphic/Rendering/ShaderData.hpp"
+#include "AirEngine/Runtime/Graphic/Rendering/MaterialBindableAssetBase.hpp"
 
 namespace AirEngine
 {
@@ -15,7 +16,10 @@ namespace AirEngine
 		{
 			namespace Instance
 			{
+				class Buffer;
 				class UniformBuffer;
+				class ImageSampler;
+				class ImageView;
 			}
 			namespace Rendering
 			{
@@ -33,13 +37,18 @@ namespace AirEngine
 					
 					static void AddToBindableAssetMap(Utility::InternedString, uint32_t desiredIndex, MaterialBindableAssetBase* materialBindableAssetBase, std::map<uint64_t, MaterialBindableAssetBase*>& bindableAssetMap);
 					static MaterialBindableAssetBase* GetFromBindableAssetMap(Utility::InternedString, uint32_t desiredIndex, std::map<uint64_t, MaterialBindableAssetBase*>& bindableAssetMap);
+					void SetDescriptorData(Utility::InternedString name, MaterialBindableAssetBase* bindableAsset, uint32_t index, vk::DescriptorType descriptorType);
 				public:
 					Material(const Shader& shader);
 					~Material();
 					NO_COPY_MOVE(Material);
 
-					void SetUniformBuffer(Utility::InternedString name, Instance::UniformBuffer* uniformBuffer, uint32_t index = 0);
-					Instance::UniformBuffer* GetUniformBuffer(Utility::InternedString name, uint32_t index = 0);
+					void SetUniformBuffer(Utility::InternedString name, Instance::Buffer* uniformBuffer, uint32_t index = 0);
+					Instance::Buffer* GetUniformBuffer(Utility::InternedString name, uint32_t index = 0);
+					void SetSampledImage(Utility::InternedString name, Instance::ImageView* sampledImageView, uint32_t index = 0);
+					Instance::ImageView* GetSampledImage(Utility::InternedString name, uint32_t index = 0);
+					void SetImageSampler(Utility::InternedString name, Instance::ImageSampler* imageSampler, uint32_t index = 0);
+					Instance::ImageSampler* GetImageSampler(Utility::InternedString name, uint32_t index = 0);
 				};
 			}
 		}

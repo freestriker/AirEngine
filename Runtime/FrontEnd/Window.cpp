@@ -87,7 +87,7 @@ bool AirEngine::Runtime::FrontEnd::Window::AcquireImage()
 }
 
 static bool isLoaded = false;
-static AirEngine::Runtime::Asset::Loader::LoadHandle assetLoadHandle{};
+static AirEngine::Runtime::Asset::Loader::LoadHandle sampledImageLoadHandle{};
 static AirEngine::Runtime::Asset::Loader::LoadHandle ndcFullScreenMeshLoadHandle{};
 static AirEngine::Runtime::Asset::Loader::LoadHandle presentShaderLoadHandle{};
 
@@ -100,7 +100,7 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 		auto&& sampler = new Graphic::Instance::ImageSampler(vk::Filter::eNearest, vk::Filter::eNearest, vk::SamplerMipmapMode::eLinear, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, 0, 1);
 		auto&& builtinSampler = Graphic::Manager::ImageSamplerManager::ImageSampler(vk::Filter::eNearest, vk::SamplerMipmapMode::eNearest, vk::SamplerAddressMode::eRepeat, 0, 10);
 
-		assetLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
+		sampledImageLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
 		ndcFullScreenMeshLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NdcFullScreen.mesh");
 		presentShaderLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
 
@@ -138,10 +138,17 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle0);
 		////Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle1);
 		//Graphic::Manager::DescriptorManager::FreeDescriptorMemory(handle12);
-
+		sampledImageLoadHandle.SharedFuture().wait();
+		auto&& sampledImage = sampledImageLoadHandle.Asset<Graphic::Asset::Texture2D>();
+		ndcFullScreenMeshLoadHandle.SharedFuture().wait();
+		auto&& ndcFullScreenMesh = ndcFullScreenMeshLoadHandle.Asset<Graphic::Asset::Mesh>();
 		presentShaderLoadHandle.SharedFuture().wait();
 		auto&& presentShader = presentShaderLoadHandle.Asset<Graphic::Rendering::Shader>();
+
 		auto&& presentMaterial = Graphic::Rendering::Material(presentShader);
+		presentMaterial.SetImageSampler(Utility::InternedString("sourceAttachmentSampler"), Graphic::Manager::ImageSamplerManager::ImageSampler(vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear, vk::SamplerAddressMode::eMirroredRepeat, 0, 1));
+		presentMaterial.SetSampledImage(Utility::InternedString("sourceAttachment"), sampledImage.ImageView(Utility::InternedString("Sampled")));
+
 		//presentMaterial.SetUniformBuffer(Utility::InternedString("sampler2d"), &uniformBuffer, 0);
 		//presentMaterial.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 0);
 		//presentMaterial.SetUniformBuffer(Utility::InternedString("matrixData"), &uniformBuffer, 1);
@@ -149,8 +156,8 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 		//auto&& ub = presentMaterial.GetUniformBuffer(Utility::InternedString("sampler2dArray"), 0);
 		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 0);
 		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 15);
-		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformBuffer, 31);
-		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), nullptr, 0);
+		//presentMaterial.SetUniformBuffer(Utility::InternedString("cubes"), &uniformSetUniformBufferBuffer, 31);
+		//presentMaterial.(Utility::InternedString("cubes"), nullptr, 0);
 
 		//auto&& dirtyHandles = Graphic::Manager::DescriptorManager::MergeAndClearDirtyHandles();
 		//Graphic::Manager::DescriptorManager::CopyHostDirtyDataToCachedBuffer(dirtyHandles);
@@ -162,39 +169,39 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 	_commandPool->Reset();
 	_commandBuffer->BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	Graphic::Command::Barrier barrier{};
-	if (assetLoadHandle.IsCompleted())
-	{
-		barrier.AddImageMemoryBarrier(
-			*currentImage.image,
-			vk::PipelineStageFlagBits2::eNone,
-			vk::AccessFlagBits2::eNone,
-			vk::PipelineStageFlagBits2::eBlit,
-			vk::AccessFlagBits2::eTransferWrite,
-			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eTransferDstOptimal,
-			vk::ImageAspectFlagBits::eColor
-		);
-		_commandBuffer->AddPipelineBarrier(barrier);
-		_commandBuffer->Blit(
-			assetLoadHandle.Asset<Graphic::Asset::Texture2D>(), vk::ImageLayout::eTransferSrcOptimal,
-			*currentImage.image, vk::ImageLayout::eTransferDstOptimal,
-			vk::ImageAspectFlagBits::eColor,
-			vk::Filter::eLinear
-		);
-		barrier.ClearImageMemoryBarriers();
-		barrier.AddImageMemoryBarrier(
-			*currentImage.image,
-			vk::PipelineStageFlagBits2::eBlit,
-			vk::AccessFlagBits2::eTransferWrite,
-			vk::PipelineStageFlagBits2::eNone,
-			vk::AccessFlagBits2::eNone,
-			vk::ImageLayout::eTransferDstOptimal,
-			vk::ImageLayout::ePresentSrcKHR,
-			vk::ImageAspectFlagBits::eColor
-		);
-		_commandBuffer->AddPipelineBarrier(barrier);
-	}
-	else
+	//if (sampledImageLoadHandle.IsCompleted())
+	//{
+	//	barrier.AddImageMemoryBarrier(
+	//		*currentImage.image,
+	//		vk::PipelineStageFlagBits2::eNone,
+	//		vk::AccessFlagBits2::eNone,
+	//		vk::PipelineStageFlagBits2::eBlit,
+	//		vk::AccessFlagBits2::eTransferWrite,
+	//		vk::ImageLayout::eUndefined,
+	//		vk::ImageLayout::eTransferDstOptimal,
+	//		vk::ImageAspectFlagBits::eColor
+	//	);
+	//	_commandBuffer->AddPipelineBarrier(barrier);
+	//	_commandBuffer->Blit(
+	//		sampledImageLoadHandle.Asset<Graphic::Asset::Texture2D>(), vk::ImageLayout::eTransferSrcOptimal,
+	//		*currentImage.image, vk::ImageLayout::eTransferDstOptimal,
+	//		vk::ImageAspectFlagBits::eColor,
+	//		vk::Filter::eLinear
+	//	);
+	//	barrier.ClearImageMemoryBarriers();
+	//	barrier.AddImageMemoryBarrier(
+	//		*currentImage.image,
+	//		vk::PipelineStageFlagBits2::eBlit,
+	//		vk::AccessFlagBits2::eTransferWrite,
+	//		vk::PipelineStageFlagBits2::eNone,
+	//		vk::AccessFlagBits2::eNone,
+	//		vk::ImageLayout::eTransferDstOptimal,
+	//		vk::ImageLayout::ePresentSrcKHR,
+	//		vk::ImageAspectFlagBits::eColor
+	//	);
+	//	_commandBuffer->AddPipelineBarrier(barrier);
+	//}
+	//else
 	{
 		barrier.AddImageMemoryBarrier(
 			*currentImage.image,
