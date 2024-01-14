@@ -49,6 +49,8 @@ static AirEngine::Runtime::Utility::InternedString swapchainAttachmentName{};
 static AirEngine::Runtime::Utility::InternedString swapchainName{};
 static AirEngine::Runtime::Utility::InternedString presentQueueName{};
 static AirEngine::Runtime::Utility::InternedString presentCommandBufferName{};
+static AirEngine::Runtime::Utility::InternedString presentSubpassName{};
+static AirEngine::Runtime::Graphic::Rendering::Material* presentMaterial{};
 
 void AirEngine::Runtime::FrontEnd::Window::LoadPresentData()
 {
@@ -60,6 +62,7 @@ void AirEngine::Runtime::FrontEnd::Window::LoadPresentData()
 	swapchainName = Utility::InternedString("Swapchain");
 	presentQueueName = Utility::InternedString("PresentQueue");
 	presentCommandBufferName = Utility::InternedString("PresentCommandBuffer");
+	presentSubpassName = Utility::InternedString("PresentSubpass");
 
 	_presentRenderPass = std::make_unique<PresentRenderPass>();
 
@@ -85,9 +88,9 @@ void AirEngine::Runtime::FrontEnd::Window::LoadPresentData()
 	presentShaderLoadHandle.SharedFuture().wait();
 	auto&& presentShader = presentShaderLoadHandle.Asset<Graphic::Rendering::Shader>();
 
-	auto&& presentMaterial = Graphic::Rendering::Material(presentShader);
-	presentMaterial.SetImageSampler(Utility::InternedString("sourceAttachmentSampler"), Graphic::Manager::ImageSamplerManager::ImageSampler(vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear, vk::SamplerAddressMode::eMirroredRepeat, 0, 1));
-	presentMaterial.SetSampledImage(Utility::InternedString("sourceAttachment"), sampledImage.ImageView(Utility::InternedString("Sampled")));
+	presentMaterial = new Graphic::Rendering::Material(presentShader);
+	presentMaterial->SetImageSampler(Utility::InternedString("sourceAttachmentSampler"), Graphic::Manager::ImageSamplerManager::ImageSampler(vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear, vk::SamplerAddressMode::eMirroredRepeat, 0, 1));
+	presentMaterial->SetSampledImage(Utility::InternedString("sourceAttachment"), sampledImage.ImageView(Utility::InternedString("Sampled")));
 
 	_commandPool = std::make_unique<Graphic::Command::CommandPool>(presentQueueName, vk::CommandPoolCreateFlagBits::eTransient);
 	auto&& commandBuffer = _commandPool->CreateCommandBuffer(presentCommandBufferName);
@@ -165,6 +168,12 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 	_commandPool->Reset();
 	auto&& _commandBuffer = _commandPool->GetCommandBuffer(presentCommandBufferName);
 	_commandBuffer.BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	{
+		_commandBuffer.BeginRenderPass(_presentRenderPass.get(), currentImage.frameBuffer.get(), { vk::ClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 0.0f)) });
+		_commandBuffer.BindDsecriptorBuffer(Graphic::Manager::DescriptorManager::DescriptorBuffer());
+		_commandBuffer.BindMaterial(presentMaterial, presentSubpassName);
+		_commandBuffer.EndRenderPass();
+	}
 	Graphic::Command::Barrier barrier{};
 	//if (sampledImageLoadHandle.IsCompleted())
 	//{
@@ -199,32 +208,32 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 	//	_commandBuffer.AddPipelineBarrier(barrier);
 	//}
 	//else
-	{
-		barrier.AddImageMemoryBarrier(
-			*currentImage.image,
-			vk::PipelineStageFlagBits2::eNone,
-			vk::AccessFlagBits2::eNone,
-			vk::PipelineStageFlagBits2::eClear,
-			vk::AccessFlagBits2::eTransferWrite,
-			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eTransferDstOptimal,
-			vk::ImageAspectFlagBits::eColor
-		);
-		_commandBuffer.AddPipelineBarrier(barrier);
-		_commandBuffer.ClearColorImage<float>(*currentImage.image, vk::ImageLayout::eTransferDstOptimal, { 1.0f, 1.0f, 1.0f, 1.0f });
-		barrier.ClearImageMemoryBarriers();
-		barrier.AddImageMemoryBarrier(
-			*currentImage.image,
-			vk::PipelineStageFlagBits2::eClear,
-			vk::AccessFlagBits2::eTransferWrite,
-			vk::PipelineStageFlagBits2::eNone,
-			vk::AccessFlagBits2::eNone,
-			vk::ImageLayout::eTransferDstOptimal,
-			vk::ImageLayout::ePresentSrcKHR,
-			vk::ImageAspectFlagBits::eColor
-		);
-		_commandBuffer.AddPipelineBarrier(barrier);
-	}
+	//{
+	//	barrier.AddImageMemoryBarrier(
+	//		*currentImage.image,
+	//		vk::PipelineStageFlagBits2::eNone,
+	//		vk::AccessFlagBits2::eNone,
+	//		vk::PipelineStageFlagBits2::eClear,
+	//		vk::AccessFlagBits2::eTransferWrite,
+	//		vk::ImageLayout::eUndefined,
+	//		vk::ImageLayout::eTransferDstOptimal,
+	//		vk::ImageAspectFlagBits::eColor
+	//	);
+	//	_commandBuffer.AddPipelineBarrier(barrier);
+	//	_commandBuffer.ClearColorImage<float>(*currentImage.image, vk::ImageLayout::eTransferDstOptimal, { 1.0f, 1.0f, 1.0f, 1.0f });
+	//	barrier.ClearImageMemoryBarriers();
+	//	barrier.AddImageMemoryBarrier(
+	//		*currentImage.image,
+	//		vk::PipelineStageFlagBits2::eClear,
+	//		vk::AccessFlagBits2::eTransferWrite,
+	//		vk::PipelineStageFlagBits2::eNone,
+	//		vk::AccessFlagBits2::eNone,
+	//		vk::ImageLayout::eTransferDstOptimal,
+	//		vk::ImageLayout::ePresentSrcKHR,
+	//		vk::ImageAspectFlagBits::eColor
+	//	);
+	//	_commandBuffer.AddPipelineBarrier(barrier);
+	//}
 	_commandBuffer.EndRecord();
 
 	_transferFence->Reset();
@@ -462,7 +471,7 @@ AirEngine::Runtime::FrontEnd::PresentRenderPass::PresentRenderPass()
 			"SwapchainAttachment",
 			vk::Format::eB8G8R8A8Srgb,
 			vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
-			vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eColorAttachmentOptimal
+			vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR
 		)
 		.AddDependency(
 			"ExternalSubpass", "PresentSubpass",

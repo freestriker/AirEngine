@@ -31,7 +31,7 @@ namespace AirEngine
 					std::map<uint64_t, MaterialBindableAssetBase*> _bindableAssetMap;
 					std::unordered_map<Utility::InternedString, std::vector<MaterialDescriptorSetMemoryInfo>> _descriptorSetMemoryInfosMap;
 				private:
-					static std::unordered_map<Utility::InternedString, std::vector<MaterialDescriptorSetMemoryInfo>> PopulateDescriptorSetMemoryInfosMap(const Shader& shader);
+					static std::unordered_map<Utility::InternedString, std::vector<MaterialDescriptorSetMemoryInfo>> PopulateDescriptorSetMemoryInfosMap(const Rendering::Shader& shader);
 					static void DestroyAllDescriptorSetMemory(const std::unordered_map<Utility::InternedString, std::vector<MaterialDescriptorSetMemoryInfo>>& descriptorSetMemoryInfosMap);
 					static void AutoCheckDescriptorSetMemory(MaterialDescriptorSetMemoryInfo& materialDescriptorSetMemoryInfo, const DescriptorInfo& shaderDescriptorInfo, uint32_t desiredIndex);
 					
@@ -39,9 +39,17 @@ namespace AirEngine
 					static MaterialBindableAssetBase* GetFromBindableAssetMap(Utility::InternedString, uint32_t desiredIndex, std::map<uint64_t, MaterialBindableAssetBase*>& bindableAssetMap);
 					void SetDescriptorData(Utility::InternedString name, MaterialBindableAssetBase* bindableAsset, uint32_t index, vk::DescriptorType descriptorType);
 				public:
-					Material(const Shader& shader);
+					Material(const Rendering::Shader& shader);
 					~Material();
 					NO_COPY_MOVE(Material);
+					inline const Shader* Shader() const
+					{
+						return _shader;
+					}
+					inline const std::unordered_map<Utility::InternedString, std::vector<MaterialDescriptorSetMemoryInfo>>& DescriptorSetMemoryInfosMap()const
+					{
+						return _descriptorSetMemoryInfosMap;
+					}
 
 					void SetUniformBuffer(Utility::InternedString name, Instance::Buffer* uniformBuffer, uint32_t index = 0);
 					Instance::Buffer* GetUniformBuffer(Utility::InternedString name, uint32_t index = 0);
