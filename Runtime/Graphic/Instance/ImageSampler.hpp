@@ -53,6 +53,7 @@ namespace AirEngine
 					NO_COPY_MOVE(ImageSampler)		
 				private:
 					void CreateVulkanInstance();
+					void SetDescriptorData(uint8_t* targetPtr, vk::DescriptorType descriptorType) override;
 				};
 			}
 		}
