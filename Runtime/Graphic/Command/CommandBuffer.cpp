@@ -178,6 +178,13 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::BindMaterial(const Ren
     _vkCommandBuffer.setDescriptorBufferOffsetsEXT(pipelineBindPoint, pipelineLayout, 0, descriptorBufferIndexs, descriptorBufferOffsets);
 }
 
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::PushConstant(const Rendering::Material* material, Utility::InternedString subpassName, void* dataPtr, uint32_t size)
+{
+    auto subShaderInfoIter = material->Shader()->Info().subShaderInfoMap.find(subpassName);
+    const auto& subShaderInfo = subShaderInfoIter->second;
+    _vkCommandBuffer.pushConstants(subShaderInfo.pipelineLayout, subShaderInfo.pushConstantInfo.shaderStageFlags, 0, size, dataPtr);
+}
+
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::BindMesh(const Graphic::Asset::Mesh* mesh, const Rendering::Material* material, Utility::InternedString subpassName)
 {
     if(material->Shader()->Info().subShaderInfoMap.at(subpassName).nameToVertexInputInfoMap.size() > mesh->Info().meshVertexAttributeInfoMap.size()) qFatal("This mesh's vertex attribute count is too less.");
@@ -205,6 +212,11 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::BindMesh(const Graphic
     _vkCommandBuffer.bindVertexBuffers(0, vertexBuffers, offsets);
     _vkCommandBuffer.setVertexInputEXT(1, &vertexInputBindingDescription, vertexInputAttributeDescriptions.size(), vertexInputAttributeDescriptions.data());
     _vkCommandBuffer.bindIndexBuffer(mesh->IndexBuffer().VkHandle(), 0, meshInfo.indexType);
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::DrawIndexed(const Graphic::Asset::Mesh* mesh, uint32_t instanceCount, uint32_t firstInstanceIndex)
+{
+    _vkCommandBuffer.drawIndexed(mesh->Info().indexCount, instanceCount, 0, 0, firstInstanceIndex);
 }
 
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer, const std::vector<vk::ClearValue>& clearValues)
