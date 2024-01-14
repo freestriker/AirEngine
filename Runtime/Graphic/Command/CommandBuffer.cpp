@@ -9,6 +9,7 @@
 #include <vulkan/vulkan_format_traits.hpp>
 #include "AirEngine/Runtime/Graphic/Rendering/Material.hpp"
 #include "AirEngine/Runtime/Graphic/Rendering/Shader.hpp"
+#include "AirEngine/Runtime/Graphic/Asset/Mesh.hpp"
 
 AirEngine::Runtime::Graphic::Command::CommandBuffer::CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, vk::CommandBufferLevel level)
 	: _name(commandBufferName)
@@ -163,6 +164,7 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::BindMaterial(const Ren
     if (subShaderInfoIter == material->Shader()->Info().subShaderInfoMap.end()) qFatal("This shader do not contain the same name of subShader.");
 
     const auto pipelineLayout = subShaderInfoIter->second.pipelineLayout;
+    const auto pipeline = subShaderInfoIter->second.pipeline;
     const auto pipelineBindPoint = material->Shader()->Info().pipelineBindPoint;
     const auto& descriptorSetMemoryInfos = material->DescriptorSetMemoryInfosMap().at(subpassName);
     const auto descriptorBufferIndexs = std::vector<uint32_t>(descriptorSetMemoryInfos.size(), 0);
@@ -172,7 +174,37 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::BindMaterial(const Ren
         descriptorBufferOffsets.at(i) = descriptorSetMemoryInfos.at(i).handle.Offset();
     }
 
+    _vkCommandBuffer.bindPipeline(pipelineBindPoint, pipeline);
     _vkCommandBuffer.setDescriptorBufferOffsetsEXT(pipelineBindPoint, pipelineLayout, 0, descriptorBufferIndexs, descriptorBufferOffsets);
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::BindMesh(const Graphic::Asset::Mesh* mesh, const Rendering::Material* material, Utility::InternedString subpassName)
+{
+    if(material->Shader()->Info().subShaderInfoMap.at(subpassName).nameToVertexInputInfoMap.size() > mesh->Info().meshVertexAttributeInfoMap.size()) qFatal("This mesh's vertex attribute count is too less.");
+    const auto& meshInfo = mesh->Info();
+
+    vk::VertexInputBindingDescription2EXT vertexInputBindingDescription(0, meshInfo.vertexByteSize, vk::VertexInputRate::eVertex, 1);
+
+    std::vector<vk::VertexInputAttributeDescription2EXT> vertexInputAttributeDescriptions{};
+    vertexInputAttributeDescriptions.reserve(material->Shader()->Info().subShaderInfoMap.at(subpassName).nameToVertexInputInfoMap.size());
+    for (const auto& nameToVertexInputInfoPair : material->Shader()->Info().subShaderInfoMap.at(subpassName).nameToVertexInputInfoMap)
+    {
+        const auto& name = nameToVertexInputInfoPair.first;
+        const auto& shaderVertexInputInfo = nameToVertexInputInfoPair.second;
+        const auto& meshVertexAttributeInfo = mesh->Info().meshVertexAttributeInfoMap.at(name);
+
+        if(shaderVertexInputInfo.format != meshVertexAttributeInfo.format) qFatal("This mesh's vertex attribute do not fit the shader's input.");
+
+        vk::VertexInputAttributeDescription2EXT vertexInputAttributeDescription(shaderVertexInputInfo.location, 0, shaderVertexInputInfo.format, meshVertexAttributeInfo.offset);
+
+        vertexInputAttributeDescriptions.emplace_back(vertexInputAttributeDescription);
+    }
+    vk::Buffer vertexBuffers[] = { mesh->VertexBuffer().VkHandle() };
+    vk::DeviceSize offsets[] = { 0 };
+
+    _vkCommandBuffer.bindVertexBuffers(0, vertexBuffers, offsets);
+    _vkCommandBuffer.setVertexInputEXT(1, &vertexInputBindingDescription, vertexInputAttributeDescriptions.size(), vertexInputAttributeDescriptions.data());
+    _vkCommandBuffer.bindIndexBuffer(mesh->IndexBuffer().VkHandle(), 0, meshInfo.indexType);
 }
 
 void AirEngine::Runtime::Graphic::Command::CommandBuffer::BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer, const std::vector<vk::ClearValue>& clearValues)

@@ -39,6 +39,7 @@ namespace AirEngine
 						Utility::InternedString name;
 						uint16_t offset;
 						uint16_t size;
+						vk::Format format;
 					};
 					struct SubMeshInfo
 					{
@@ -55,6 +56,7 @@ namespace AirEngine
 						uint32_t indexCount;
 						uint32_t meshCount;
 						vk::IndexType indexType;
+						uint32_t vertexByteSize;
 						std::map<Utility::InternedString, MeshVertexAttributeInfo> meshVertexAttributeInfoMap;
 					};
 				private:

@@ -161,20 +161,20 @@ bool AirEngine::Runtime::FrontEnd::Window::AcquireImage()
 
 bool AirEngine::Runtime::FrontEnd::Window::Present()
 {
-
 	auto&& currentFrame = _frameResources[_curFrameIndex];
 	auto&& currentImage = _imageResources[_curImageIndex];
 
 	_commandPool->Reset();
-	auto&& _commandBuffer = _commandPool->GetCommandBuffer(presentCommandBufferName);
-	_commandBuffer.BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	auto&& commandBuffer = _commandPool->GetCommandBuffer(presentCommandBufferName);
+	commandBuffer.BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	{
-		_commandBuffer.BeginRenderPass(_presentRenderPass.get(), currentImage.frameBuffer.get(), { vk::ClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 0.0f)) });
-		_commandBuffer.BindDsecriptorBuffer(Graphic::Manager::DescriptorManager::DescriptorBuffer());
-		_commandBuffer.BindMaterial(presentMaterial, presentSubpassName);
-		_commandBuffer.EndRenderPass();
+		commandBuffer.BeginRenderPass(_presentRenderPass.get(), currentImage.frameBuffer.get(), { vk::ClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 0.0f)) });
+		commandBuffer.BindDsecriptorBuffer(Graphic::Manager::DescriptorManager::DescriptorBuffer());
+		commandBuffer.BindMaterial(presentMaterial, presentSubpassName);
+		commandBuffer.BindMesh(&ndcFullScreenMeshLoadHandle.Asset<Graphic::Asset::Mesh>(), presentMaterial, presentSubpassName);
+		commandBuffer.EndRenderPass();
 	}
-	Graphic::Command::Barrier barrier{};
+	//Graphic::Command::Barrier barrier{};
 	//if (sampledImageLoadHandle.IsCompleted())
 	//{
 	//	barrier.AddImageMemoryBarrier(
@@ -234,13 +234,13 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 	//	);
 	//	_commandBuffer.AddPipelineBarrier(barrier);
 	//}
-	_commandBuffer.EndRecord();
+	commandBuffer.EndRecord();
 
 	_transferFence->Reset();
 	_commandPool->Queue().ImmediateIndividualSubmit(
 		{
 			{{currentFrame.acquireSemaphore.get(), vk::PipelineStageFlagBits2::eClear}},
-			{&_commandBuffer},
+			{&commandBuffer},
 			{{currentImage.transferSemaphore.get(), vk::PipelineStageFlagBits2::eNone}}
 		},
 		*_transferFence

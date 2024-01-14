@@ -11,6 +11,10 @@ namespace AirEngine
 	{
 		namespace Graphic
 		{
+			namespace Asset
+			{
+				class Mesh;
+			}
 			namespace Instance
 			{
 				class Queue;
@@ -59,6 +63,7 @@ namespace AirEngine
 					
 					void BindDsecriptorBuffer(const Instance::Buffer* descriptorBuffer);
 					void BindMaterial(const Rendering::Material* material, Utility::InternedString subpassName);
+					void BindMesh(const Graphic::Asset::Mesh* mesh, const Rendering::Material* material, Utility::InternedString subpassName);
 
 					void BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer, const std::vector<vk::ClearValue>& clearValues = {});
 					void EndRenderPass();

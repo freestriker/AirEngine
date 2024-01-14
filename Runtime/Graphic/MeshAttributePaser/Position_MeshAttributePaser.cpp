@@ -23,7 +23,7 @@ uint32_t AirEngine::Runtime::Graphic::MeshAttributePaser::Position_MeshAttribute
 void AirEngine::Runtime::Graphic::MeshAttributePaser::Position_MeshAttributePaser::OnPopulateMeshVertexAttributeInfoMap(std::map<Utility::InternedString, Asset::Mesh::MeshVertexAttributeInfo>& meshVertexAttributeInfoMap) const
 {
 	auto&& attributeName = Utility::InternedString("vertexPosition");
-	meshVertexAttributeInfoMap[attributeName] = Asset::Mesh::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexPosition), sizeof(VertexData::vertexPosition));
+	meshVertexAttributeInfoMap[attributeName] = Asset::Mesh::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexPosition), sizeof(VertexData::vertexPosition), vk::Format::eR32G32B32Sfloat);
 }
 
 void AirEngine::Runtime::Graphic::MeshAttributePaser::Position_MeshAttributePaser::OnPopulateVertexData(void* vertexDataPtr, size_t vertexDataByteSize, const Asset::Mesh::MeshInfo& meshInfo, const aiScene& meshScene) const
