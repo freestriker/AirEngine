@@ -848,7 +848,7 @@ void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& s
 			}
 			vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo
 			(
-				vk::PipelineCreateFlags(),
+				vk::PipelineCreateFlagBits::eDescriptorBufferEXT,
 				pipelineShaderStageCreateInfos,
 				nullptr,
 				&pipelineInputAssemblyStateCreateInfo,

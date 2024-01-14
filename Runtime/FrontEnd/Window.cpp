@@ -171,7 +171,11 @@ bool AirEngine::Runtime::FrontEnd::Window::Present()
 		commandBuffer.BeginRenderPass(_presentRenderPass.get(), currentImage.frameBuffer.get(), { vk::ClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 0.0f)) });
 		commandBuffer.BindDsecriptorBuffer(Graphic::Manager::DescriptorManager::DescriptorBuffer());
 		commandBuffer.BindMaterial(presentMaterial, presentSubpassName);
+		auto&& extent2D = currentImage.image->Extent2D();
+		auto&& swapchainAttachmentSize = glm::vec4(extent2D.width, extent2D.height, 1.0f / extent2D.width, 1.0f / extent2D.height);
+		commandBuffer.PushConstant(presentMaterial, presentSubpassName, swapchainAttachmentSize);
 		commandBuffer.BindMesh(&ndcFullScreenMeshLoadHandle.Asset<Graphic::Asset::Mesh>(), presentMaterial, presentSubpassName);
+		commandBuffer.DrawIndexed(&ndcFullScreenMeshLoadHandle.Asset<Graphic::Asset::Mesh>());
 		commandBuffer.EndRenderPass();
 	}
 	//Graphic::Command::Barrier barrier{};

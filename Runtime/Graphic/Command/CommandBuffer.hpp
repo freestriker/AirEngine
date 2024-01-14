@@ -63,7 +63,14 @@ namespace AirEngine
 					
 					void BindDsecriptorBuffer(const Instance::Buffer* descriptorBuffer);
 					void BindMaterial(const Rendering::Material* material, Utility::InternedString subpassName);
+					void PushConstant(const Rendering::Material* material, Utility::InternedString subpassName, void* dataPtr, uint32_t size);
+					template<typename TConstant>
+					inline void PushConstant(Rendering::Material* material, Utility::InternedString subpassName, TConstant&& constant)
+					{
+						PushConstant(material, subpassName, &constant, sizeof(TConstant));
+					}
 					void BindMesh(const Graphic::Asset::Mesh* mesh, const Rendering::Material* material, Utility::InternedString subpassName);
+					void DrawIndexed(const Graphic::Asset::Mesh* mesh, uint32_t instanceCount = 1, uint32_t firstInstanceIndex = 0);
 
 					void BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer, const std::vector<vk::ClearValue>& clearValues = {});
 					void EndRenderPass();
