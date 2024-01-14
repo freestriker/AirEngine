@@ -39,6 +39,12 @@ namespace AirEngine
 						vk::ImageLayout layout;
 						AttachmentType type;
 					};
+					struct FullAttachmentInfo
+					{
+						Utility::InternedString name;
+						uint32_t attachmentIndex;
+						vk::AttachmentDescription2 descripton;
+					};
 					struct SubPassInfo
 					{
 						friend class RenderPassBuilder;
@@ -67,7 +73,7 @@ namespace AirEngine
 					private:
 						Utility::InternedString _name;
 						std::unordered_map<Utility::InternedString, SubPassInfo> _subPassInfos;
-						std::unordered_map<Utility::InternedString, AttachmentInfo> _attachmentInfos;
+						std::unordered_map<Utility::InternedString, FullAttachmentInfo> _fullAttachmentInfoMap;
 					public:
 						inline Utility::InternedString Name() const
 						{
@@ -77,9 +83,9 @@ namespace AirEngine
 						{
 							return _subPassInfos.at(name);
 						}
-						inline const std::unordered_map<Utility::InternedString, AttachmentInfo>& AttachmentInfos() const
+						inline const std::unordered_map<Utility::InternedString, FullAttachmentInfo>& FullAttachmentInfoMap() const
 						{
-							return _attachmentInfos;
+							return _fullAttachmentInfoMap;
 						}
 					};
 

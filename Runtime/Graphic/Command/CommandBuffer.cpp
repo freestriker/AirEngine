@@ -7,6 +7,8 @@
 #include "AirEngine/Runtime/Graphic/Instance/FrameBuffer.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/RenderPassBase.hpp"
 #include <vulkan/vulkan_format_traits.hpp>
+#include "AirEngine/Runtime/Graphic/Rendering/Material.hpp"
+#include "AirEngine/Runtime/Graphic/Rendering/Shader.hpp"
 
 AirEngine::Runtime::Graphic::Command::CommandBuffer::CommandBuffer(Utility::InternedString commandBufferName, Command::CommandPool* commandPool, vk::CommandBufferLevel level)
 	: _name(commandBufferName)
@@ -149,14 +151,41 @@ void AirEngine::Runtime::Graphic::Command::CommandBuffer::Blit(const Instance::I
     _vkCommandBuffer.blitImage(srcImage.VkHandle(), srcImageLayout, dstImage.VkHandle(), dstImageLayout, blits, filter);
 }
 
-void AirEngine::Runtime::Graphic::Command::CommandBuffer::BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer)
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::BindDsecriptorBuffer(const Instance::Buffer* descriptorBuffer)
+{
+    vk::DescriptorBufferBindingInfoEXT descriptorBufferBindingInfo(descriptorBuffer->BufferDeviceAddress(), vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT | vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT);
+    _vkCommandBuffer.bindDescriptorBuffersEXT(descriptorBufferBindingInfo);
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::BindMaterial(const Rendering::Material* material, Utility::InternedString subpassName)
+{
+    auto subShaderInfoIter = material->Shader()->Info().subShaderInfoMap.find(subpassName);
+    if (subShaderInfoIter == material->Shader()->Info().subShaderInfoMap.end()) qFatal("This shader do not contain the same name of subShader.");
+
+    const auto pipelineLayout = subShaderInfoIter->second.pipelineLayout;
+    const auto pipelineBindPoint = material->Shader()->Info().pipelineBindPoint;
+    const auto& descriptorSetMemoryInfos = material->DescriptorSetMemoryInfosMap().at(subpassName);
+    const auto descriptorBufferIndexs = std::vector<uint32_t>(descriptorSetMemoryInfos.size(), 0);
+    auto descriptorBufferOffsets = std::vector<vk::DeviceAddress>(descriptorSetMemoryInfos.size());
+    for (uint32_t i = 0; i < descriptorSetMemoryInfos.size(); ++i)
+    {
+        descriptorBufferOffsets.at(i) = descriptorSetMemoryInfos.at(i).handle.Offset();
+    }
+
+    _vkCommandBuffer.setDescriptorBufferOffsetsEXT(pipelineBindPoint, pipelineLayout, 0, descriptorBufferIndexs, descriptorBufferOffsets);
+}
+
+void AirEngine::Runtime::Graphic::Command::CommandBuffer::BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer, const std::vector<vk::ClearValue>& clearValues)
 {
     if (renderPass == nullptr || frameBuffer == nullptr) qFatal("Begin render pass must have valid data.");
 
     auto&& renderRect = vk::Rect2D({ 0, 0 }, frameBuffer->Extent2D());
     auto&& renderViewport = vk::Viewport(renderRect.offset.x, renderRect.offset.y, renderRect.extent.width, renderRect.extent.height, 0, 1);
 
-    vk::RenderPassBeginInfo renderPassBeginInfo(renderPass->VkHandle(), frameBuffer->VkHandle(), renderRect);
+    std::vector<vk::ClearValue> values(clearValues);
+    values.resize(renderPass->Info().FullAttachmentInfoMap().size(), vk::ClearValue());
+
+    vk::RenderPassBeginInfo renderPassBeginInfo(renderPass->VkHandle(), frameBuffer->VkHandle(), renderRect, values);
 
     _vkCommandBuffer.beginRenderPass(renderPassBeginInfo, _vkCommandBufferLevel == vk::CommandBufferLevel::ePrimary ? vk::SubpassContents::eInline : vk::SubpassContents::eSecondaryCommandBuffers);
     _vkCommandBuffer.setViewport(0, 1, &renderViewport);

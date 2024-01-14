@@ -19,6 +19,10 @@ namespace AirEngine
 				class FrameBuffer;
 				class RenderPassBase;
 			}
+			namespace Rendering
+			{
+				class Material;
+			}
 			namespace Command
 			{
 				class CommandPool;
@@ -52,8 +56,11 @@ namespace AirEngine
 					void CopyBuffer(const Instance::Buffer& srcBuffer, const Instance::Buffer& dstBuffer, const std::vector<std::tuple<vk::DeviceSize, vk::DeviceSize, vk::DeviceSize>> srcOffsetDstOffsetSizes);
 					void FillBuffer(const Instance::Buffer* buffer, size_t offset, size_t size, uint32_t data);
 					void Blit(const Instance::Image& srcImage, vk::ImageLayout srcImageLayout, const Instance::Image& dstImage, vk::ImageLayout dstImageLayout, vk::ImageAspectFlags imageAspectFlags, vk::Filter filter);
-				
-					void BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer);
+					
+					void BindDsecriptorBuffer(const Instance::Buffer* descriptorBuffer);
+					void BindMaterial(const Rendering::Material* material, Utility::InternedString subpassName);
+
+					void BeginRenderPass(Graphic::Instance::RenderPassBase* renderPass, Graphic::Instance::FrameBuffer* frameBuffer, const std::vector<vk::ClearValue>& clearValues = {});
 					void EndRenderPass();
 				};
 				template<typename TColorChannel>

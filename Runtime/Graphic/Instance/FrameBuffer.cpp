@@ -21,7 +21,7 @@ AirEngine::Runtime::Graphic::Instance::FrameBuffer::FrameBuffer(const FrameBuffe
 {
 	if (builder._renderPass == nullptr) qFatal("Render pass must not be null.");
 
-	if (builder._renderPass->Info().AttachmentInfos().size() != builder._attachmentMap.size()) qFatal("Render pass do not contains this attachment.");
+	if (builder._renderPass->Info().FullAttachmentInfoMap().size() != builder._attachmentMap.size()) qFatal("Render pass do not contains this attachment.");
 
 	if (std::find_if(builder._vkImageViews.begin(), builder._vkImageViews.end(), [](const auto& x)->bool { return x == vk::ImageView(); }) != builder._vkImageViews.end()) qFatal("Frame buffer should set all attachments.");
 
@@ -53,7 +53,7 @@ AirEngine::Runtime::Graphic::Instance::FrameBufferBuilder& AirEngine::Runtime::G
 
 	_attachmentMap.clear();
 	_vkImageViews.clear();
-	_vkImageViews.resize(renderPass->Info().AttachmentInfos().size());
+	_vkImageViews.resize(renderPass->Info().FullAttachmentInfoMap().size());
 
 	_renderPass = renderPass;
 
@@ -71,8 +71,8 @@ AirEngine::Runtime::Graphic::Instance::FrameBufferBuilder& AirEngine::Runtime::G
 	}
 	else if (_extent2D != imageView->Image()->Extent2D()) qFatal("Attachment must have the same extent.");
 
-	auto iter = _renderPass->Info().AttachmentInfos().find(name);
-	if(iter == _renderPass->Info().AttachmentInfos().end()) qFatal("Render pass do not contains this attachment.");
+	auto iter = _renderPass->Info().FullAttachmentInfoMap().find(name);
+	if(iter == _renderPass->Info().FullAttachmentInfoMap().end()) qFatal("Render pass do not contains this attachment.");
 
 	_attachmentMap.emplace(name, imageView);
 	_vkImageViews.at(iter->second.attachmentIndex) = imageView->VkHandle();
@@ -84,7 +84,7 @@ AirEngine::Runtime::Graphic::Instance::FrameBuffer* AirEngine::Runtime::Graphic:
 {
 	if (_renderPass == nullptr) qFatal("Render pass must not be null.");
 
-	if(_renderPass->Info().AttachmentInfos().size() != _attachmentMap.size()) qFatal("Render pass do not contains this attachment.");
+	if(_renderPass->Info().FullAttachmentInfoMap().size() != _attachmentMap.size()) qFatal("Render pass do not contains this attachment.");
 	
 	if(std::find_if(_vkImageViews.begin(), _vkImageViews.end(), [](const auto& x)->bool { return x == vk::ImageView(); }) != _vkImageViews.end()) qFatal("Frame buffer should set all attachments.");
 

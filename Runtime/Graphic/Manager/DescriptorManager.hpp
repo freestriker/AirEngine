@@ -102,6 +102,10 @@ namespace AirEngine
 					{
 						return _descriptorTypeToSizeMap.at(descriptorType);
 					}
+					inline static const Instance::Buffer* DescriptorBuffer()
+					{
+						return _deviceBuffer;
+					}
 				};
 			}
 		}

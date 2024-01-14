@@ -6,7 +6,7 @@
 #include "AirEngine/Runtime/Graphic/Instance/ImageSampler.hpp"
 #include "AirEngine/Runtime/Graphic/Instance/ImageView.hpp"
 
-std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>> AirEngine::Runtime::Graphic::Rendering::Material::PopulateDescriptorSetMemoryInfosMap(const Shader& shader)
+std::unordered_map<AirEngine::Runtime::Utility::InternedString, std::vector<AirEngine::Runtime::Graphic::Rendering::MaterialDescriptorSetMemoryInfo>> AirEngine::Runtime::Graphic::Rendering::Material::PopulateDescriptorSetMemoryInfosMap(const Rendering::Shader& shader)
 {
 	const auto& shaderInfo = shader.Info();
 
@@ -73,7 +73,7 @@ void AirEngine::Runtime::Graphic::Rendering::Material::DestroyAllDescriptorSetMe
 	}
 }
 
-AirEngine::Runtime::Graphic::Rendering::Material::Material(const Shader& shader)
+AirEngine::Runtime::Graphic::Rendering::Material::Material(const Rendering::Shader& shader)
 	: _shader(&shader)
 	, _bindableAssetMap()
 	, _descriptorSetMemoryInfosMap(PopulateDescriptorSetMemoryInfosMap(shader))
