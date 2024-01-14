@@ -23,7 +23,7 @@ AirEngine::Runtime::Graphic::Instance::ImageView::~ImageView()
 
 void AirEngine::Runtime::Graphic::Instance::ImageView::SetDescriptorData(uint8_t* targetPtr, vk::DescriptorType descriptorType)
 {
-	vk::DescriptorGetInfoEXT descriptorGetInfo{};
+	vk::DescriptorGetInfoEXT descriptorGetInfo{ descriptorType };
 	vk::DescriptorImageInfo descriptorImageInfo({}, _vkImageView, _vkImageLayout);
 	descriptorGetInfo.data.pSampledImage = &descriptorImageInfo;
 
