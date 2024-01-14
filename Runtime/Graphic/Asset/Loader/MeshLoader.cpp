@@ -201,6 +201,8 @@ void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::PopulateMesh(AirEng
 	const auto VERTEX_DATA_BYTE_OFFSET = 0;
 	const auto INDEX_DATA_BYTE_OFFSET = VERTEX_DATA_BYTE_OFFSET + VERTEX_DATA_BYTE_SIZE;
 
+	meshInfo.vertexByteSize = PER_VERTEX_DATA_BYTE_SIZE;
+
 	/// populate mesh vertex attribute info map
 	{
 		meshAttributePaser->OnPopulateMeshVertexAttributeInfoMap(meshInfo.meshVertexAttributeInfoMap);
