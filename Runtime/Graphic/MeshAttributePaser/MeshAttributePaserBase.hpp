@@ -17,6 +17,7 @@ namespace AirEngine
 					: public Utility::ReflectableObject
 				{
 					friend class Asset::Loader::MeshLoader;
+					friend class Asset::Loader::RayTracingMeshLoader;
 					REFLECTABLE_OBJECT
 				protected:
 					virtual void OnEditPostProcessSteps(uint32_t& postProcessSteps) const { };

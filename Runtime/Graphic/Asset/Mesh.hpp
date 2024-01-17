@@ -21,11 +21,13 @@ namespace AirEngine
 				namespace Loader
 				{
 					class MeshLoader;
+					class RayTracingMeshLoader;
 				}
 				class AIR_ENGINE_API Mesh final
 					: public AirEngine::Runtime::Asset::AssetBase
 				{
 					friend class Loader::MeshLoader;
+					friend class Loader::RayTracingMeshLoader;
 				public:
 					struct VertexData
 					{
