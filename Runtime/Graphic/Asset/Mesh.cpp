@@ -10,10 +10,5 @@ AirEngine::Runtime::Graphic::Asset::Mesh::Mesh()
 AirEngine::Runtime::Graphic::Asset::Mesh::~Mesh()
 {
 	delete _vertexBuffer;
-	_vertexBuffer = nullptr;
-	if (_indexBuffer != nullptr)
-	{
-		delete _indexBuffer;
-		_indexBuffer = nullptr;
-	}
+	delete _indexBuffer;
 }
