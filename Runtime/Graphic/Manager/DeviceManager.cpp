@@ -129,6 +129,23 @@ void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateDevice()
 	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.runtimeDescriptorArray = VK_TRUE;
 	vkPhysicalDeviceDescriptorIndexingFeaturesEXT.descriptorBindingVariableDescriptorCount = VK_TRUE;
 
+	auto accelerationStructureFeatures = vk::PhysicalDeviceAccelerationStructureFeaturesKHR()
+		.setAccelerationStructure(VK_TRUE)                                  // 加速结构支持
+		.setAccelerationStructureCaptureReplay(VK_FALSE)                     // 保存和重用加速结构设备地址，用于捕获和回放追踪结果
+		.setAccelerationStructureIndirectBuild(VK_FALSE)                    // 间接构建加速结构
+		.setAccelerationStructureHostCommands(VK_FALSE)                     // 从主机端操作加速结构
+		.setDescriptorBindingAccelerationStructureUpdateAfterBind(VK_FALSE); // 在绑定后更新加速结构
+
+	auto rayTracingPipelineFeatures = vk::PhysicalDeviceRayTracingPipelineFeaturesKHR()
+		.setRayTracingPipeline(VK_TRUE)                                     // 光线追踪管线支持
+		.setRayTracingPipelineShaderGroupHandleCaptureReplay(VK_FALSE)      // 保存和重用管线着色器组，用于捕获和回放追踪结果
+		.setRayTracingPipelineShaderGroupHandleCaptureReplayMixed(VK_FALSE) // 混用可重用和非可重用的着色器组
+		.setRayTracingPipelineTraceRaysIndirect(VK_TRUE)                    // 间接光线追踪调度命令
+		.setRayTraversalPrimitiveCulling(VK_TRUE);                          // 在光线遍历时剔除图元
+
+	auto rayQueryFeatures = vk::PhysicalDeviceRayQueryFeaturesKHR()
+		.setRayQuery(VK_TRUE);
+
 	vkb::PhysicalDeviceSelector physicalDeviceSelector(_vkbInstance);
 	physicalDeviceSelector = physicalDeviceSelector
 		.add_required_extension(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME)
@@ -144,7 +161,15 @@ void AirEngine::Runtime::Graphic::Manager::DeviceManager::CreateDevice()
 		.add_required_extension(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)
 		.add_required_extension_features(vkPhysicalDeviceDescriptorBufferFeaturesEXT)
 		.add_required_extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
-		.add_required_extension_features(vkPhysicalDeviceDescriptorIndexingFeaturesEXT);
+		.add_required_extension_features(vkPhysicalDeviceDescriptorIndexingFeaturesEXT)
+		.add_required_extension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
+		.add_required_extension_features(accelerationStructureFeatures)
+		.add_required_extension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
+		.add_required_extension_features(rayTracingPipelineFeatures)
+		.add_required_extension(VK_KHR_RAY_QUERY_EXTENSION_NAME)
+		.add_required_extension_features(rayQueryFeatures)
+		.add_required_extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+
 	if (isWindow)
 	{
 		physicalDeviceSelector.set_surface(dynamic_cast<FrontEnd::WindowFrontEndBase&>(FrontEnd()).VkSurface());
