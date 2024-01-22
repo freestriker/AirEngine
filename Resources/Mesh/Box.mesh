@@ -1,5 +1,6 @@
 {
     "meshPath": "../..\\Resources\\Mesh\\Box.ply",
     "postProcessSteps": [],
-    "meshAttributePaser": "AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser"
+    "meshAttributePaser": "AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser",
+    "isUsedForRayTracing": true
 }

@@ -128,11 +128,7 @@ void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::PopulateMesh(AirEng
 
 	/// get index type
 	{
-		if (meshInfo.indexCount <= uint32_t(std::numeric_limits<uint8_t>::max()))
-		{
-			meshInfo.indexType = vk::IndexType::eUint8EXT;
-		}
-		else if (meshInfo.indexCount <= uint32_t(std::numeric_limits<uint16_t>::max()))
+		if (meshInfo.indexCount <= uint32_t(std::numeric_limits<uint16_t>::max()))
 		{
 			meshInfo.indexType = vk::IndexType::eUint16;
 		}
@@ -154,7 +150,7 @@ void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::PopulateMesh(AirEng
 
 	/// populate mesh vertex attribute info map
 	{
-		meshAttributePaser->OnPopulateMeshVertexAttributeInfoMap(meshInfo.meshVertexAttributeInfoMap);
+		meshInfo.vertexAttributePositionName = meshAttributePaser->OnPopulateMeshVertexAttributeInfoMap(meshInfo.meshVertexAttributeInfoMap);
 	}
 
 	std::vector<uint8_t> dataBytes(DATA_BYTE_SIZE);
@@ -191,11 +187,6 @@ void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::PopulateMesh(AirEng
 	{
 		switch (meshInfo.indexType)
 		{
-			case vk::IndexType::eUint8EXT:
-			{
-				POPULATE_INDEX_DATA(uint8_t);
-				break;
-			}
 			case vk::IndexType::eUint16:
 			{
 				POPULATE_INDEX_DATA(uint16_t);
@@ -209,15 +200,17 @@ void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::PopulateMesh(AirEng
 		}
 	}
 
+	const auto rtExternalUsage = descriptor.isUsedForRayTracing ? vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR : vk::BufferUsageFlags();
+
 	auto&& vertexBuffer = new Graphic::Instance::Buffer(
 		VERTEX_DATA_BYTE_SIZE,
-		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst | rtExternalUsage,
 		vk::MemoryPropertyFlagBits::eDeviceLocal
 	);
 
 	auto&& indexBuffer = new Graphic::Instance::Buffer(
 		INDEX_DATA_BYTE_SIZE,
-		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst | rtExternalUsage,
 		vk::MemoryPropertyFlagBits::eDeviceLocal
 	);
 
@@ -227,6 +220,29 @@ void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::PopulateMesh(AirEng
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached,
 		VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
 	);
+
+	Graphic::Instance::Buffer* matrixBuffer = nullptr;
+	if (descriptor.isUsedForRayTracing)
+	{
+		matrixBuffer = new Graphic::Instance::Buffer(
+			sizeof(vk::TransformMatrixKHR),
+			rtExternalUsage,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached,
+			VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+		);
+		VkTransformMatrixKHR transformMatrix = {
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f
+		};
+		std::memcpy(
+			matrixBuffer->Memory()->Map(),
+			&transformMatrix,
+			sizeof(vk::TransformMatrixKHR)
+		);
+		matrixBuffer->Memory()->Unmap();
+		matrixBuffer->Memory()->Flush();
+	}
 
 	/// copy to gpu
 	{
@@ -239,32 +255,115 @@ void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::PopulateMesh(AirEng
 		stagingBuffer.Memory()->Flush();
 	}
 
-	// copy to device
+	Graphic::Instance::Buffer* accelerationStructureBuffer = nullptr;
+	vk::AccelerationStructureKHR accelerationStructure{};
+	Graphic::Instance::Buffer* scratchBuffer = nullptr;
+	if (descriptor.isUsedForRayTracing)
 	{
-		//Graphic::Command::Barrier barrier{};
-		//barrier.AddBufferMemoryBarrier(
-		//	*vertexBuffer,
-		//	vk::PipelineStageFlagBits2::eHost,
-		//	vk::AccessFlagBits2::eHostWrite,
-		//	vk::PipelineStageFlagBits2::eTransfer,
-		//	vk::AccessFlagBits2::eTransferWrite
-		//);
-		//barrier.AddBufferMemoryBarrier(
-		//	*indexBuffer,
-		//	vk::PipelineStageFlagBits2::eHost,
-		//	vk::AccessFlagBits2::eHostWrite,
-		//	vk::PipelineStageFlagBits2::eTransfer,
-		//	vk::AccessFlagBits2::eTransferWrite
-		//);
+		auto&& positionInfo = meshInfo.meshVertexAttributeInfoMap.at(meshInfo.vertexAttributePositionName);
+		vk::AccelerationStructureGeometryTrianglesDataKHR accelerationStructureGeometryTrianglesData = vk::AccelerationStructureGeometryTrianglesDataKHR()
+			.setVertexData(vertexBuffer->BufferDeviceAddress())
+			.setVertexFormat(positionInfo.format)
+			.setVertexStride(PER_VERTEX_DATA_BYTE_SIZE)
+			.setMaxVertex(meshInfo.vertexCount - 1)
+			.setIndexData(indexBuffer->BufferDeviceAddress())
+			.setIndexType(meshInfo.indexType)
+			.setTransformData(matrixBuffer->BufferDeviceAddress());
+		vk::AccelerationStructureGeometryKHR accelerationStructureGeometry = vk::AccelerationStructureGeometryKHR()
+			.setFlags(vk::GeometryFlagBitsKHR::eOpaque)
+			.setGeometryType(vk::GeometryTypeKHR::eTriangles)
+			.setGeometry(accelerationStructureGeometryTrianglesData);
+		vk::AccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo = vk::AccelerationStructureBuildGeometryInfoKHR()
+			.setType(vk::AccelerationStructureTypeKHR::eBottomLevel)
+			.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace)
+			.setGeometryCount(1)
+			.setPGeometries(&accelerationStructureGeometry);
+		const uint32_t primitiveCount = meshInfo.indexCount / 3;
+
+		vk::AccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{};
+		Manager::DeviceManager::Device().getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, &accelerationStructureBuildGeometryInfo, &primitiveCount, &accelerationStructureBuildSizesInfo);
 		
+		accelerationStructureBuffer = new Graphic::Instance::Buffer(
+			accelerationStructureBuildSizesInfo.accelerationStructureSize,
+			vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR,
+			vk::MemoryPropertyFlagBits::eDeviceLocal
+		);
+
+		vk::AccelerationStructureCreateInfoKHR accelerationStructureCreateInfo(
+			vk::AccelerationStructureCreateFlagsKHR(), 
+			accelerationStructureBuffer->VkHandle(),
+			0, accelerationStructureBuildSizesInfo.accelerationStructureSize, 
+			vk::AccelerationStructureTypeKHR::eBottomLevel
+		);
+		accelerationStructure = Manager::DeviceManager::Device().createAccelerationStructureKHR(accelerationStructureCreateInfo);
+	
+		scratchBuffer = new Graphic::Instance::Buffer(
+			accelerationStructureBuildSizesInfo.buildScratchSize,
+			vk::BufferUsageFlagBits::eStorageBuffer,
+			vk::MemoryPropertyFlagBits::eDeviceLocal
+		);
+	}
+
+	// copy to device
+	{		
 		auto&& commandPool = Graphic::Command::CommandPool(Utility::InternedString("TransferQueue"), vk::CommandPoolCreateFlagBits::eTransient);
 		auto&& commandBuffer = commandPool.CreateCommandBuffer(Utility::InternedString("TransferCommandBuffer"));
 		auto&& transferFence = Graphic::Command::Fence(false);
 
 		commandBuffer.BeginRecord(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		//commandBuffer.AddPipelineBarrier(barrier);
 		commandBuffer.CopyBuffer(stagingBuffer, *vertexBuffer, { {VERTEX_DATA_BYTE_OFFSET, 0, VERTEX_DATA_BYTE_SIZE} });
 		commandBuffer.CopyBuffer(stagingBuffer, *indexBuffer, { {INDEX_DATA_BYTE_OFFSET, 0, INDEX_DATA_BYTE_SIZE} });
+		if (descriptor.isUsedForRayTracing)
+		{
+			{
+				Command::Barrier barrier{};
+				barrier.AddBufferMemoryBarrier(
+					*vertexBuffer,
+					vk::PipelineStageFlagBits2::eCopy,
+					vk::AccessFlagBits2::eMemoryWrite,
+					vk::PipelineStageFlagBits2::eAccelerationStructureBuildKHR,
+					vk::AccessFlagBits2::eMemoryRead
+				);
+				barrier.AddBufferMemoryBarrier(
+					*indexBuffer,
+					vk::PipelineStageFlagBits2::eCopy,
+					vk::AccessFlagBits2::eMemoryWrite,
+					vk::PipelineStageFlagBits2::eAccelerationStructureBuildKHR,
+					vk::AccessFlagBits2::eMemoryRead
+				);
+				commandBuffer.AddPipelineBarrier(barrier);
+			}
+			auto&& positionInfo = meshInfo.meshVertexAttributeInfoMap.at(meshInfo.vertexAttributePositionName);
+			vk::AccelerationStructureGeometryTrianglesDataKHR accelerationStructureGeometryTrianglesData = vk::AccelerationStructureGeometryTrianglesDataKHR()
+				.setVertexData(vertexBuffer->BufferDeviceAddress())
+				.setVertexFormat(positionInfo.format)
+				.setVertexStride(PER_VERTEX_DATA_BYTE_SIZE)
+				.setMaxVertex(meshInfo.vertexCount - 1)
+				.setIndexData(indexBuffer->BufferDeviceAddress())
+				.setIndexType(meshInfo.indexType)
+				.setTransformData(matrixBuffer->BufferDeviceAddress());
+			vk::AccelerationStructureGeometryKHR accelerationStructureGeometry = vk::AccelerationStructureGeometryKHR()
+				.setFlags(vk::GeometryFlagBitsKHR::eOpaque)
+				.setGeometryType(vk::GeometryTypeKHR::eTriangles)
+				.setGeometry(accelerationStructureGeometryTrianglesData);
+			vk::AccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo = vk::AccelerationStructureBuildGeometryInfoKHR()
+				.setType(vk::AccelerationStructureTypeKHR::eBottomLevel)
+				.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace)
+				.setMode(vk::BuildAccelerationStructureModeKHR::eBuild)
+				.setDstAccelerationStructure(accelerationStructure)
+				.setScratchData(scratchBuffer->BufferDeviceAddress())
+				.setGeometryCount(1)
+				.setPGeometries(&accelerationStructureGeometry);
+
+			vk::AccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo = vk::AccelerationStructureBuildRangeInfoKHR()
+				.setPrimitiveCount(meshInfo.indexCount / 3)
+				.setPrimitiveOffset(0)
+				.setTransformOffset(0)
+				.setFirstVertex(0);
+			auto accelerationStructureBuildRangeInfoPtr = &accelerationStructureBuildRangeInfo;
+
+			commandBuffer.VkHandle().buildAccelerationStructuresKHR(1, &accelerationStructureBuildGeometryInfo, &accelerationStructureBuildRangeInfoPtr);
+		}
 		commandBuffer.EndRecord();
 
 		commandPool.Queue().ImmediateIndividualSubmit(
@@ -275,8 +374,12 @@ void AirEngine::Runtime::Graphic::Asset::Loader::MeshLoader::PopulateMesh(AirEng
 		while (transferFence.Status() == vk::Result::eNotReady) std::this_thread::yield();
 	}
 
+	delete scratchBuffer;
+
 	mesh->_vertexBuffer = vertexBuffer;
 	mesh->_indexBuffer = indexBuffer;
+	mesh->_accelerationStructureBuffer = accelerationStructureBuffer;
+	mesh->_accelerationStructure = accelerationStructure;
 	mesh->_meshInfo = std::move(meshInfo);
 
 	*isInLoading = false;

@@ -22,7 +22,7 @@ namespace AirEngine
 				protected:
 					virtual void OnEditPostProcessSteps(uint32_t& postProcessSteps) const { };
 					virtual uint32_t OnGetPerVertexByteSize() const = 0;
-					virtual void OnPopulateMeshVertexAttributeInfoMap(MeshAttributePaser::MeshVertexAttributeInfoMap& meshVertexAttributeInfoMap) const = 0;
+					virtual Utility::InternedString OnPopulateMeshVertexAttributeInfoMap(MeshAttributePaser::MeshVertexAttributeInfoMap& meshVertexAttributeInfoMap) const = 0;
 					virtual void OnPopulateVertexData(void* vertexDataPtr, size_t vertexDataByteSize, const Asset::Mesh::MeshInfo& meshInfo, const aiScene& meshScene) const = 0;
 				public:
 					MeshAttributePaserBase() = default;

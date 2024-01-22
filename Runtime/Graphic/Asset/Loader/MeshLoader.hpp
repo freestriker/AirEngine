@@ -22,12 +22,14 @@ namespace AirEngine
 							std::string meshPath;
 							std::vector<std::string> postProcessSteps;
 							std::string meshAttributePaser;
+							bool isUsedForRayTracing;
 
 							NLOHMANN_DEFINE_TYPE_INTRUSIVE(
 								Descriptor,
 								meshPath,
 								postProcessSteps,
-								meshAttributePaser
+								meshAttributePaser,
+								isUsedForRayTracing
 							)
 						};
 						AirEngine::Runtime::Asset::AssetBase* OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading) override;

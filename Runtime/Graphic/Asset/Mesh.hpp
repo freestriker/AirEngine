@@ -51,11 +51,14 @@ namespace AirEngine
 						uint32_t meshCount;
 						vk::IndexType indexType;
 						uint32_t vertexByteSize;
+						Utility::InternedString vertexAttributePositionName;
 						MeshAttributePaser::MeshVertexAttributeInfoMap meshVertexAttributeInfoMap;
 					};
 				protected:
 					Graphic::Instance::Buffer* _vertexBuffer;
 					Graphic::Instance::Buffer* _indexBuffer;
+					Graphic::Instance::Buffer* _accelerationStructureBuffer;
+					vk::AccelerationStructureKHR _accelerationStructure;
 					MeshInfo _meshInfo;
 				public:
 					Mesh();
@@ -70,11 +73,23 @@ namespace AirEngine
 					{
 						return *_indexBuffer;
 					}
+					inline Graphic::Instance::Buffer* AccelerationStructureBuffer()const
+					{
+						return _accelerationStructureBuffer;
+					}
+					inline vk::AccelerationStructureKHR VkAccelerationStructure()const
+					{
+						return _accelerationStructure;
+					}
+					inline bool IsUsedFoRayTracing()const
+					{
+						return _accelerationStructureBuffer != nullptr;
+					}
 					inline const MeshInfo& Info()const
 					{
 						return _meshInfo;
 					}
-					static uint8_t IndexTypeToByteCount(vk::IndexType indexType)
+					static inline uint8_t IndexTypeToByteCount(vk::IndexType indexType)
 					{
 						switch (indexType)
 						{

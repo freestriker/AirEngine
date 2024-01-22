@@ -26,16 +26,17 @@ uint32_t AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentT
 	return sizeof(VertexData);
 }
 
-void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser::OnPopulateMeshVertexAttributeInfoMap(MeshAttributePaser::MeshVertexAttributeInfoMap& meshVertexAttributeInfoMap) const
+AirEngine::Runtime::Utility::InternedString AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser::OnPopulateMeshVertexAttributeInfoMap(MeshAttributePaser::MeshVertexAttributeInfoMap& meshVertexAttributeInfoMap) const
 {
-	auto&& attributeName = Utility::InternedString("vertexPosition");
-	meshVertexAttributeInfoMap[attributeName] = MeshAttributePaser::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexPosition), sizeof(VertexData::vertexPosition), vk::Format::eR32G32B32Sfloat);
-	attributeName = Utility::InternedString("vertexTexcoords");
+	auto&& vertexPositionName = Utility::InternedString("vertexPosition");
+	meshVertexAttributeInfoMap[vertexPositionName] = MeshAttributePaser::MeshVertexAttributeInfo(vertexPositionName, offsetof(VertexData, VertexData::vertexPosition), sizeof(VertexData::vertexPosition), vk::Format::eR32G32B32Sfloat);
+	auto&& attributeName = Utility::InternedString("vertexTexcoords");
 	meshVertexAttributeInfoMap[attributeName] = MeshAttributePaser::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexTexcoords), sizeof(VertexData::vertexTexcoords), vk::Format::eR32G32Sfloat);
 	attributeName = Utility::InternedString("vertexNormal");
 	meshVertexAttributeInfoMap[attributeName] = MeshAttributePaser::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexNormal), sizeof(VertexData::vertexNormal), vk::Format::eR32G32B32Sfloat);
 	attributeName = Utility::InternedString("vertexTangent");
 	meshVertexAttributeInfoMap[attributeName] = MeshAttributePaser::MeshVertexAttributeInfo(attributeName, offsetof(VertexData, VertexData::vertexTangent), sizeof(VertexData::vertexTangent), vk::Format::eR32G32B32Sfloat);
+	return vertexPositionName;
 }
 
 void AirEngine::Runtime::Graphic::MeshAttributePaser::PositionNormalTangentTexcoord_MeshAttributePaser::OnPopulateVertexData(void* vertexDataPtr, size_t vertexDataByteSize, const Asset::Mesh::MeshInfo& meshInfo, const aiScene& meshScene) const
