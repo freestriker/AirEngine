@@ -5,6 +5,7 @@
 #include <glm/vec3.hpp>
 #include <vulkan/vulkan.hpp>
 #include <map>
+#include "AirEngine/Runtime/Graphic/MeshAttributePaser/MeshVertexAttributeInfo.hpp"
 
 namespace AirEngine
 {
@@ -21,13 +22,11 @@ namespace AirEngine
 				namespace Loader
 				{
 					class MeshLoader;
-					class RayTracingMeshLoader;
 				}
-				class AIR_ENGINE_API Mesh final
+				class AIR_ENGINE_API Mesh
 					: public AirEngine::Runtime::Asset::AssetBase
 				{
 					friend class Loader::MeshLoader;
-					friend class Loader::RayTracingMeshLoader;
 				public:
 					struct VertexData
 					{
@@ -35,13 +34,6 @@ namespace AirEngine
 						glm::vec2 texCoords;
 						glm::vec3 normal;
 						glm::vec3 tangent;
-					};
-					struct MeshVertexAttributeInfo
-					{
-						Utility::InternedString name;
-						uint16_t offset;
-						uint16_t size;
-						vk::Format format;
 					};
 					struct SubMeshInfo
 					{
@@ -59,9 +51,9 @@ namespace AirEngine
 						uint32_t meshCount;
 						vk::IndexType indexType;
 						uint32_t vertexByteSize;
-						std::map<Utility::InternedString, MeshVertexAttributeInfo> meshVertexAttributeInfoMap;
+						MeshAttributePaser::MeshVertexAttributeInfoMap meshVertexAttributeInfoMap;
 					};
-				private:
+				protected:
 					Graphic::Instance::Buffer* _vertexBuffer;
 					Graphic::Instance::Buffer* _indexBuffer;
 					MeshInfo _meshInfo;

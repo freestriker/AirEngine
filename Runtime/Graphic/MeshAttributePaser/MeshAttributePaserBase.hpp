@@ -4,6 +4,7 @@
 #include <assimp/scene.h>
 #include "AirEngine/Runtime/Graphic/Asset/Mesh.hpp"
 #include "AirEngine/Runtime/Utility/ReflectableObject.hpp"
+#include "AirEngine/Runtime/Graphic/MeshAttributePaser/MeshVertexAttributeInfo.hpp"
 
 namespace AirEngine
 {
@@ -17,12 +18,11 @@ namespace AirEngine
 					: public Utility::ReflectableObject
 				{
 					friend class Asset::Loader::MeshLoader;
-					friend class Asset::Loader::RayTracingMeshLoader;
 					REFLECTABLE_OBJECT
 				protected:
 					virtual void OnEditPostProcessSteps(uint32_t& postProcessSteps) const { };
 					virtual uint32_t OnGetPerVertexByteSize() const = 0;
-					virtual void OnPopulateMeshVertexAttributeInfoMap(std::map<Utility::InternedString, Asset::Mesh::MeshVertexAttributeInfo>& meshVertexAttributeInfoMap) const = 0;
+					virtual void OnPopulateMeshVertexAttributeInfoMap(MeshAttributePaser::MeshVertexAttributeInfoMap& meshVertexAttributeInfoMap) const = 0;
 					virtual void OnPopulateVertexData(void* vertexDataPtr, size_t vertexDataByteSize, const Asset::Mesh::MeshInfo& meshInfo, const aiScene& meshScene) const = 0;
 				public:
 					MeshAttributePaserBase() = default;
