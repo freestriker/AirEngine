@@ -406,6 +406,7 @@ void AirEngine::Runtime::Graphic::Manager::DescriptorManager::Initialize()
 	_descriptorTypeToSizeMap[vk::DescriptorType::eStorageBuffer] = physicalDeviceDescriptorBufferPropertiesEXT.storageBufferDescriptorSize;
 	_descriptorTypeToSizeMap[vk::DescriptorType::eStorageImage] = physicalDeviceDescriptorBufferPropertiesEXT.storageImageDescriptorSize;
 	_descriptorTypeToSizeMap[vk::DescriptorType::eInputAttachment] = physicalDeviceDescriptorBufferPropertiesEXT.inputAttachmentDescriptorSize;
+	_descriptorTypeToSizeMap[vk::DescriptorType::eAccelerationStructureKHR] = physicalDeviceDescriptorBufferPropertiesEXT.accelerationStructureDescriptorSize;
 }
 
 std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Graphic::Manager::DescriptorManager::OnGetInitializeOperations()

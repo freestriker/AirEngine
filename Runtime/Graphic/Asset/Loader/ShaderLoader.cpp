@@ -167,6 +167,14 @@ void LoadSpirvData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInf
 	{
 		shaderInfo.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
 	}
+	else if (stages & vk::ShaderStageFlagBits::eRaygenKHR)
+	{
+		shaderInfo.pipelineBindPoint = vk::PipelineBindPoint::eRayTracingKHR;
+		if (shaderDescriptor.subShaders.size() != 1)
+		{
+			qFatal("Too many sub shaders for ray tracing shader.");
+		}
+	}
 	else
 	{
 		qFatal("Failed to get right pipeline bind point.");
@@ -359,7 +367,11 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 		auto& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subShaderDescriptor.subPass);
 
 		auto subPassName = AirEngine::Runtime::Utility::InternedString(subShaderDescriptor.subPass);
-		auto&& subPassInfo = shaderCreateInfo.renderPass->Info().SubPassInfo(subPassName);
+		const AirEngine::Runtime::Graphic::Instance::RenderPassBase::SubPassInfo* subPassInfo = nullptr;
+		if (shaderInfo.pipelineBindPoint == vk::PipelineBindPoint::eGraphics)
+		{
+			subPassInfo = &shaderCreateInfo.renderPass->Info().SubPassInfo(subPassName);
+		}
 
 		std::map<uint8_t, std::map<uint8_t, vk::DescriptorSetLayoutBinding>> setToBindingToDescriptorBindingMap{};
 		std::map<uint8_t, std::pair<DescriptorSetInfo, std::map<uint8_t, DescriptorInfo>>> setToDescriptorSetInfoAndBindingToDescriptorInfoMap{};
@@ -503,6 +515,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 		}
 
 		//Check input
+		if(shaderInfo.pipelineBindPoint == vk::PipelineBindPoint::eGraphics)
 		{
 			for (auto& setToDescriptorSetInfoAndBindingToDescriptorInfoMapPair : setToDescriptorSetInfoAndBindingToDescriptorInfoMap)
 			{
@@ -517,7 +530,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 
 					if (descriptorInfo.type == vk::DescriptorType::eInputAttachment)
 					{
-						auto&& attachmentInfo = subPassInfo.AttachmentInfo(descriptorInfo.name);
+						auto&& attachmentInfo = subPassInfo->AttachmentInfo(descriptorInfo.name);
 						if (descriptorInfo.imageInfo->inputAttachmentIndex != attachmentInfo.location)
 						{
 							qFatal("Input attachment do not match.");
@@ -544,7 +557,7 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 			const bool isDynamic = setToDescriptorSetInfoAndBindingToDescriptorInfoMap.at(set).second.rbegin()->second.descriptorCount == 0;
 
 			std::vector<vk::DescriptorBindingFlags> flags{bindingToDescriptorBindingMap.size(), vk::DescriptorBindingFlags()};
-			vk::DescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlags{flags};
+			//vk::DescriptorSetLayoutBindingFlagsCreateInfo setLayoutBindingFlags{flags};
 			{
 				if (isDynamic)
 				{
@@ -555,8 +568,8 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 
 			vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
 				vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT,
-				vkDescriptorSetLayoutBindings,
-				&setLayoutBindingFlags
+				vkDescriptorSetLayoutBindings/*,
+				&setLayoutBindingFlags*/
 			);
 
 			auto&& layout = AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
@@ -870,6 +883,121 @@ void CreateGraphicPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& s
 		subShaderInfo.pipeline = pipeline;
 	}
 }
+void CreateRayTracingPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	using namespace AirEngine::Runtime;
+
+	for (auto& subShaderInfoMapPair : shaderInfo.subShaderInfoMap)
+	{
+		auto&& subPassName = subShaderInfoMapPair.first;
+		auto& subShaderInfo = subShaderInfoMapPair.second;
+		auto&& setToDescriptorSetInfoIndexMap = subShaderInfo.setToDescriptorSetInfoIndexMap;
+		auto&& subShaderDescriptor = *std::find_if(shaderDescriptor.subShaders.begin(), shaderDescriptor.subShaders.end(), [&](const SubShaderDescriptor& subShaderDescriptor)->bool {return subShaderDescriptor.subPass == subPassName.ToString(); });
+		auto&& subShaderCreateInfo = shaderCreateInfo.subShaderCreateInfos.at(subPassName.ToString());
+
+		vk::PipelineLayout pipelineLayout{};
+		{
+			std::vector<vk::DescriptorSetLayout> vkDescriptorSetLayouts{};
+			for (auto& setToDescriptorSetInfoIndexMapPair : setToDescriptorSetInfoIndexMap)
+			{
+				auto&& set = setToDescriptorSetInfoIndexMapPair.first;
+				auto&& descriptorSetInfoIndex = setToDescriptorSetInfoIndexMapPair.second;
+				auto&& descriptorSetInfo = subShaderInfo.descriptorSetInfos[descriptorSetInfoIndex];
+
+				vkDescriptorSetLayouts.emplace_back(descriptorSetInfo.layout);
+			}
+
+			std::vector<vk::PushConstantRange> pushConstantRanges{};
+			if (subShaderCreateInfo.pushConstantRange) pushConstantRanges.emplace_back(subShaderCreateInfo.pushConstantRange.value());
+
+			vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{ vk::PipelineLayoutCreateFlags(), vkDescriptorSetLayouts, pushConstantRanges };
+			pipelineLayout = AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().createPipelineLayout(pipelineLayoutCreateInfo);
+		}
+
+		vk::Pipeline pipeline{};
+		{
+			std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos{ subShaderCreateInfo.shaderDatas.size() };
+			std::vector<vk::RayTracingShaderGroupCreateInfoKHR> rayTracingShaderGroupCreateInfos{ subShaderCreateInfo.shaderDatas.size() };
+			uint32_t shaderDataIndex = 0;
+			for (const auto& shaderDatasPair : subShaderCreateInfo.shaderDatas)
+			{
+				const auto& stage = shaderDatasPair.first;
+				const auto& shaderReflectData = shaderDatasPair.second.first;
+				const auto& shaderModule = shaderDatasPair.second.second;
+
+				auto& pipelineShaderStageCreateInfo = pipelineShaderStageCreateInfos.at(shaderDataIndex);
+				pipelineShaderStageCreateInfo.stage = stage;
+				pipelineShaderStageCreateInfo.module = shaderModule;
+				pipelineShaderStageCreateInfo.pName = shaderReflectData.entry_point_name;
+				
+				switch (stage)
+				{
+					case vk::ShaderStageFlagBits::eRaygenKHR:
+					case vk::ShaderStageFlagBits::eMissKHR:
+					{
+						auto& shaderGroup = rayTracingShaderGroupCreateInfos.at(shaderDataIndex);
+						shaderGroup.type = vk::RayTracingShaderGroupTypeKHR::eGeneral;
+						shaderGroup.generalShader = shaderDataIndex;
+						shaderGroup.closestHitShader = vk::ShaderUnusedKhr;
+						shaderGroup.anyHitShader = vk::ShaderUnusedKhr;
+						shaderGroup.intersectionShader = vk::ShaderUnusedKhr;
+						
+						break;
+					}
+					case vk::ShaderStageFlagBits::eClosestHitKHR:
+					{
+						auto& shaderGroup = rayTracingShaderGroupCreateInfos.at(shaderDataIndex);
+						shaderGroup.type = vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
+						shaderGroup.generalShader = vk::ShaderUnusedKhr;
+						shaderGroup.closestHitShader = shaderDataIndex;
+						shaderGroup.anyHitShader = vk::ShaderUnusedKhr;
+						shaderGroup.intersectionShader = vk::ShaderUnusedKhr;
+
+						break;
+					}
+					case vk::ShaderStageFlagBits::eAnyHitKHR:
+					{
+						auto& shaderGroup = rayTracingShaderGroupCreateInfos.at(shaderDataIndex);
+						shaderGroup.type = vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
+						shaderGroup.generalShader = vk::ShaderUnusedKhr;
+						shaderGroup.closestHitShader = vk::ShaderUnusedKhr;
+						shaderGroup.anyHitShader = shaderDataIndex;
+						shaderGroup.intersectionShader = vk::ShaderUnusedKhr;
+
+						break;
+					}
+					case vk::ShaderStageFlagBits::eIntersectionKHR:
+					{
+						auto& shaderGroup = rayTracingShaderGroupCreateInfos.at(shaderDataIndex);
+						shaderGroup.type = vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
+						shaderGroup.generalShader = vk::ShaderUnusedKhr;
+						shaderGroup.closestHitShader = vk::ShaderUnusedKhr;
+						shaderGroup.anyHitShader = vk::ShaderUnusedKhr;
+						shaderGroup.intersectionShader = shaderDataIndex;
+
+						break;
+					}
+					default:
+						break;
+				}
+
+				++shaderDataIndex;
+			}
+
+			vk::RayTracingPipelineCreateInfoKHR rayTracingPipelineCI{};
+			rayTracingPipelineCI.stageCount = static_cast<uint32_t>(pipelineShaderStageCreateInfos.size());
+			rayTracingPipelineCI.pStages = pipelineShaderStageCreateInfos.data();
+			rayTracingPipelineCI.groupCount = static_cast<uint32_t>(rayTracingShaderGroupCreateInfos.size());
+			rayTracingPipelineCI.pGroups = rayTracingShaderGroupCreateInfos.data();
+			rayTracingPipelineCI.maxPipelineRayRecursionDepth = 1;
+			rayTracingPipelineCI.layout = pipelineLayout;
+			pipeline = AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().createRayTracingPipelineKHR({}, {}, rayTracingPipelineCI).value;
+		}
+
+		subShaderInfo.pipelineLayout = pipelineLayout;
+		subShaderInfo.pipeline = pipeline;
+	}
+}
 void UnloadSpirvData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
 {
 	for (auto& subShaderCreateInfoPair : shaderCreateInfo.subShaderCreateInfos)
@@ -911,6 +1039,12 @@ void AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::PopulateShader(Ai
 			LoadVertexInputData(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
 			CheckGraphicFragmentShaderOutData(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
 			CreateGraphicPipeline(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+			break;
+		}
+		case vk::PipelineBindPoint::eRayTracingKHR:
+		{
+			ParseShaderInfo(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+			CreateRayTracingPipeline(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
 			break;
 		}
 		default:

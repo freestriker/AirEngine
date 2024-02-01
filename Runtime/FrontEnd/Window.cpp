@@ -45,6 +45,7 @@ void AirEngine::Runtime::FrontEnd::Window::OnCreateSurface()
 static AirEngine::Runtime::Asset::Loader::LoadHandle sampledImageLoadHandle{};
 static AirEngine::Runtime::Asset::Loader::LoadHandle ndcFullScreenMeshLoadHandle{};
 static AirEngine::Runtime::Asset::Loader::LoadHandle presentShaderLoadHandle{};
+static AirEngine::Runtime::Asset::Loader::LoadHandle rtTestShaderLoadHandle{};
 static AirEngine::Runtime::Utility::InternedString swapchainAttachmentName{};
 static AirEngine::Runtime::Utility::InternedString swapchainName{};
 static AirEngine::Runtime::Utility::InternedString presentQueueName{};
@@ -54,6 +55,9 @@ static AirEngine::Runtime::Graphic::Rendering::Material* presentMaterial{};
 
 void AirEngine::Runtime::FrontEnd::Window::LoadPresentData()
 {
+	rtTestShaderLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/RtTest.shader");
+	rtTestShaderLoadHandle.SharedFuture().wait();
+
 	sampledImageLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Texture/WorkShop_Equirectangular.texture2d");
 	ndcFullScreenMeshLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Mesh/NdcFullScreen.mesh");
 	presentShaderLoadHandle = Asset::Manager::AssetManager::LoadAsset("..\\../Resources\\Shader/Present.shader");
