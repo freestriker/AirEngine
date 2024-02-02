@@ -4,7 +4,12 @@
 
 AirEngine::Runtime::Asset::Loader::LoadHandle AirEngine::Runtime::Asset::Loader::LoaderBase::LoadAsset(const std::string& path)
 {
-	std::filesystem::path fsPath(path); 
+	if (!_isReadyToLoad)
+	{
+		qFatal("This asset loader need be initialized.");
+	}
+	
+	std::filesystem::path fsPath(path);
 	auto&& currentPath = std::filesystem::current_path();
 	if (!std::filesystem::exists(fsPath)) qFatal("File do not exist.");
 
@@ -44,6 +49,11 @@ AirEngine::Runtime::Asset::Loader::LoadHandle AirEngine::Runtime::Asset::Loader:
 
 void AirEngine::Runtime::Asset::Loader::LoaderBase::UnloadAsset(const std::string& path)
 {
+	if (!_isReadyToLoad)
+	{
+		qFatal("This asset loader need be initialized.");
+	}
+
 	auto&& fsPath = std::filesystem::absolute(std::filesystem::path(path));
 	LoadContext::PathHashValue pathHash = std::filesystem::hash_value(fsPath);
 
@@ -60,6 +70,11 @@ void AirEngine::Runtime::Asset::Loader::LoaderBase::UnloadAsset(const std::strin
 
 void AirEngine::Runtime::Asset::Loader::LoaderBase::CollectUnloadableAssets()
 {
+	if (!_isReadyToLoad)
+	{
+		qFatal("This asset loader need be initialized.");
+	}
+
 	if (_assetLoadContextMap.size() == 0) return;
 
 	std::unique_lock<std::mutex> loaderLock(_loaderMutex);
@@ -83,12 +98,35 @@ void AirEngine::Runtime::Asset::Loader::LoaderBase::CollectUnloadableAssets()
 	}
 }
 
+void AirEngine::Runtime::Asset::Loader::LoaderBase::Initialize()
+{
+	if (_isReadyToLoad)
+	{
+		qFatal("This asset loader is already initialized.");
+	}
+
+	OnInitialize();
+	_isReadyToLoad = true;
+}
+
+void AirEngine::Runtime::Asset::Loader::LoaderBase::Finalize()
+{
+	if (!_isReadyToLoad)
+	{
+		qFatal("This asset loader is not initialized.");
+	}
+
+	OnFinalize();
+	_isReadyToLoad = false;
+}
+
 AirEngine::Runtime::Asset::Loader::LoaderBase::LoaderBase(const std::string& name, const std::string& supportedSuffixName)
 	: _name(name)
 	, _gcHoldAssetSet()
 	, _assetLoadContextMap()
 	, _loaderMutex()
 	, _supportedSuffixName(supportedSuffixName)
+	, _isReadyToLoad(false)
 {
 }
 

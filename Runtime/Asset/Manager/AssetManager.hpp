@@ -24,13 +24,17 @@ namespace AirEngine
 				protected:
 					static std::unordered_map<std::string, Loader::LoaderBase*> _nameToAssetLoaderMap;
 					static std::unordered_map<std::string, Loader::LoaderBase*> _suffixNameToAssetLoaderMap;
+					virtual std::vector<Utility::OperationWrapper> OnGetInitializeOperations() override;
 					virtual std::vector<Utility::OperationWrapper> OnGetUpdateOperations() override;
+					virtual std::vector<Utility::OperationWrapper> OnGetFinalizeOperations() override;
 				public:
 					AssetManager();
 					virtual ~AssetManager();
 					NO_COPY_MOVE(AssetManager)
 				protected:
+					static void InitializeAllAssetLoader();
 					static void CollectUpdate();
+					static void FinalizeAllAssetLoader();
 					template<typename TAssetLoader, typename... Args>
 					static TAssetLoader& AddAssetLoader(Args&&... args)
 					{

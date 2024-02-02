@@ -9,6 +9,7 @@
 #include <string>
 #include <memory>
 #include "AirEngine/Runtime/Asset/AssetBase.hpp"
+#include <optional>
 
 namespace AirEngine
 {
@@ -27,11 +28,20 @@ namespace AirEngine
 					std::mutex _loaderMutex;
 					const std::string _supportedSuffixName;
 					const std::string _name;
+					bool _isReadyToLoad;
 				protected:
 					LoaderBase(const std::string& name, const std::string& supportedSuffixName);
 					NO_COPY_MOVE(LoaderBase);
 					virtual Asset::AssetBase* OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading) = 0;
 					virtual void OnUnloadAsset(Asset::AssetBase* asset) = 0;
+					virtual void OnInitialize()
+					{
+
+					}
+					virtual void OnFinalize()
+					{
+
+					}
 				public:
 					virtual ~LoaderBase();
 					inline const std::string& SupportedSuffixName()const
@@ -45,6 +55,8 @@ namespace AirEngine
 					LoadHandle LoadAsset(const std::string& path);
 					void UnloadAsset(const std::string& path);
 					void CollectUnloadableAssets();
+					void Initialize();
+					void Finalize();
 				};
 			}
 		}

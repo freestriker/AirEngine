@@ -7,9 +7,33 @@
 std::unordered_map<std::string, AirEngine::Runtime::Asset::Loader::LoaderBase*> AirEngine::Runtime::Asset::Manager::AssetManager::_nameToAssetLoaderMap{ };
 std::unordered_map<std::string, AirEngine::Runtime::Asset::Loader::LoaderBase*> AirEngine::Runtime::Asset::Manager::AssetManager::_suffixNameToAssetLoaderMap{ };
 
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Asset::Manager::AssetManager::OnGetInitializeOperations()
+{
+	return
+	{
+		{ GRAPHIC_INITIALIZE_LAYER, GRAPHIC_POST_INITIALIZE_DEVICE_INDEX, "Initialize all asset loader.", InitializeAllAssetLoader}
+	};
+}
+
+void AirEngine::Runtime::Asset::Manager::AssetManager::InitializeAllAssetLoader()
+{
+	for (auto& pair : _nameToAssetLoaderMap)
+	{
+		pair.second->Initialize();
+	}
+}
+
 void AirEngine::Runtime::Asset::Manager::AssetManager::CollectUpdate()
 {
 	CollectAll();
+}
+
+void AirEngine::Runtime::Asset::Manager::AssetManager::FinalizeAllAssetLoader()
+{
+	for (auto& pair : _nameToAssetLoaderMap)
+	{
+		pair.second->Finalize();
+	}
 }
 
 std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Asset::Manager::AssetManager::OnGetUpdateOperations()
@@ -17,6 +41,14 @@ std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::A
 	return
 	{
 		{ COLLECT_UPDATE_LAYER, 0, "Collect asset manager's garbage.", CollectUpdate}
+	};
+}
+
+std::vector<AirEngine::Runtime::Utility::OperationWrapper> AirEngine::Runtime::Asset::Manager::AssetManager::OnGetFinalizeOperations()
+{
+	return
+	{
+		
 	};
 }
 
