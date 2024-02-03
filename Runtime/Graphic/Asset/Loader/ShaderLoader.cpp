@@ -12,6 +12,7 @@
 #include <vulkan/vulkan.hpp>
 #include "AirEngine/Runtime/Utility/StringToVulkanypeTransfer.hpp"
 #include "AirEngine/Runtime/Core/Manager/TaskManager.hpp"
+#include "AirEngine/Runtime/Graphic/Instance/Buffer.hpp"
 
 AirEngine::Runtime::Asset::AssetBase* AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading)
 {
@@ -596,6 +597,12 @@ void ParseShaderInfo(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderI
 		auto& subShaderInfo = shaderInfo.subShaderInfoMap[subPassName];
 		subShaderInfo.subPass = subPassName;
 		{
+			subShaderInfo.stages.reserve(subShaderCreateInfo.shaderDatas.size());
+			for (const auto& shaderDatasPair : subShaderCreateInfo.shaderDatas)
+			{
+				subShaderInfo.stages.emplace_back(shaderDatasPair.first);
+			}
+
 			if (subShaderCreateInfo.pushConstantRange)
 			{
 				subShaderInfo.pushConstantInfo.valid = true;
@@ -917,7 +924,7 @@ void CreateRayTracingPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo
 		vk::Pipeline pipeline{};
 		{
 			std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos{ subShaderCreateInfo.shaderDatas.size() };
-			std::vector<vk::RayTracingShaderGroupCreateInfoKHR> rayTracingShaderGroupCreateInfos{ subShaderCreateInfo.shaderDatas.size() };
+			std::array<std::vector<vk::RayTracingShaderGroupCreateInfoKHR>, 4> seperateRayTracingShaderGroupCreateInfos{};
 			uint32_t shaderDataIndex = 0;
 			for (const auto& shaderDatasPair : subShaderCreateInfo.shaderDatas)
 			{
@@ -933,9 +940,19 @@ void CreateRayTracingPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo
 				switch (stage)
 				{
 					case vk::ShaderStageFlagBits::eRaygenKHR:
+					{
+						auto& shaderGroup = seperateRayTracingShaderGroupCreateInfos.at(0).emplace_back(vk::RayTracingShaderGroupCreateInfoKHR{});
+						shaderGroup.type = vk::RayTracingShaderGroupTypeKHR::eGeneral;
+						shaderGroup.generalShader = shaderDataIndex;
+						shaderGroup.closestHitShader = vk::ShaderUnusedKhr;
+						shaderGroup.anyHitShader = vk::ShaderUnusedKhr;
+						shaderGroup.intersectionShader = vk::ShaderUnusedKhr;
+
+						break;
+					}
 					case vk::ShaderStageFlagBits::eMissKHR:
 					{
-						auto& shaderGroup = rayTracingShaderGroupCreateInfos.at(shaderDataIndex);
+						auto& shaderGroup = seperateRayTracingShaderGroupCreateInfos.at(1).emplace_back(vk::RayTracingShaderGroupCreateInfoKHR{});
 						shaderGroup.type = vk::RayTracingShaderGroupTypeKHR::eGeneral;
 						shaderGroup.generalShader = shaderDataIndex;
 						shaderGroup.closestHitShader = vk::ShaderUnusedKhr;
@@ -946,7 +963,7 @@ void CreateRayTracingPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo
 					}
 					case vk::ShaderStageFlagBits::eClosestHitKHR:
 					{
-						auto& shaderGroup = rayTracingShaderGroupCreateInfos.at(shaderDataIndex);
+						auto& shaderGroup = seperateRayTracingShaderGroupCreateInfos.at(2).emplace_back(vk::RayTracingShaderGroupCreateInfoKHR{});
 						shaderGroup.type = vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
 						shaderGroup.generalShader = vk::ShaderUnusedKhr;
 						shaderGroup.closestHitShader = shaderDataIndex;
@@ -955,33 +972,29 @@ void CreateRayTracingPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo
 
 						break;
 					}
-					case vk::ShaderStageFlagBits::eAnyHitKHR:
-					{
-						auto& shaderGroup = rayTracingShaderGroupCreateInfos.at(shaderDataIndex);
-						shaderGroup.type = vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
-						shaderGroup.generalShader = vk::ShaderUnusedKhr;
-						shaderGroup.closestHitShader = vk::ShaderUnusedKhr;
-						shaderGroup.anyHitShader = shaderDataIndex;
-						shaderGroup.intersectionShader = vk::ShaderUnusedKhr;
-
-						break;
-					}
-					case vk::ShaderStageFlagBits::eIntersectionKHR:
-					{
-						auto& shaderGroup = rayTracingShaderGroupCreateInfos.at(shaderDataIndex);
-						shaderGroup.type = vk::RayTracingShaderGroupTypeKHR::eTrianglesHitGroup;
-						shaderGroup.generalShader = vk::ShaderUnusedKhr;
-						shaderGroup.closestHitShader = vk::ShaderUnusedKhr;
-						shaderGroup.anyHitShader = vk::ShaderUnusedKhr;
-						shaderGroup.intersectionShader = shaderDataIndex;
-
-						break;
-					}
 					default:
 						break;
 				}
 
 				++shaderDataIndex;
+			}
+
+			std::vector<vk::RayTracingShaderGroupCreateInfoKHR> rayTracingShaderGroupCreateInfos{ subShaderCreateInfo.shaderDatas.size() };
+			{
+				subShaderInfo.rayTracingInfo.groupCounts.at(0) = seperateRayTracingShaderGroupCreateInfos.at(0).size();
+				subShaderInfo.rayTracingInfo.groupCounts.at(1) = seperateRayTracingShaderGroupCreateInfos.at(1).size();
+				subShaderInfo.rayTracingInfo.groupCounts.at(2) = seperateRayTracingShaderGroupCreateInfos.at(2).size();
+				subShaderInfo.rayTracingInfo.groupCounts.at(3) = seperateRayTracingShaderGroupCreateInfos.at(3).size();
+
+				uint32_t startIndex = 0;
+				for (const auto& seperateRayTracingShaderGroupCreateInfo : seperateRayTracingShaderGroupCreateInfos)
+				{
+					if (seperateRayTracingShaderGroupCreateInfo.size() == 0) continue;
+
+					std::memcpy(&rayTracingShaderGroupCreateInfos.at(startIndex), seperateRayTracingShaderGroupCreateInfo.data(), seperateRayTracingShaderGroupCreateInfo.size() * sizeof(vk::RayTracingShaderGroupCreateInfoKHR));
+					
+					startIndex += seperateRayTracingShaderGroupCreateInfo.size();
+				}
 			}
 
 			vk::RayTracingPipelineCreateInfoKHR rayTracingPipelineCI{};
@@ -996,6 +1009,53 @@ void CreateRayTracingPipeline(AirEngine::Runtime::Graphic::Rendering::ShaderInfo
 
 		subShaderInfo.pipelineLayout = pipelineLayout;
 		subShaderInfo.pipeline = pipeline;
+	}
+}
+void CreateShaderBindingTable(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
+{
+	using namespace AirEngine::Runtime::Graphic;
+
+	auto& subShaderInfo = shaderInfo.subShaderInfoMap.begin()->second;
+	auto& rayTracingInfo = subShaderInfo.rayTracingInfo;
+
+	const uint32_t handleSize = AirEngine::Runtime::Graphic::Rendering::Shader::ShaderGroupHandleSize();
+	const uint32_t handleSizeAligned = AirEngine::Runtime::Graphic::Rendering::Shader::ShaderGroupHandleAlignedSize();
+	const uint32_t groupCount = static_cast<uint32_t>(subShaderInfo.stages.size());
+	const uint32_t sbtSize = groupCount * handleSizeAligned;
+
+	{
+		std::vector<uint8_t> shaderHandleStorage(sbtSize, 0);
+		auto result = AirEngine::Runtime::Graphic::Manager::DeviceManager::Device().getRayTracingShaderGroupHandlesKHR(subShaderInfo.pipeline, 0, groupCount, sbtSize, shaderHandleStorage.data());
+
+		Instance::Buffer* sbtBuffer = new Instance::Buffer(
+			sbtSize,
+			vk::BufferUsageFlagBits::eShaderBindingTableKHR,
+			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+			VmaAllocationCreateFlagBits::VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+		);
+
+		void* sbtBufferMemoryPtr = sbtBuffer->Memory()->Map();
+		std::memcpy(sbtBufferMemoryPtr, shaderHandleStorage.data(), sbtSize);
+		sbtBuffer->Memory()->Unmap();
+
+		rayTracingInfo.shaderBindingTableBuffer = sbtBuffer;
+	}
+
+	{
+		uint32_t offset = 0;
+		for (uint32_t groupIndex = 0; groupIndex < 4; ++groupIndex)
+		{
+			const auto& count = rayTracingInfo.groupCounts.at(groupIndex);
+
+			if (count == 0) continue;
+
+			auto& region = subShaderInfo.rayTracingInfo.stridedDeviceAddressRegions.at(groupIndex);
+			region.deviceAddress = rayTracingInfo.shaderBindingTableBuffer->BufferDeviceAddress() + offset;
+			region.stride = handleSizeAligned;
+			region.size = count * handleSizeAligned;
+
+			offset += region.size;
+		}
 	}
 }
 void UnloadSpirvData(AirEngine::Runtime::Graphic::Rendering::ShaderInfo& shaderInfo, const ShaderDescriptor& shaderDescriptor, ShaderCreateInfo& shaderCreateInfo)
@@ -1045,6 +1105,7 @@ void AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::PopulateShader(Ai
 		{
 			ParseShaderInfo(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
 			CreateRayTracingPipeline(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
+			CreateShaderBindingTable(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
 			break;
 		}
 		default:
@@ -1056,6 +1117,19 @@ void AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::PopulateShader(Ai
 	UnloadSpirvData(shader->_shaderInfo, shaderDescriptor, shaderCreateInfo);
 
 	*isInLoading = false;
+}
+
+void AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::OnInitialize()
+{
+	vk::PhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{};
+
+	auto&& physicalDeviceProperties = vk::PhysicalDeviceProperties2();
+	physicalDeviceProperties.pNext = &rayTracingPipelineProperties;
+
+	Graphic::Manager::DeviceManager::PhysicalDevice().getProperties2(&physicalDeviceProperties);
+
+	Rendering::Shader::_shaderGroupHandleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
+	Rendering::Shader::_shaderGroupHandleAlignedSize = (rayTracingPipelineProperties.shaderGroupHandleSize + rayTracingPipelineProperties.shaderGroupHandleAlignment - 1) & ~(rayTracingPipelineProperties.shaderGroupHandleAlignment - 1);
 }
 
 AirEngine::Runtime::Graphic::Asset::Loader::ShaderLoader::ShaderLoader()

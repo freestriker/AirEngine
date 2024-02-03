@@ -21,6 +21,7 @@ namespace AirEngine
 					Runtime::Asset::AssetBase* OnLoadAsset(const std::string& path, std::shared_future<void>& loadOperationFuture, bool& isInLoading) override;
 					void OnUnloadAsset(Runtime::Asset::AssetBase* asset) override;
 					static void PopulateShader(AirEngine::Runtime::Graphic::Rendering::Shader* shader, const std::string path, bool* isInLoading);
+					void OnInitialize()override;
 				public:
 					ShaderLoader();
 					virtual ~ShaderLoader();

@@ -26,6 +26,8 @@ namespace AirEngine
 				{
 					friend class Runtime::Graphic::Asset::Loader::ShaderLoader;
 				private:
+					static uint32_t _shaderGroupHandleSize;
+					static uint32_t _shaderGroupHandleAlignedSize;
 					ShaderInfo _shaderInfo;
 				public:
 					Shader();
@@ -35,6 +37,14 @@ namespace AirEngine
 						return _shaderInfo;
 					}
 					NO_COPY_MOVE(Shader);
+					static inline uint32_t ShaderGroupHandleSize()
+					{
+						return _shaderGroupHandleSize;
+					}
+					static inline  uint32_t ShaderGroupHandleAlignedSize()
+					{
+						return _shaderGroupHandleAlignedSize;
+					}
 				};
 			}
 		}

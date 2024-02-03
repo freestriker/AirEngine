@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <spirv_reflect.h>
 #include <unordered_map>
+#include <array>
 
 namespace AirEngine
 {
@@ -17,6 +18,7 @@ namespace AirEngine
 			namespace Instance
 			{
 				class RenderPassBase;
+				class Buffer;
 			}
 			namespace Rendering
 			{
@@ -70,9 +72,16 @@ namespace AirEngine
 					uint32_t size;
 					bool valid;
 				};
+				struct RayTracingInfo
+				{
+					std::array<uint8_t, 4> groupCounts;
+					std::array<vk::StridedDeviceAddressRegionKHR, 4> stridedDeviceAddressRegions;
+					Instance::Buffer* shaderBindingTableBuffer;
+				};
 				struct SubShaderInfo
 				{
 					AirEngine::Runtime::Utility::InternedString subPass;
+					std::vector<vk::ShaderStageFlags> stages;
 					std::unordered_map< AirEngine::Runtime::Utility::InternedString, VertexInputInfo> nameToVertexInputInfoMap;
 					std::vector<DescriptorInfo> descriptorInfos{};
 					std::vector<DescriptorSetInfo> descriptorSetInfos{};
@@ -81,6 +90,7 @@ namespace AirEngine
 					vk::PipelineLayout pipelineLayout;
 					vk::Pipeline pipeline;
 					PushConstantInfo pushConstantInfo;
+					RayTracingInfo rayTracingInfo;
 
 					const ShaderInfo* shaderInfo;
 				};
